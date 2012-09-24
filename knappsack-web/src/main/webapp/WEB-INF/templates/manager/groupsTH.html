@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_groups=${true}, active='groupNav',title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+            var recordText = /*[[#{desktop.group.records}]]*/ "records per page";
+            $('table').dataTable( {
+                "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+                "sPaginationType": "bootstrap",
+                "oLanguage": {
+                    "sLengthMenu": "_MENU_ " + recordText
+                },
+                "aoColumns": [
+                    null,
+                    null,
+                    { "bSortable": false },
+                    { "bSortable": false }
+                ]
+            });
+        });
+        /*]]>*/
+    </script>
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+        <div class="span10">
+
+            <header class="jumbotron subhead" id="overview">
+                <h1 th:text="#{desktop.group.groups}">Groups</h1>
+
+                <p class="lead" th:text="#{desktop.group.allGroups}">
+                    All groups that you belong to.
+                </p>
+
+                <div>
+                    <a href="manageGroupTH.html" th:href="@{/manager/addGroup}" class="btn btn-success" th:if="${user.systemOrOrganizationAdmin}" th:inline="text"><i class="icon-plus icon-white"/> [[#{destkop.group.addGroup}]]</a>
+                </div>
+            </header>
+
+            <section class="well">
+                <table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                    <thead>
+                    <tr>
+                        <th th:text="#{desktop.group.name}">Name</th>
+                        <th th:text="#{desktop.group.organization}">Organization</th>
+                        <th th:text="#{desktop.group.edit}">Edit</th>
+                        <th th:text="#{desktop.group.delete}">Delete</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="group : ${groups}">
+                        <td th:text="${group.name}">1</td>
+                        <td th:text="${group.organization.name}"></td>
+                        <td><a href="" th:href="@{'/manager/editGroup/' + ${group.id}}" th:text="#{desktop.group.edit}">Edit</a></td>
+                        <td><a href="" th:href="@{'/manager/deleteGroup/' + ${group.id}}" th:text="#{desktop.group.delete}">Delete</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </section>
+
+        </div>
+
+    </div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+    <section th:include="/includesTH :: table_scripts"/>
+</section>
+
+</body>
+</html>

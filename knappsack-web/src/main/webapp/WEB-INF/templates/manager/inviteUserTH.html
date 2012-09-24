@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active=${subNav},title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+            var singleUrl = /*[[@{/manager/sendInvitation}]]*/ '';
+            var batchUrl = /*[[@{/manager/batchInvitations}]]*/ '';
+            var url = singleUrl;
+            $('#invitationForm').submit(function() {
+                $("#invitationForm").attr("action", url);
+                return true;
+            });
+
+            $('.btn-primary').bind('click',function(){
+                value = $(this).attr('value');
+                if(value == 'batch') {
+                    url = batchUrl;
+                } else if(value == 'single') {
+                    url = singleUrl;
+                }
+            });
+        });
+
+
+        /*]]>*/
+    </script>
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+        <div class="span10">
+            <ul class="breadcrumb">
+                <li>
+                    <a th:href="@{'/manager/editOrg/' + ${domainId}}" th:text="${domainName}" th:if="${domainType eq 'ORGANIZATION'}"/>
+                    <a th:href="@{'/manager/editGroup/' + ${domainId}}" th:text="${domainName}" th:if="${domainType eq 'GROUP'}"/>
+                    <span class="divider">/</span>
+                </li>
+                <li class="active">
+                    <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.inviteUser.inviteMember}">Invite Member</a>
+                </li>
+            </ul>
+
+            <div class="row-fluid">
+                <div class="span7">
+                <form id="invitationForm" th:object="${invitationForm}" th:action="@{/manager/sendInvitation}" method="POST" enctype="multipart/form-data" class="form-horizontal">
+                    <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                        <h1 th:text="#{errors.header}"/>
+                        <ul>
+                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                        </ul>
+                    </div>
+
+                    <div th:unless="${emailError == null}">
+                        <div class="alert alert-error" th:if="${#bools.isTrue(emailError)}">
+                            <strong th:text="#{desktop.alert.error.prefix}">Oh snap!</strong> <span th:text="#{desktop.manager.invite.email.error}">An error occurred and the invitation email was not sent.</span>
+                        </div>
+
+                        <div class="alert alert-success" th:if="${#bools.isFalse(emailError)}">
+                            <a class="close" data-dismiss="alert">x</a>
+                            <strong th:text="#{desktop.alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.manager.invite.email.success}">You have successfully activated your account.</span>
+                        </div>
+                    </div>
+
+                    <fieldset>
+
+                        <input type="hidden" id="domainId" name="domainId" th:value="*{domainId}"/>
+                        <input type="hidden" id="domainType" name="domainType" th:value="*{domainType}"/>
+
+                        <div class="well">
+                            <div class="control-group">
+                                <label class="control-label" for="email" style="" th:text="#{desktop.inviteUser.emailAddress}">E-Mail Address</label>
+
+                                <div class="controls">
+                                    <input type="text" id="email" th:field="*{inviteeForms[0].email}"/>
+                                </div>
+                            </div>
+
+
+                            <div class="control-group">
+                                <label class="control-label" for="userRole" th:text="#{desktop.inviteUser.selectUserRole}">Select User Role</label>
+
+                                <div class="controls">
+                                    <select type="select" id="userRole" th:field="*{inviteeForms[0].userRole}">
+                                        <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                        <option th:each="userRole : ${userRoles}"
+                                                th:value="${userRole}" th:text="#{${userRole.messageKey}}"></option>
+                                    </select>
+                                </div>
+                                <div class="pull-right">
+                                    <button type="submit" class="btn btn-primary" value="single" th:text="#{desktop.inviteUser.invite}">Invite</button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="well">
+                            <div class="control-group" id="contactsGoogleDiv">
+                                <label class="control-label" for="contactsGoogle" th:text="#{desktop.inviteUser.importContactsGoogle}">Import Contacts - Google CSV</label>
+                                <div class="controls">
+                                    <input class="button" type="file" id="contactsGoogle" name="contactsGoogle"/>
+                                </div>
+                                <div class="pull-right">
+                                    <button type="submit" class="btn btn-primary" value="batch" th:text="#{desktop.inviteUser.next}">Next</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="well">
+                            <div class="control-group" id="contactsOutlookDiv">
+                                <label class="control-label" for="contactsOutlook" th:text="#{desktop.inviteUser.importContactsOutlook}">Import Contacts - Outlook CSV</label>
+                                <div class="controls">
+                                    <input class="button" type="file" id="contactsOutlook" name="contactsOutlook"/>
+                                </div>
+                                <div class="pull-right">
+                                    <button type="submit" class="btn btn-primary" value="batch" th:text="#{desktop.inviteUser.next}">Next</button>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                </form>
+
+            </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+
+</body>
+</html>

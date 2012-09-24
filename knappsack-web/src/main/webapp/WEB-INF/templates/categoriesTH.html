@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="title=#{desktop.categories.title}">
+<head th:substituteby="/includesTH :: head"></head>
+<body>
+
+<div th:substituteby="/includesTH :: header"></div>
+
+<div class="container">
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+
+            $('.category').click(function() {
+                var url = /*[[@{/categories/}]]*/ '/categories/';
+                url += $(this).attr('data-id');
+                window.location = url;
+            });
+
+        });
+        /*]]>*/
+    </script>
+
+
+    <header class="jumbotron subhead" id="overview">
+        <h1 th:text="#{desktop.categories.overview.header}">Categories</h1>
+
+        <p class="lead" th:text="#{desktop.categories.overview.lead}">
+            Select a category to view its applications.
+        </p>
+    </header>
+
+    <section class="row" style="margin: 0 auto;">
+
+        <span id="noResults" th:if="${#lists.isEmpty(categories)}" th:text="#{desktop.categories.no.categories}">No Categories</span>
+
+        <div class="row" style="margin: 0 auto;">
+
+            <div th:each="category : ${categories}" th:attr="data-id=${category.id}" class="category" th:title="${category.name}">
+                <div class="icon"><img th:src="@{${category.icon.url}}"/></div>
+                <div style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"><span th:text="${category.name}"/></div>
+            </div>
+        </div>
+
+    </section>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+</body>
+</html>

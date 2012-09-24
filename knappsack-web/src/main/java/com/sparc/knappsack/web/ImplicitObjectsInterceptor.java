@@ -1,0 +1,89 @@
+package com.sparc.knappsack.web;
+
+import com.sparc.knappsack.components.entities.User;
+import com.sparc.knappsack.components.services.UserService;
+import com.sparc.knappsack.util.WebRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.util.StringUtils;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+
+public class ImplicitObjectsInterceptor extends HandlerInterceptorAdapter {
+
+
+    @Qualifier("userService")
+    @Autowired
+    private UserService userService;
+
+    @Value("${ApplicationDomain}")
+    private String applicationDomain = "";
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
+        HttpSession session = request.getSession();
+        SecurityContext context = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
+        if (context != null) {
+            if (context.getAuthentication() != null && context.getAuthentication().getPrincipal() != null && context.getAuthentication().getPrincipal() instanceof User) {
+                User user = userService.getUserFromSecurityContext();
+
+                String servletPath = request.getServletPath();
+
+                if (!servletPath.startsWith("/auth") && !servletPath.startsWith("/resources") && user != null) {
+                    if (!user.isActivated() && !servletPath.startsWith("/activate")) {
+                        String requestURL = request.getContextPath() + "/activate";
+
+                        response.sendRedirect(requestURL);
+                    } else if (user.isPasswordExpired() && !servletPath.startsWith("/profile/changePassword") && !servletPath.startsWith("/auth/forgotPassword")) {
+                        String requestURL = request.getContextPath() + "/profile/changePassword";
+
+                        response.sendRedirect(requestURL);
+                    }
+                }
+//                }
+            }
+        }
+
+        // We do not want the healthcheck to ever populate the WebRequest object
+        if (request != null && !StringUtils.startsWithIgnoreCase(request.getServletPath(), "/healthcheck")) {
+            String serverName;
+            //If ApplicationDomain is set on the properties then use that as the server name, else use what came off the request
+            if (StringUtils.hasText(applicationDomain) && !("${ApplicationDomain}").equalsIgnoreCase(applicationDomain)) {
+                serverName = applicationDomain;
+            } else {
+                serverName = request.getServerName();
+            }
+            WebRequest.getInstance(request.getScheme(), serverName, request.getServerPort(), request.getContextPath());
+        }
+
+        return true;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
+
+        if (request != null && modelAndView != null) {
+            User user = userService.getUserFromSecurityContext();
+            if (user == null) {
+                HttpSession session = request.getSession();
+                if (session != null) {
+                    SecurityContext context = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
+                    if (context != null) {
+                        if (context.getAuthentication() != null && context.getAuthentication().getPrincipal() != null && context.getAuthentication().getPrincipal() instanceof User) {
+                            user = userService.get(((User) context.getAuthentication().getPrincipal()).getId());
+                        }
+                    }
+                }
+            }
+            modelAndView.getModel().put("user", user);
+        }
+    }
+
+}

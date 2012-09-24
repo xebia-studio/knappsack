@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active='organizationNav',title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+<script type="text/javascript" th:inline="javascript">
+/*<![CDATA[*/
+$(document).ready(function () {
+    var isEdit = /*[[${isEdit}]]*/ false;
+    var tmpOptions = {};
+    var successFunction;
+    var tmpSelectedRows = [];
+    var organizationId = /*[[${org.id}]]*/ '';
+
+    var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
+    var $membersTable = $('#membersTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPage
+        },
+        "aoColumns": [
+            { "bSortable": false },
+            null,
+            null,
+            { "sSortDataType": "dom-select" },
+            { "bSortable": false }
+        ]
+    });
+    $('#membersTableRemoveBtn').data('table', $membersTable);
+    $('#membersTable').data('table', $membersTable);
+
+    var $guestsTable = $('#guestsTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPage
+        },
+        "aoColumns": [
+            null,
+            null
+        ]
+    });
+    $('#guestsTableRemoveBtn').data('table', $guestsTable);
+    $('#guestsTable').data('table', $guestsTable);
+
+    $('#categoriesTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPage
+        },
+        "aoColumns": [
+            null,
+            null,
+            { "bSortable": false },
+            { "bSortable": false }
+        ]
+    });
+
+    $('#applicationsTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPage
+        },
+        "aoColumns": [
+            null,
+            null,
+            null,
+            { "sSortDataType": "dom-select" },
+            { "bSortable": false }
+        ]
+    });
+
+
+    function ajaxSubmit(dataSet) {
+        var url = /*[[@{/manager/updateAppVersionState}]]*/ '/manager/updateAppVersionState';
+        $.ajax({url:url, data:dataSet, success:function(data) {
+            if (data.result) {
+                $('#appStateModal .modal-body .alert-error').hide();
+                $('#appStateModal .modal-body .alert-success').show();
+                $('#appStateModal').modal('show');
+            } else {
+                $('#appStateModal .modal-body .alert-error').show();
+                $('#appStateModal .modal-body .alert-success').hide();
+                $('#appStateModal').modal('show');
+            }
+        }});
+    }
+
+    $('#applicationsTable').on('click', '.updateAppState', function() {
+        var row = $(this).closest('tr').get(0);
+        var appVerId = $(row).attr('data-app-ver-id');
+        var appStateVal = $(row).children('td.select-td').children('select').val();
+        var dataSet = { appVersionId:appVerId, appState:appStateVal };
+
+        ajaxSubmit(dataSet);
+    });
+
+    $('#membersTable').on('click', '.updateMember', function() {
+        var row = $(this).closest('tr').get(0);
+        var userId = $(row).attr('data-user-id');
+        var userRole = $(row).children('td.select-td').children('select').val();
+        tmpOptions = { orgId : organizationId, userId : userId, userRole : userRole };
+
+        showConfirmationModal('Update Member Role');
+        $('#confirmationModalSubmit').on('click', function () {
+            var url = /*[[@{/manager/updateOrgMemberRole}]]*/ '/manager/updateOrgMemberRole';
+            ajaxMemberUpdateSubmit(url);
+        });
+
+        successFunction = function() {
+        };
+    });
+
+    function showConfirmationModal(title) {
+        $('#confirmationModal .modal-header h3').text(title);
+        $('#confirmationModal').modal();
+    }
+
+    function hideModal(delay) {
+        setTimeout(function () {
+                    $('.modal').modal('hide');
+                }, delay
+        );
+    }
+
+    $('#confirmationModal').on('show', function () {
+        $('#confirmationModal .modal-body .alert').hide();
+        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+        $('#confirmationModal .close').removeAttr('disabled');
+    });
+
+    $('#confirmationModal').on('hide', function () {
+        $('#confirmationModalSubmit').unbind('click');
+        tmpOptions = {};
+        successFunction = '';
+    });
+
+    function ajaxMemberUpdateSubmit(url) {
+        $.ajax({ url:url, data:tmpOptions, success:function(data) {
+            if (data.result) {
+                $('#confirmationModal .modal-body .alert-error').hide();
+                $('#confirmationModal .modal-body .alert-success').show();
+                successFunction();
+                hideModal(500);
+            } else {
+                $('#confirmationModal .modal-body .alert-error').show();
+                $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                $('#confirmationModal .close').removeAttr('disabled');
+            }
+        }
+        });
+    }
+
+    $('#membersTable').on('click', '.check-all', function() {
+        var checked = $(this).attr('checked');
+
+        var $dataTable = $(this).closest('table').data('table');
+
+        $dataTable.$('td :checkbox').each(function () {
+            if (checked) {
+                $(this).attr('checked', 'checked');
+                $(this).closest('tr').addClass('row_selected');
+            } else {
+                $(this).removeAttr('checked');
+                $(this).closest('tr').removeClass('row_selected');
+            }
+        });
+
+        checkButtonState($dataTable, $('#membersTableRemoveBtn'));
+    });
+
+    $('#membersTable').on('click', '.check', function() {
+        var checked = $(this).attr('checked');
+
+        if (checked) {
+            $(this).closest('tr').addClass('row_selected');
+        } else {
+            $(this).closest('tr').removeClass('row_selected');
+        }
+
+        checkButtonState($membersTable, $('#membersTableRemoveBtn'));
+    });
+
+    $('.removeMembers').on('click', function (event) {
+        event.preventDefault();
+        var memberIdsToRemove = [];
+
+        var data = $membersTable.$('tr.row_selected');
+
+        $(data).each(function () {
+            memberIdsToRemove.push($(this).attr('data-user-id'));
+            tmpSelectedRows.push(this);
+        });
+
+        tmpOptions = { organizationId:organizationId, userIds:memberIdsToRemove };
+        showConfirmationModal('Remove Member');
+        $('#confirmationModalSubmit').click(function () {
+            ajaxRemoveMemberSubmit($membersTable);
+        });
+    });
+
+    function ajaxRemoveMemberSubmit(dataTable) {
+        $('#confirmationModal .modal-footer .btn').attr('disabled', 'disabled');
+        $('#confirmationModal .close').attr('disabled', 'disabled');
+        var url = /*[[@{/manager/removeOrganizationUsers}]]*/ '/manager/removeOrganizationUsers';
+        $.ajax({
+            url:url,
+            data:tmpOptions,
+            type:"POST",
+            success:function (data) {
+                if (data.result) {
+                    $('#confirmationModal .modal-body .alert-error').hide();
+                    $('#confirmationModal .modal-body .alert-success').show();
+                    $(tmpSelectedRows).each(function () {
+                        dataTable.fnDeleteRow(this);
+                    });
+
+                    checkButtonState(dataTable, $('#membersTableRemoveBtn'));
+
+                    tmpOptions = {};
+                    hideModal(500);
+                } else {
+                    $('#confirmationModal .modal-body .alert-error').show();
+                    $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                    $('#confirmationModal .close').removeAttr('disabled');
+                }
+            }
+        });
+    }
+
+    function checkButtonState(dataTable, button) {
+        if (!dataTable || !button) {
+            return;
+        }
+
+        var checkedLength = dataTable.$('td :checkbox:checked').length;
+
+        if (checkedLength > 0) {
+            $(button).removeAttr('disabled');
+        } else {
+            $(button).attr('disabled', 'disabled');
+        }
+    }
+});
+/*]]>*/
+</script>
+
+<div class="row-fluid">
+<div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+<div class="span10">
+
+<header class="jumbotron subhead" id="overview">
+
+    <ul class="breadcrumb">
+        <li class="active">
+            <a href="#" th:text="${originalName}" th:if="${#bools.isTrue(isEdit)}"/>
+            <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageOrganization.createOrg}">Create Organization</a>
+        </li>
+    </ul>
+
+    <h1 th:if="${#bools.isTrue(isEdit)}" style="text-align: left" th:text="#{desktop.manageOrganization.updateOrg}">Update Organization</h1>
+
+    <h1 th:if="${#bools.isFalse(isEdit)}" style="text-align: left" th:text="#{desktop.manageOrganization.addOrganization}">Add Organization</h1>
+
+    <p class="lead" th:if="${#bools.isTrue(isEdit)}" th:text="#{desktop.manageOrganization.modifyInfo}">
+        Modify the information for this organization.
+    </p>
+
+    <p class="lead" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageOrganization.modifyInfo}">
+        Enter information for your new organization..
+    </p>
+</header>
+
+<div class="tabbable">
+<section id="tabs">
+<ul id="tab" class="nav nav-tabs">
+    <li class="active dropdown">
+        <a href="#" th:text="#{desktop.manageOrganization.org}" th:if="${#bools.isFalse(isEdit)}">Organization</a>
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" th:inline="text" th:if="${#bools.isTrue(isEdit)}">
+            [[#{desktop.manageOrganization.org}]]
+            <b class="caret"/>
+        </a>
+        <ul class="dropdown-menu" th:if="${#bools.isTrue(isEdit)}">
+            <li><a href="#organization" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
+            <li class="divider" th:if="${user.systemAdmin}"></li>
+            <li th:if="${user.systemAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${org.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.preferences}">Preferences</a></li>
+        </ul>
+    </li>
+
+    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
+            [[#{desktop.manageOrganization.categories}]]
+            <b class="caret"/>
+        </a>
+        <ul class="dropdown-menu">
+            <li><a href="#categories" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
+            <li class="divider"></li>
+            <li><a href="manageCategoryTH.html" th:href="@{/manager/addCategory/}  + ${org.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.addCategory}">Add
+                Category</a></li>
+        </ul>
+
+    </li>
+    <li id="membersTab" th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
+            [[#{desktop.manageOrganization.members}]]
+            <b class="caret"/>
+        </a>
+        <ul class="dropdown-menu">
+            <li><a href="#members" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
+            <li class="divider"></li>
+            <li><a href="inviteUserTH.html" th:href="@{/manager/inviteUser/}  + ${org.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.inviteMember}">Invite
+                Member</a></li>
+            <li><a href="inviteesTH.html" th:href="@{/manager/invitesPending/}  + ${org.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.invitesPending}">Invites Pending</a></li>
+        </ul>
+
+    </li>
+    <li id="applicationsTab" th:if="${#bools.isTrue(isEdit)}"><a href="#applications" data-toggle="tab" th:inline="text">[[#{desktop.manageOrganization.applications}]]<i
+            id="applicationsTabAlertIcon" th:if="${#bools.isTrue(hasApplicationRequests)}"
+            class="icon-exclamation-sign"/></a></li>
+</ul>
+
+<div class="tab-content">
+
+<div id="organization" class="tab-pane active">
+    <div class="row-fluid">
+        <div class="span7">
+            <div class="row well">
+                <form id="orgForm" th:object="${org}" th:action="@{'/manager/uploadOrg'}" method="POST"
+                      enctype="multipart/form-data" class="form-horizontal">
+                    <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                        <h1 th:text="#{errors.header}"/>
+                        <ul>
+                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                        </ul>
+                    </div>
+                    <fieldset>
+                        <input type="hidden" id="id" name="id" th:value="*{id}"/>
+                        <input type="hidden" id="editing" name="editing" th:value="*{editing}"/>
+
+                        <div class="control-group">
+                            <label class="control-label" for="name"><span class="required">*</span> <span th:text="#{desktop.manageOrganization.name}">Name</span></label>
+
+                            <div class="controls">
+                                <input id="name" name="name" th:value="*{name}" autofocus="autofocus" required="required" type="text"/>
+                            </div>
+                        </div>
+
+                        <div class="control-group" th:if="${user.systemAdmin}">
+                            <label class="control-label" for="storageConfigurationId"><span class="required">*</span> <span th:text="#{desktop.manageOrganization.selectStorage}">Select Storage Method</span></label>
+
+                            <div class="controls">
+                                <select id="storageConfigurationId" name="storageConfigurationId" th:disabled="${#bools.isTrue(isEdit)}"
+                                        required="required">
+                                    <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                    <option th:each="storageConfiguration : ${storageConfigurations}"
+                                            th:selected="*{storageConfigurationId} == ${storageConfiguration.id}"
+                                            th:value="${storageConfiguration.id}"
+                                            th:text="${storageConfiguration.name}"></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="control-group" th:if="${user.systemAdmin}">
+                            <label class="control-label" for="storagePrefix"><span class="required">*</span> <span th:text="#{desktop.manageOrganization.storagePrefix}">Storage Prefix</span></label>
+
+                            <div class="controls">
+                                <input id="storagePrefix" type="text" th:field="*{storagePrefix}" required="required" th:readonly="${#bools.isTrue(isEdit)}"/>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" th:text="#{desktop.manageOrganization.submit}">Submit</button>
+                        </div>
+
+                    </fieldset>
+
+                    <div class="alert alert-info">
+                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                    </div>
+                </form>
+            </div>
+            <div class="row" th:if="${domainStatistics != null}">
+                <h3 th:text="#{desktop.manager.domainStatistics.statistics}"></h3>
+                <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalUsers(${domainStatistics.totalUsers})}"></span>
+                <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalApplications(${domainStatistics.totalApplications})}"></span>
+                <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalApplicationVersions(${domainStatistics.totalApplicationVersions})}"></span>
+                <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalMegabyteStorageUsed(${#numbers.formatDecimal(domainStatistics.totalMegabyteStorageAmount,1,3)})}"></span>
+            </div>
+        </div>
+        <div class="span5">
+            <dl>
+                <dt th:text="#{desktop.manageOrganization.name}">Name</dt>
+                <dd th:text="#{desktop.manageOrganization.name.help}">This is the name of the organization that will be visible to users.</dd>
+                <dt th:text="#{desktop.manageOrganization.storageMethod}">Storage Method</dt>
+                <dd th:text="#{desktop.manageOrganization.storageMethod.help}">This is the name of the storage configuration you want to use to store files for this organization.</dd>
+                <dt th:text="#{desktop.manageOrganization.storagePrefix}">Storage Prefix</dt>
+                <dd th:text="#{desktop.manageOrganization.storagePrefix.help.1}">This is a prefix used to identify the base storage location. For example if the prefix is demo_org and the local path is /home/knappsack</dd>
+                <dd th:text="#{desktop.manageOrganization.storagePrefix.help.2}">then the path for this organization will be:</dd>
+                <dd th:text="#{desktop.manageOrganization.storagePrefix.help.3}">/home/knappsack/demo_org</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+
+<div id="categories" class="tab-pane" th:if="${#bools.isTrue(isEdit)}">
+    <!--<div class="subnav">-->
+    <!--</div>-->
+    <h2 th:if="${#lists.isEmpty(categories)}" th:text="#{desktop.manageOrganization.noCategories}">There are currently no categories for this
+        organization.</h2>
+    <table id="categoriesTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" th:if="${not #lists.isEmpty(categories)}">
+        <thead>
+        <tr>
+            <th th:text="#{desktop.manageOrganization.name}">Name</th>
+            <th th:text="#{desktop.manageOrganization.description}">Description</th>
+            <th th:text="#{desktop.manageOrganization.edit}">Edit</th>
+            <th th:text="#{desktop.manageOrganization.delete}">Delete</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="category : ${categories}">
+            <td th:text="${category.name}">1</td>
+            <td th:text="${category.description}" class="stripthml">My Name</td>
+            <td><a href="" th:href="@{'/manager/editCategory/' + ${category.id} + '/' + ${org.id}}">Edit</a></td>
+            <td><a href="" th:href="@{'/manager/deleteCategory/' + ${category.id} + '/' + ${org.id}}">Delete</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="members" class="tab-pane" th:if="${#bools.isTrue(isEdit)}">
+    <div>
+        <header class="jumbotron subhead" id="membersHeader">
+            <h3 th:text="#{desktop.manageOrganization.organizationMembers}">Organization Members</h3>
+
+            <p class="lead" th:text="#{desktop.manageOrganization.manageUsers}">
+                Manage the users who are currently members of this organization.
+            </p>
+        </header>
+
+        <div th:if="${not #lists.isEmpty(organizationMembers)}">
+            <div id="membersNavBar" style="margin-bottom: 9px;">
+                <button id="membersTableRemoveBtn" class="removeMembers btn btn-danger" href="" disabled="disabled" th:inline="text"><i class="icon-remove icon-white"/> [[#{desktop.manageOrganization.removeSelected}]]</button>
+            </div>
+            <table id="membersTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <th><input type="checkbox" class="check-all"/></th>
+                    <th th:text="#{desktop.manageOrganization.name}">Name</th>
+                    <th th:text="#{desktop.manageOrganization.email}">Email</th>
+                    <th th:text="#{desktop.manageOrganization.role}">Role</th>
+                    <th th:text="#{desktop.manageOrganization.update}">Update</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="organizationMember,iterStat : ${organizationMembers}" th:attr="data-user-id=${organizationMember.user.id}">
+                    <td><input class="check" type="checkbox"/></td>
+                    <td th:text="${organizationMember.user.fullName}">My Name</td>
+                    <td th:text="${organizationMember.user.email}">Email</td>
+                    <td class="select-td">
+                        <select>
+                            <option th:each="userRole : ${userRoles}" th:value="${userRole}" th:selected="${userRole} == ${organizationMember.userRole}" th:text="#{${userRole.messageKey}}"></option>
+                        </select>
+                    </td>
+                    <td><button class="updateMember" th:value="*{iterStat.index}" th:text="#{desktop.manageOrganization.update}">Update</button></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p th:if="${#lists.isEmpty(organizationMembers)}" class="alert alert-info" th:text="#{desktop.manageOrganization.noMembers}">There are currently no members for this organization.</p>
+    </div>
+
+    <hr />
+
+    <div>
+        <header class="jumbotron subhead" id="guestsHeader">
+            <h3 th:text="#{desktop.manageOrganization.organizationGuests}">Organization Guests</h3>
+            <p class="lead" th:text="#{desktop.manageOrganization.organizationGuests.help}">
+                This includes users who are members of a group but not the organization as a whole.
+            </p>
+        </header>
+
+        <div th:if="${not #lists.isEmpty(organizationGuests)}">
+            <table id="guestsTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <th th:text="#{desktop.manageOrganization.name}">Name</th>
+                    <th th:text="#{desktop.manageOrganization.email}">Email</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="guest,iterStat : ${organizationGuests}" th:attr="data-user-id=${guest.user.id}">
+                    <td th:text="${guest.user.fullName}">My Name</td>
+                    <td th:text="${guest.user.email}">Email</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p th:if="${#lists.isEmpty(organizationGuests)}" class="alert alert-info" th:text="#{desktop.manageOrganization.noGuests}">There are currently no guests for this
+                organization.</p>
+
+    </div>
+</div>
+
+<div id="applications" class="tab-pane" th:if="${#bools.isTrue(isEdit)}">
+    <h2 th:if="${#lists.isEmpty(applicationVersions)}" th:text="#{desktop.manageOrganization.noApps}">There are currently no applications for this organization.</h2>
+    <table id="applicationsTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" th:if="${not #lists.isEmpty(applicationVersions)}">
+        <thead>
+        <tr>
+            <th th:text="#{desktop.manageOrganization.name}">Name</th>
+            <th th:text="#{desktop.manageOrganization.description}">Description</th>
+            <th th:text="#{desktop.manageOrganization.version}">Version</th>
+            <th th:text="#{desktop.manageOrganization.availability}">Availability</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="applicationVersion,iterStat : ${applicationVersions}" th:attr="data-app-ver-id=${applicationVersion.id}">
+            <td th:text="${applicationVersion.application.name}">Name</td>
+            <td th:text="${applicationVersion.application.description}" class="striphtml">Description</td>
+            <td th:text="${applicationVersion.versionName}">Version</td>
+            <td class="select-td">
+                <select th:id="'appStateSelect' + ${iterStat.index}" required="required" style="width:20em">
+                    <option th:selected="${applicationVersion.appState == appState}" th:each="appState : ${appStates}" th:value="${appState}" th:text="#{${appState.messageKey}}"></option>
+                </select>
+            </td>
+            <td>
+                <button class="updateAppState" th:value="*{iterStat.index}" th:text="#{desktop.manageOrganization.update}">Update</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+
+</div>
+</section>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+
+<div id="appStateModal" class="modal hide fade" style="display: none;">
+    <div class="modal-header">
+        <a class="close" data-dismiss="modal">x</a>
+        <h3 th:text="#{desktop.manageOrganization.appVisibility}">Application Visibility</h3>
+    </div>
+    <div class="modal-body">
+        <div class="alert alert-success" style="display: none;">
+            <h2 th:text="#{desktop.manageOrganization.appUpdated}">The application was updated!</h2>
+        </div>
+        <div class="alert alert-error" style="display: none;">
+            <h2 th:text="#{desktop.manageOrganization.error}">An error has occurred. Please try again.</h2>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <a id="modalCancel" href="#" class="btn" data-dismiss="modal" th:text="#{desktop.manageOrganization.okay}">Okay</a>
+    </div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+    <section th:include="/includesTH :: table_scripts"/>
+</section>
+
+</body>
+</html>

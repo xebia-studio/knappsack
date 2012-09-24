@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack password changed notification</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<p th:text="#{greeting(${name})}">
+    Hello, Peter Static!
+</p>
+<p th:inline="text">
+    A request has been submitted by <b>[[${userName}]]</b> to publish application <b>[[${applicationName}]] v.[[${applicationVersion}]]</b> to <b>[[${organizationName}]]</b>.  Please navigate to the below url to handle this request.
+</p>
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+<p>
+    Regards, <br />
+    &emsp; <em>The Knappsack Team</em>
+</p>
+</body>
+</html>

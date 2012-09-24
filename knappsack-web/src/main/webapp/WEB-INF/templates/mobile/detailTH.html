@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_detail=${true},title='Knappsack'" xmlns:ks="http://www.knappsack.com">
+<head th:substituteby="/mobile/includesTH :: mobileHead"></head>
+<body>
+
+<div id="detailPage" data-role="page" data-theme="b" class="page-no-cache">
+
+<div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    var selectedVersionId = /*[[${initialVersionId}]]*/ '';
+
+    $("#detailPage").bind('pageinit', function() {
+
+        var description = /*[[${selectedApplication.description}]]*/ '';
+        $('#description').addHtml(description);
+
+        var recentChanges = /*[[${versions.get(0).recentChanges}]]*/ '';
+        $('#recentChanges').addHtml(recentChanges);
+
+        var instance, indicators;
+
+        $('p').nl2br();
+
+        $('#detailPage').bind('pagebeforeshow', function() {
+            var screenShots = /*[[${selectedApplication.screenShots}]]*/ '';
+            if (screenShots.length <= 0) {
+                $('.image-container').hide();
+            }
+            setupPage();
+        });
+
+        $('#detailPage').bind('pageshow', function() {
+            var screenShots = /*[[${selectedApplication.screenShots}]]*/ '';
+
+            if (screenShots.length > 0) {
+                $('.flexslider').flexslider({
+                    animation: "slide",
+                    controlsContainer: ".controls-container",
+                    smoothHeight: true
+                });
+            } else {
+                $('.image-container').hide();
+            }
+        });
+
+        $("#installBtn").bind("click", function() {
+
+            var selectedAppId = /*[[${selectedApplication.id}]]*/ '';
+            var generateDownloadApplicationUrl = /*[[@{/generateDownloadApplicationUrl/}]]*/ '';
+            var downloadDirectly = /*[[${downloadDirectly}]]*/ true;
+
+            if (downloadDirectly) {
+                $.ajax({
+                    type:"POST",
+                    url:generateDownloadApplicationUrl + selectedVersionId,
+                    cache:false,
+                    dataType:"text",
+                    data:({id:selectedAppId}),
+                    async:true,
+                    success:onSuccess,
+                    error:onError
+                });
+            } else {
+                $('.tab').hide();
+                $('.tab-link').removeClass('ui-btn-active');
+                $('#installContent').show();
+            }
+
+        });
+
+        $("#installContent #download").click(function() {
+            var url = /*[[@{/downloadApplication/}]]*/ '/downloadApplication/';
+            window.location = url + selectedVersionId;
+        });
+
+        function onSuccess(data) {
+//                $.mobile.loadPage(data);
+            window.location = data;
+//                $.mobile.changePage(data);
+        }
+
+        function onError(jqXHR, textStatus, errorThrown) {
+            console.log(jqXHR);
+            console.log(textStatus);
+            console.log(errorThrown);
+        }
+
+        function setupPage() {
+            $('.tab').hide();
+            $('#installContent').hide();
+            $('#tab1Div').show();
+        }
+
+        $('#versionSelect').change(function() {
+            var recentChanges = $('#versionSelect option:selected').attr('data-recent-changes');
+            selectedVersionId = $('#versionSelect option:selected').attr('data-id');
+
+            $('#recentChanges').addHtml(recentChanges);
+        });
+
+        $('.tab-link').bind('click', function() {
+            $('.tab-link').removeClass('ui-btn-active');
+            $(this).addClass("ui-btn-active");
+            $('.tab').hide();
+            switch ($(this).attr('id')) {
+                case "tab1":
+                    $("#tab1Div").show();
+                    break;
+                case "tab2":
+                    $("#tab2Div").show();
+                    break;
+            }
+            return false;
+        });
+    });
+    /*]]>*/
+</script>
+
+<div data-role="header" data-id="mainHeader" class="header">
+    <a id="backBtn" href="#" data-rel="back" data-icon="back" data-direction="reverse" th:text="#{mobile.detail.back}">Back</a>
+
+    <h1>Knappsack</h1>
+
+    <a id="installBtn" rel="external" data-theme="b" th:if="${#bools.isTrue(showInstallBtn)}" th:unless="${#lists.isEmpty(versions)}" th:text="#{mobile.detail.install}">Install</a>
+
+</div>
+
+<ul data-role="listview" style="margin-bottom: 0px" data-theme="a">
+    <li>
+        <div style="display: inline-block; width: 100%">
+            <div class="li-floater">
+                <div class="thumb">
+                    <img src="" th:src="@{'/image/' + ${selectedApplication.icon.id}}" class="li-thumbnail" th:if="${#bools.isTrue(selectedApplication.icon)}"/>
+                    <img src="" ks:src="@{/resources/img/default_icon.png}" class="li-thumbnail" th:if="${#bools.isFalse(selectedApplication.icon)}"/>
+                </div>
+            </div>
+
+            <h1 th:text="${selectedApplication.name}"></h1>
+
+            <p th:text="#{${selectedApplication.applicationType.messageKey}}"></p>
+
+            <select name="versionSelect" id="versionSelect" data-mini="true" data-inline="true" data-theme="b" th:unless="${#lists.isEmpty(versions)}">
+                <option th:each="version : ${versions}" th:value="${version.versionName}" th:text="${'v.' + version.versionName}" th:attr="data-version=${version.versionName},data-recent-changes=${version.recentChanges},data-id=${version.id}"/>
+            </select>
+        </div>
+    </li>
+</ul>
+
+<div data-role="navbar">
+    <ul>
+        <li><a id="tab1" href="#" rel="external" data-ajax="false" class="tab-link ui-btn-active" data-theme="a" th:text="#{mobile.detail.description}">Description</a></li>
+        <li th:unless="${#lists.isEmpty(versions)}"><a id="tab2" href="#" rel="external" data-ajax="false" class="tab-link" data-theme="a" th:text="#{mobile.detail.whatsNew}">Whats New</a></li>
+    </ul>
+</div>
+
+<!--<div class="content">-->
+<div data-role="content">
+
+    <div id="tab1Div" class="tab default-tab">
+        <p id="description" class="html"></p>
+
+        <div class="image-container">
+            <div id="mySlider" class="flexslider">
+                <ul class="slides">
+                    <li th:each="screenShot : ${selectedApplication.screenShots}">
+                        <img th:src="${screenShot.url}"/>
+                    </li>
+                </ul>
+            </div>
+            <div class="controls-container"/>
+        </div>
+    </div>
+    <div id="tab2Div" class="tab" th:unless="${#lists.isEmpty(versions)}">
+        <p id="recentChanges" class="html"/>
+    </div>
+    <div id="installContent" class="tab">
+
+        <div th:if="${applicationType == 'ANDROID'}">
+            <div data-role="collapsible" data-collapsed="false" data-theme="b" data-content-theme="c">
+                <h3 th:text="#{android.install.instructions.general.header}">Android Install Instructions</h3>
+
+                <p th:text="#{android.install.instructions.specific.header}">Enable 'Unknown Sources' before attempting
+                    to download the application.</p>
+
+                <ol data-role="listview" data-inset="true" data-theme="b">
+                    <li th:text="#{android.install.instructions.step1}">Navigate to 'Settings' from your home screen
+                    </li>
+                    <li th:text="#{android.install.instructions.step2}">Click on the 'Applications' menu option</li>
+                    <li th:text="#{android.install.instructions.step3}">Select 'Unknown Sources'</li>
+                </ol>
+            </div>
+            <br/>
+            <a id="download" href="#" rel="external" data-role="button" th:text="#{mobile.detail.download}">Download</a>
+        </div>
+    </div>
+</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_activate=${#bools.isFalse(activated)},title=#{desktop.activate.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"></div>
+
+<div class="container">
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+            var url = /*[[@{/activate/}]]*/ '';
+            $('#activationForm').submit(function() {
+                url = url + $('#accessCode').val();
+                $(this).attr('action', url);
+                return true;
+            });
+
+            $('#resend').click(function(e) {
+                e.preventDefault();
+
+                var modalTitle = /*[[#{desktop.activate.resend.modal.title}]]*/ 'Re-Send Activation Code';
+
+                showConfirmationModal(modalTitle);
+                $('#confirmationModalSubmit').click(function () {
+                    ajaxReSendActivationCode();
+                });
+            });
+
+            function ajaxReSendActivationCode() {
+                var url = /*[[@{/activate/sendCode}]]*/ '/activate/sendCode';
+                $.get(url, function(data) {
+                    if (data.result) {
+                        $('#confirmationModal .modal-body .alert-error').hide();
+                        $('#confirmationModal .modal-body .alert-success').show();
+                        hideModal(500);
+                    } else {
+                        $('#confirmationModal .modal-body .alert-error').show();
+                        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                        $('#confirmationModal .close').removeAttr('disabled');
+                    }
+                });
+            }
+
+            function hideModal(delay) {
+                setTimeout(function () {
+                            $('.modal').modal('hide');
+                        }, delay
+                );
+            }
+
+            function showConfirmationModal(title) {
+                $('#confirmationModal .modal-header h3').text(title);
+                $('#confirmationModal').modal();
+            }
+
+            $('#confirmationModal').on('show', function () {
+                $('#confirmationModal .modal-body .alert').hide();
+                $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                $('#confirmationModal .close').removeAttr('disabled');
+            });
+
+            $('#confirmationModal').on('hide', function () {
+                $('#confirmationModalSubmit').unbind('click');
+            });
+        });
+        /*]]>*/
+    </script>
+
+    <header class="jumbotron subhead" id="overview">
+        <h1 th:text="#{desktop.activate.overview.header}">Account Activation</h1>
+
+        <p class="lead" th:if="${#bools.isFalse(activated)}" th:text="#{desktop.activate.overview.lead}">
+            Enter the activation code for your account.
+        </p>
+    </header>
+
+        <div class="row-fluid">
+            <div class="span7 well">
+
+                <div class="alert alert-warning" th:if="${#bools.isTrue(activated)} AND ${#bools.isTrue(error)}">
+                    <strong th:text="#{desktop.alert.warning.prefix}">Warning!</strong> <span th:text="#{desktop.activate.alert.activation.warning}">You have attempted to activate this account even though it has already been activated.  If this is not the account you meant to activate, please logout and log in with the appropriate credentials.</span>
+                </div>
+
+                <div class="alert alert-success" th:if="${#bools.isTrue(activated)} AND ${#bools.isFalse(error)}">
+                    <strong th:text="#{desktop.alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.activate.alert.activation.success}">Your account is successfully activated.</span>
+                </div>
+
+                <div class="alert alert-error" th:if="${#bools.isTrue(error)} AND ${#bools.isFalse(activated)}">
+                    <a class="close" data-dismiss="alert" th:text="#{desktop.alert.close}">x</a>
+                    <strong th:text="#{desktop.alert.error.prefix}">Oh snap!</strong> <span th:text="#{desktop.activate.alert.activation.error}">Account activation failed.  Please try again.</span>
+                </div>
+
+                <form id="activationForm" class="form-horizontal" th:if="${#bools.isFalse(activated)}">
+                    <fieldset>
+                        <div class="control-group">
+                            <label for="accessCode" class="control-label"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.activate.activation.code.label}">Activation Code</span></label>
+
+                            <div class="controls">
+                                <input type="text" id="accessCode" name="accessCode" required="required" th:title="#{desktop.activate.activation.code.title}" title="Activation Code" size="36" maxlength="36" autofocus="autofocus"/>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" th:title="#{desktop.activate.submit.title}" title="Submit" th:text="#{desktop.activate.submit}">Submit</button>
+                        </div>
+                    </fieldset>
+
+                    <div class="alert alert-info">
+                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                    </div>
+                </form>
+            </div>
+            <div class="span5" th:if="${#bools.isFalse(activated)}">
+                <dl>
+                    <dt th:text="#{desktop.activate.faq.activation.code.dt}">Activation Code</dt>
+                    <dd th:text="#{desktop.activate.faq.activation.code.dd.line1}">The activation code is a unique code for your user account.  In order for you to navigate to any page other than this one you will have to enter the code you received by email.</dd>
+                    <dd th:text="#{desktop.activate.faq.activation.code.dd.line2}">Please check your email for the address you logged in with to obtain the activation code.</dd>
+                    <br/>
+                    <dd><span th:text="#{desktop.activate.faq.activation.code.dd.line3}">If you would like to have your activation code re-emailed to you for this account please</span> <a id="resend" th:text="#{desktop.activate.faq.activation.code.resend}">Click Here</a>.</dd>
+                </dl>
+            </div>
+        </div>
+
+    <div th:substituteBy="/includesTH :: confirmation_modal"/>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+
+</body>
+</html>

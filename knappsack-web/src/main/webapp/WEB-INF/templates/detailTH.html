@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com" th:with="title=${selectedApplication.name}">
+<head th:substituteby="/includesTH :: head"></head>
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"></div>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+
+    $(document).ready(function() {
+
+        var subscribePopoverTitle = /*[[#{detail.subscribe.popover.title}]]*/ 'Subscribe';
+        var unsubscribePopoverTitle = /*[[#{detail.unsubscribe.popover.title}]]*/ 'Unsubscribe';
+        var subscribePopoverContent = /*[[#{detail.subscribe.popover.content}]]*/ 'By clicking this button you are subscribing to this application.  What that means is when a new version becomes available you will be notified by email.';
+        var unsubscribePopoverContent = /*[[#{detail.unsubscribe.popover.content}]]*/ 'By clicking this button you are unsubscribing from this applications  What that means is when a new version becomes available you will not be notified by email.';
+
+        $('.nl2br').nl2br();
+
+        var description = /*[[${selectedApplication.description}]]*/ '';
+        $('#description').addHtml(description);
+
+        var recentChanges = /*[[${versions.get(0).recentChanges}]]*/ '';
+        $('#recentChanges').addHtml(recentChanges);
+
+        var isSubscribed = $('#subscriptionBtn').attr('data-subscribed');
+
+        if (isSubscribed == 'false') {
+            var elem = $('#subscriptionBtn');
+            $(elem).addClass('btn-success').append('<i class="icon-plus icon-white">').append(' Subscribe');
+            setPopoverTitle(elem, subscribePopoverTitle);
+            setPopoverContent(elem, subscribePopoverContent);
+        } else {
+            var elem = $('#subscriptionBtn');
+            $(elem).addClass('btn-danger').append('<i class="icon-remove icon-white">').append(' Unsubscribe');
+            setPopoverTitle(elem, unsubscribePopoverTitle);
+            setPopoverContent(elem, unsubscribePopoverContent);
+        }
+
+        function setPopoverTitle(elem, title) {
+            $(elem).attr("data-original-title", title);
+        }
+
+        function setPopoverContent(elem, content) {
+            $(elem).attr("data-content", content);
+        }
+
+        $('#subscriptionBtn').popover( {delay: { show: 500, hide: 100 }, trigger: 'hover'} );
+
+        $('#subscriptionBtn').click(function() {
+
+            $(this).popover('hide');
+
+            var btn = $(this);
+
+            $(btn).button('loading');
+
+            if (isSubscribed == 'false') {
+                var url = /*[[@{'/profile/subscribe/' + ${selectedApplication.id}}]]*/ '';
+            } else {
+                var url = /*[[@{'/profile/unsubscribe/' + ${selectedApplication.id}}]]*/ '';
+            }
+
+            $.get(url, function(data) {
+                if (data.result) {
+                    if ($(btn).attr('data-subscribed') == 'false') {
+                        $(btn).removeClass('btn-success').addClass('btn-danger');
+                        $(btn).attr('data-complete-text', 'Unsubscribe');
+                        $(btn).button('complete').contents().remove();
+                        $(btn).append('<i class="icon-remove icon-white">').append(' Unsubscribe');
+                        $(btn).attr('data-subscribed', 'true');
+                        setPopoverTitle(elem, unsubscribePopoverTitle);
+                        setPopoverContent(elem, unsubscribePopoverContent);
+
+                        isSubscribed = 'true';
+                    } else {
+                        $(btn).removeClass('btn-danger');
+                        $(btn).addClass('btn-success');
+                        $(btn).attr('data-complete-text', 'Subscribe');
+                        $(btn).button('complete').contents().remove();
+                        $(btn).append('<i class="icon-plus icon-white">').append(' Subscribe');
+                        $(btn).attr('data-subscribed', 'false');
+                        setPopoverTitle($(btn), subscribePopoverTitle);
+                        setPopoverContent($(btn), subscribePopoverContent);
+
+                        isSubscribed = 'false';
+                    }
+                } else {
+                    $(btn).button('complete');
+                }
+            });
+
+            setTimeout(function(){}, 2000);
+
+        });
+
+        var selectedVersionId = /*[[${initialVersionId}]]*/ '';
+
+        $('#myCarousel .item').each(function(index, value) {
+            if (index == 0) {
+                $(value).addClass('active');
+            }
+        });
+
+        var screenShotsLength = /*[[${#lists.size(selectedApplication.screenShots)}]]*/ 0;
+
+        if (screenShotsLength > 1) {
+            $('.carousel').carousel('cycle');
+        } else {
+            $('.carousel').carousel('pause');
+        }
+
+        $('.versionSelect').click(function(e) {
+            e.preventDefault();
+
+            var version = $(this).attr('data-version');
+            var recentChanges = $(this).attr('data-recent-changes');
+            selectedVersionId = $(this).attr('data-id');
+
+            $('#recentChanges').addHtml(recentChanges);
+
+            var downloadBtnTxt = /*[[#{desktop.detail.download.button}]]*/ 'Download';
+            if (version != null && version != '') {
+                downloadBtnTxt = downloadBtnTxt + version;
+            }
+
+            $('#downloadBtn').text(downloadBtnTxt);
+
+        });
+
+        $('#downloadBtn').click(function() {
+            var url = /*[[@{/downloadApplication/}]]*/ '';
+            if (url != '') {
+                url = url + selectedVersionId;
+                window.location = url;
+            }
+        });
+
+    });
+
+    /*]]>*/
+</script>
+
+<div class="container">
+
+    <div th:inline="text">
+        <p>
+        <div class="icon" style="float: left; margin-right: 8px;">
+            <img src="" th:src="@{${selectedApplication.icon.url}}"
+                 style="float:left;margin-right: 2px;height: 72px;width: 72px" th:if="${#bools.isTrue(selectedApplication.icon)}"/>
+            <img src="" ks:src="@{/resources/img/default_icon.png}" style="float: left; margin-right: 2px; height: 72px; width: 72px;" th:if="${#bools.isFalse(selectedApplication.icon)}"/>
+        </div>
+
+        <h1 th:text="${selectedApplication.name} + ' - ' + #{${selectedApplication.applicationType.messageKey}}"></h1>
+        </p>
+        <br/>
+
+        <div class="btn-toolbar" th:unless="${#lists.isEmpty(versions)}">
+            <div class="btn-group">
+                <button id="downloadBtn" class="btn btn-primary" th:text="#{desktop.detail.download.button} + ${versions.get(0).versionName}" th:title="#{desktop.detail.download.button.title}" title="Download">Download</button>
+                <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown" th:title="#{desktop.detail.version.select.button.title}" title="Select a version">
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li><span style="padding: 0px 15px;" th:text="#{desktop.detail.version.select}">Select a version</span></li>
+                    <li class="divider"/>
+                    <li th:each="version : ${versions}">
+                        <a class="versionSelect" href="#" th:text="${version.versionName}" th:title="${version.versionName}" th:attr="data-version=${version.versionName},data-recent-changes=${version.recentChanges},data-id=${version.id}"/>
+                    </li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button id="subscriptionBtn" class="btn" rel="popover" th:attr="data-subscribed=${#bools.isTrue(isSubscribed)}">
+                </button>
+            </div>
+            <div class="btn-group" ks:canEditApplication="${selectedApplication.id}">
+                <a class="btn btn-info" th:href="@{'/manager/editApplication/' + ${selectedApplication.id}}"><i class="icon-edit icon-white"/> <span th:text="#{desktop.detail.edit.button}">Edit</span></a>
+            </div>
+        </div>
+        <br/>
+    </div>
+
+    <section id="tabs" class="tabbable">
+        <ul id="tab" class="nav nav-tabs">
+            <li class="active"><a href="#details" data-toggle="tab" th:text="#{desktop.detail.overview.tab}" th:title="#{desktop.detail.overview.tab.title}" title="Overview">Overview</a></li>
+            <li><a href="#whatsNew" data-toggle="tab" th:unless="${#lists.isEmpty(versions)}" th:text="#{desktop.detail.whats.new.tab}" th:title="#{desktop.detail.whats.new.tab.title}">What's New</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <div id="details" class="tab-pane active">
+                <div class="alert alert-info" th:if="${applicationType == 'CHROME'}">
+                    <span th:text="#{desktop.detail.chrome.instructions.line1}">
+                        Since version 21 of Chrome, extensions may no longer be directly installed.  Please follow these steps to install:
+                    </span>
+                    <ol>
+                        <li><span th:text="#{desktop.detail.chrome.instructions.step1}">Download the extension file from the website and save it to your computer.</span></li>
+                        <li><span th:text="#{desktop.detail.chrome.instructions.step2}">Click the wrench icon on the browser toolbar.</span></li>
+                        <li><span th:text="#{desktop.detail.chrome.instructions.step3}">Select Tools > Extensions.</span></li>
+                        <li><span th:text="#{desktop.detail.chrome.instructions.step4}">Locate the extension file on your computer and drag the file onto the Extensions page.</span></li>
+                        <li><span th:text="#{desktop.detail.chrome.instructions.step5}">Review the list of permissions in the dialog that appears. If you would like to proceed, click Install.</span></li>
+                    </ol>
+                </div>
+                <h3 th:text="#{desktop.detail.overview.description.header}">Description</h3>
+
+                <section class="well">
+                    <span id="description" class="html"></span>
+                </section>
+                <!--<p class="well nl2br" th:text="${selectedApplication.description}"/>-->
+
+                <h3 th:text="#{desktop.detail.overview.screenshots.header}">Screenshots</h3>
+
+                <div id="myCarousel" class="carousel slide" th:if="${not #lists.isEmpty(selectedApplication.screenShots)}">
+                    <div class="carousel-inner">
+                        <div class="item" th:each="screenShot : ${selectedApplication.screenShots}">
+                            <img class="thumbnail" src="" th:src="${screenShot.url}"/>
+                        </div>
+                    </div>
+                    <a class="carousel-control left" href="#myCarousel" data-slide="prev" th:if="${#lists.size(selectedApplication.screenShots) > 1}" th:title="#{desktop.detail.screenshot.carousel.previous}">&lsaquo;</a>
+                    <a class="carousel-control right" href="#myCarousel" data-slide="next" th:if="${#lists.size(selectedApplication.screenShots) > 1}" th:title="#{desktop.detail.screenshot.carousel.next}">&rsaquo;</a>
+                </div>
+            </div>
+            <div id="whatsNew" class="tab-pane" th:unless="${#lists.isEmpty(versions)}">
+                <h3 th:text="#{desktop.detail.whats.new.header}">What's New</h3>
+                <p id="recentChanges" class="nl2br html" />
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+
+</body>
+</html>

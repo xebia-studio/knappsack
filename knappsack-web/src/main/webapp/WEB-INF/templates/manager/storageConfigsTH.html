@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_groups=${true}, active='storageNav',title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+            $('table').dataTable( {
+                "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+                "sPaginationType": "bootstrap",
+                "oLanguage": {
+                    "sLengthMenu": "_MENU_ records per page"
+                },
+                "aoColumns": [
+                    null,
+                    null,
+                    null,
+                    { "bSortable": false },
+                    { "bSortable": false }
+                ]
+            });
+        });
+        /*]]>*/
+    </script>
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+        <div class="span10">
+
+            <header class="jumbotron subhead" id="overview">
+                <h1 th:text="#{desktop.storageConfigs.storageConfigurations}">Storage Configurations</h1>
+
+                <p class="lead" th:text="#{desktop.storageConfigs.allStorageConfigurations}">
+                    All storage configurations.
+                </p>
+
+                <div>
+                    <a href="manageGroupTH.html" class="btn btn-success" th:href="@{/manager/addStorageConfig}" th:inline="text"><i class="icon-plus icon-white"/> [[#{desktop.storageConfigs.addNew}]]</a>
+                </div>
+            </header>
+
+            <section class="well">
+                <table id="display-data" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                    <thead>
+                    <tr>
+                        <th th:text="#{desktop.storageConfigs.name}">Name</th>
+                        <th th:text="#{desktop.storageConfigs.location}">Location</th>
+                        <th th:text="#{desktop.storageConfigs.type}">Type</th>
+                        <th th:text="#{desktop.storageConfigs.edit}">Edit</th>
+                        <th th:text="#{desktop.storageConfigs.delete}">Delete</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="storageConfiguration : ${storageConfigurations}">
+                        <td th:text="${storageConfiguration.name}">1</td>
+                        <td th:text="${storageConfiguration.baseLocation}">My Name</td>
+                        <td th:text="#{${storageConfiguration.storageType.messageKey}}">My Name</td>
+                        <td><a href="" th:href="@{'/manager/editStorageConfiguration/' + ${storageConfiguration.id}}">Edit</a></td>
+                        <td><a href="" th:href="@{'/manager/deleteStorageConfiguration/' + ${storageConfiguration.id}}">Delete</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+    <section th:include="/includesTH :: table_scripts"/>
+</section>
+
+</body>
+</html>

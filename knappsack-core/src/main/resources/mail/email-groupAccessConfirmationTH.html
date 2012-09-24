@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack Group Request Confirmation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<p th:text="#{greeting(${name})}">
+    Hello, Peter Static!
+</p>
+
+<p th:inline="text" th:if="${#bools.isTrue(status)}">
+    Your request for access to group <b>[[${groupName}]]</b> has been <b>Accepted</b>.  Changes will take affect upon successful login of your account.
+</p>
+<p th:inline="text" th:if="${#bools.isFalse(status)}">
+    Your request for access to group <b>[[${groupName}]]</b> has been <b>Declined</b>.  We are sorry for the inconvenience.
+</p>
+
+<p>
+    Regards, <br/>
+    &emsp; <em>The Knappsack Team</em>
+</p>
+</body>
+</html>

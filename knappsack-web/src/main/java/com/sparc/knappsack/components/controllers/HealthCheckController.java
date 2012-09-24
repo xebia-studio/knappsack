@@ -1,0 +1,15 @@
+package com.sparc.knappsack.components.controllers;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@Controller
+public class HealthCheckController extends AbstractController {
+
+    @RequestMapping("/healthcheck")
+    @ResponseStatus(value = HttpStatus.OK)
+    public void healthCheck() { }
+
+}

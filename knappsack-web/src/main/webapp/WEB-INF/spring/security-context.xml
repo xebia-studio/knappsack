@@ -1,0 +1,161 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:context="http://www.springframework.org/schema/context"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+                http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd
+                http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+    <beans:beans profile="dev">
+        <context:property-placeholder location="classpath:properties/security_dev.properties" ignore-unresolvable="true"/>
+    </beans:beans>
+
+    <beans:beans profile="dev">
+        <context:component-scan use-default-filters="true" base-package="com.sparc.knappsack.security"/>
+
+        <global-method-security secured-annotations="enabled" pre-post-annotations="enabled">
+            <expression-handler ref="customMethodSecurityExpressionHandler"/>
+        </global-method-security>
+
+        <http pattern="/ios/**" disable-url-rewriting="true" security="none"/>
+
+        <http use-expressions="true" disable-url-rewriting="true" auto-config="true" create-session="ifRequired" access-decision-manager-ref="accessDecisionManager">
+
+            <expression-handler ref="customMethodSecurityExpressionHandler"/>
+
+            <session-management invalid-session-url="/auth/login" session-fixation-protection="none"/>
+
+            <intercept-url pattern="/ios/**" access="permitAll"/>
+            <intercept-url pattern="/auth/**" access="permitAll"/>
+            <intercept-url pattern="/legal/**" access="permitAll"/>
+            <intercept-url pattern="/resources/**" access="permitAll"/>
+            <intercept-url pattern="/signup/**" access="permitAll"/>
+            <intercept-url pattern="/manager/**" access="isAnyAdmin()"/>
+            <intercept-url pattern="/**" access="hasRole('ROLE_USER')" requires-channel="${requires.channel}"/>
+
+            <form-login login-page="/auth/login" authentication-failure-url="${default.failure.url}" always-use-default-target="false"/>
+
+            <openid-login authentication-failure-handler-ref="openIDAuthenticationFailureHandler" default-target-url="/home" user-service-ref="userDetailsService" always-use-default-target="false">
+                <attribute-exchange identifier-match="https://www.google.com/.*">
+                    <openid-attribute name="email" type="http://axschema.org/contact/email" required="true" count="1"/>
+                    <openid-attribute name="firstname" type="http://axschema.org/namePerson/first" required="true" />
+                    <openid-attribute name="lastname" type="http://axschema.org/namePerson/last" required="true" />
+                </attribute-exchange>
+                <attribute-exchange identifier-match=".*yahoo.com.*">
+                    <openid-attribute name="email" type="http://axschema.org/contact/email" required="true"/>
+                    <openid-attribute name="fullname" type="http://axschema.org/namePerson" required="true" />
+                </attribute-exchange>
+                <attribute-exchange identifier-match=".*myopenid.com.*">
+                    <openid-attribute name="email" type="http://schema.openid.net/contact/email" required="true"/>
+                    <openid-attribute name="fullname" type="http://schema.openid.net/namePerson" required="true" />
+                </attribute-exchange>
+            </openid-login>
+
+            <remember-me user-service-ref="userDetailsService" token-repository-ref="tokenRepository" token-validity-seconds="86400" key="key" />
+
+            <logout invalidate-session="true" logout-success-url="/auth/login" logout-url="/auth/logout"/>
+
+        </http>
+
+        <beans:bean id="accessDecisionManager" class="org.springframework.security.access.vote.AffirmativeBased">
+            <beans:property name="decisionVoters">
+                <beans:list>
+                    <beans:bean class="org.springframework.security.web.access.expression.WebExpressionVoter">
+                        <beans:property name="expressionHandler" ref="customWebSecurityExpressionHandler"/>
+                    </beans:bean>
+                </beans:list>
+            </beans:property>
+        </beans:bean>
+
+        <!--<beans:bean class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">-->
+            <!--<beans:property name=""-->
+        <!--</beans:bean>-->
+
+        <!--BEANS-->
+        <beans:bean id="tokenRepository"
+                    class="org.springframework.security.web.authentication.rememberme.InMemoryTokenRepositoryImpl"/>
+
+        <beans:bean id="openIDAuthenticationFailureHandler" class="com.sparc.knappsack.security.OpenIDAuthenticationFailureHandler">
+            <beans:property name="defaultFailureUrl" value="${default.failure.url}"/>
+            <beans:property name="openIdRegistrationUrl" value="/auth/register"/>
+        </beans:bean>
+
+        <beans:bean id="tokenFilter" class="com.sparc.knappsack.security.TokenFilter">
+            <beans:property name="filterProcessesUrl" value="/ios" />
+            <beans:property name="authenticationManager" ref="authenticationManager"/>
+        </beans:bean>
+
+        <authentication-manager alias="authenticationManager">
+            <!--<authentication-provider ref="openIdAuthenticationProvider"/>-->
+            <authentication-provider ref="usernamePasswordAuthenticationProvider"/>
+            <authentication-provider ref="rememberMeAuthenticationProvider"/>
+        </authentication-manager>
+
+        <beans:bean id="rememberMeAuthenticationProvider" class="org.springframework.security.authentication.RememberMeAuthenticationProvider">
+            <beans:property name="key" value="key"/>
+        </beans:bean>
+
+        <beans:bean id="openIdAuthenticationProvider" class="org.springframework.security.openid.OpenIDAuthenticationProvider">
+            <beans:property name="userDetailsService" ref="userDetailsService"/>
+        </beans:bean>
+
+        <beans:bean id="usernamePasswordAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
+            <beans:property name="userDetailsService" ref="userDetailsService"/>
+            <beans:property name="passwordEncoder" ref="passwordEncoder"/>
+            <beans:property name="saltSource" ref="saltSource"/>
+        </beans:bean>
+
+        <beans:bean id="saltSource" class="org.springframework.security.authentication.dao.ReflectionSaltSource">
+            <beans:property name="userPropertyToUse" value="username"/>
+        </beans:bean>
+
+        <beans:bean id="passwordEncoder" class="org.springframework.security.authentication.encoding.ShaPasswordEncoder">
+            <beans:constructor-arg value="256"/>
+            <beans:property name="encodeHashAsBase64" value="true"/>
+        </beans:bean>
+
+        <beans:bean id="formLoginUserDetailsManager" class="com.sparc.knappsack.security.FormLoginUserDetailsManager">
+            <beans:constructor-arg index="0" ref="userDetailsDao"/>
+        </beans:bean>
+
+        <beans:bean id="normalizedOpenIdAttributesBuilder"
+                    class="com.sparc.knappsack.security.NormalizedOpenIdAttributesBuilder">
+            <beans:property name="emailAddressAttributeNames">
+                <beans:set value-type="java.lang.String">
+                    <beans:value type="java.lang.String">axContactEmail</beans:value>
+                    <beans:value type="java.lang.String">oiContactEmail</beans:value>
+                    <beans:value type="java.lang.String">email</beans:value>
+                </beans:set>
+            </beans:property>
+            <beans:property name="firstNameAttributeNames">
+                <beans:set value-type="java.lang.String">
+                    <beans:value type="java.lang.String">axNamePersonFirstName</beans:value>
+                    <beans:value type="java.lang.String">firstname</beans:value>
+                </beans:set>
+            </beans:property>
+            <beans:property name="lastNameAttributeNames">
+                <beans:set value-type="java.lang.String">
+                    <beans:value type="java.lang.String">axNamePersonLastName</beans:value>
+                    <beans:value type="java.lang.String">lastname</beans:value>
+                </beans:set>
+            </beans:property>
+            <beans:property name="fullNameAttributeNames">
+                <beans:set value-type="java.lang.String">
+                    <beans:value type="java.lang.String">axNamePersonFullname</beans:value>
+                    <beans:value type="java.lang.String">axNamePersonFriendlyName</beans:value>
+                    <beans:value type="java.lang.String">fullname</beans:value>
+                </beans:set>
+            </beans:property>
+        </beans:bean>
+
+        <beans:bean id="iosFilterChainProxy" class="org.springframework.security.web.FilterChainProxy">
+            <beans:constructor-arg>
+                <beans:list>
+                    <filter-chain pattern="/ios/**" filters="tokenFilter" />
+                </beans:list>
+            </beans:constructor-arg>
+        </beans:bean>
+
+    </beans:beans>
+
+</beans:beans>

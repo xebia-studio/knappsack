@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='Knappsack'" >
+<head th:substituteby="/mobile/includesTH :: mobileHead" ></head>
+<body>
+
+<style type="text/css">
+
+    .ui-dialog .ui-header a.ui-btn { display:none; }
+
+</style>
+
+<div id="activatePage" data-role="page" data-dom-cache="false">
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        $('#activatePage').bind('pagecreate', function() {
+
+            var url = /*[[@{/activate/}]]*/ '/activate';
+
+            $('#activationForm').validate();
+
+            $('#activationForm').submit(function(e) {
+                url = url + $('#accessCode').val();
+                $(this).attr('action', url);
+                return true;
+            });
+
+            $('#resendBtn').click(function() {
+                $.mobile.showPageLoadingMsg();
+
+                var sendCodeUrl = /*[[@{/activate/sendCode}]]*/ '/activate/sendCode'
+                $.get(sendCodeUrl, function(data) {
+                    $.mobile.hidePageLoadingMsg();
+                    $.mobile.changePage('#confirmationSuccess')
+                });
+            });
+
+            $('#confirmationSuccess').find('.ui-header').find('a:first').hide();
+
+        });
+
+        /*]]>*/
+    </script>
+
+    <div data-role="header" data-id="mainHeader" data-position="fixed" class="header">
+        <a th:href="@{/auth/logout}" href="/auth/logout" data-ajax="false" data-icon="back" data-direction="reverse" th:text="#{mobile.activate.logout}">Logout</a>
+        <!--<img class="logo_cente?adgr" src="../../../resources/img/knappsack.png" th:src="@{/resources/img/knappsack.png}"/>-->
+        <h1>Knappsack</h1>
+        <a th:href="@{/home}" href="/home" data-icon="home" th:if="${#bools.isTrue(success)}" th:text="#{mobile.activate.home}">Home</a>
+    </div>
+
+    <div data-role="content">
+        <h3 th:text="#{mobile.activate.accountActivation}">Account Activation</h3>
+        <!--<h3 th:if="${#bools.isFalse(success)}">Activate Account</h3>-->
+        <!--<h3 th:if="${#bools.isTrue(success)}">Activation Success</h3>-->
+
+        <p class="lead" th:if="${#bools.isFalse(activated)}" th:text="#{mobile.activate.enterCode}">
+            Enter the activation code for your account.
+        </p>
+
+        <div class="alert alert-warning" th:if="${#bools.isTrue(activated)} AND ${#bools.isTrue(error)}">
+            <p><strong th:text="#{mobile.activate.warning}">Warning!</strong> <span th:text="#{mobile.activate.alreadyActivatedAttempt}">You have attempted to activate this account even though it has already been activated.  If this is not the account you meant to activate, please logout and log in with the appropriate credentials.</span></p>
+        </div>
+
+        <div class="alert alert-success" th:if="${#bools.isTrue(activated)} AND ${#bools.isFalse(error)}">
+            <p><strong th:text="#{mobile.activate.wellDone}">Well done!</strong> <span th:text="#{mobile.activate.activateSuccess}">You have successfully activated your account.</span></p>
+        </div>
+
+        <div class="alert alert-error" th:if="${#bools.isTrue(error)} AND ${#bools.isFalse(activated)}">
+            <p><strong th:text="#{mobile.activate.ohSnap}">Oh snap!</strong> <span th:text="#{mobile.activate.activateFail}">Account activation failed.  Please try again.</span></p>
+        </div>
+
+        <form id="activationForm" th:if="${#bools.isFalse(activated)}" data-ajax="false">
+            <fieldset>
+                <div class="control-group">
+                    <div class="controls">
+                        <input type="text" id="accessCode" name="accessCode" placeholder="Code:" class="required" required="required" size="36" maxlength="36"/>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-large btn-primary" href="#" data-mini="true" data-theme="b" th:text="#{mobile.activate.login}">Login</button>
+                </div>
+            </fieldset>
+        </form>
+
+        <div data-role="collapsible" data-collapsed="false" data-theme="c" data-content-theme="c" th:if="${#bools.isFalse(activated)}">
+            <h3 th:text="#{mobile.activate.instructions}">Instructions</h3>
+            <dl>
+                <dt th:text="#{mobile.activate.activationCode}">Activation Code</dt>
+                <dd th:text="#{mobile.activate.activationCode.help.1}">The activation code is a unique code for your user account.  In order for you to navigate to any page other than this one you will have to enter the code you received by email.</dd>
+                <dd th:text="#{mobile.activate.activationCode.help.2}">Please check your email for the address you logged in with to obtain the activation code.</dd>
+                <br/>
+                <dd><span  th:text="#{mobile.activate.activationCode.help.3}">If you would like to have your activation code re-emailed to you for this account please </span><a id="resend" data-rel="dialog" href="#confirmation" th:text="#{mobile.activate.clickHere}">Click Here</a>.</dd>
+            </dl>
+        </div>
+
+    </div>
+
+</div>
+
+<div id="confirmation" data-role="dialog" data-url="#confirmation" data-dom-cache="false">
+    <div data-role="header" data-theme="e">
+        <h1 th:text="#{mobile.activate.resend}">Resend</h1>
+    </div>
+    <div data-role="content">
+        <h1 th:text="#{mobile.activate.resend}">Resend Activation Code?</h1>
+        <p th:text="#{mobile.activate.resendConfirmation}">Are you sure you want to have your activation code resent to your email address?</p>
+
+        <button id="resendBtn" data-theme="b" th:text="#{mobile.activate.continue}">Continue</button>
+        <a href="#" data-role="button" data-rel="back" th:text="#{mobile.activate.cancel}">Cancel</a>
+    </div>
+
+</div>
+
+<div id="confirmationSuccess" data-role="dialog" data-url="#confirmation" data-dom-cache="false">
+    <div data-role="header" data-theme="e">
+        <h1 th:text="#{mobile.activate.resend}">Resend</h1>
+    </div>
+    <div data-role="content">
+        <h1 th:text="#{mobile.activate.success}">Success</h1>
+        <p th:text="#{mobile.activate.resendSuccess}">Your activation code has been successfully resent to your email address.</p>
+
+        <a href="#activatePage" data-role="button" th:text="#{mobile.activate.continue}">Continue</a>
+    </div>
+
+</div>
+
+<div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
+
+</body>
+</html>

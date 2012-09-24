@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active='groupNav',title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"></div>
+
+<div class="container-fluid">
+
+    <script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    $(document).ready(function () {
+
+        var tempUrl, selectedElement;
+
+        var successFunction;
+
+        $("#provisioningFileDiv").hide();
+        $("#propertiesListDiv").hide();
+
+        $('textarea').wysihtml5({
+            "image": false,
+            "html": true
+        });
+
+        var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
+        $('#applicationVersionsTable').dataTable( {
+            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+            "sPaginationType": "bootstrap",
+            "oLanguage": {
+                "sLengthMenu": "_MENU_ " + recordsPerPage
+            },
+            "aoColumns": [
+                null,
+                null,
+                { "bSortable": false },
+                { "bSortable": false }
+            ]
+        });
+
+        var isEdit = /*[[${isEdit}]]*/ false;
+        if (isEdit) {
+            var hasIcon = /*[[${uploadApplication.icon != null}]]*/ false;
+            if (hasIcon) {
+                $("#addIconDiv").hide();
+            }
+
+            $('#applicationType').attr('readonly', 'readonly');
+            $("#applicationType option").not(":selected").attr("disabled", "disabled");
+        }
+
+        $("#deleteIcon").live("click", function (e) {
+            e.preventDefault();
+            showConfirmationModal('Delete Icon');
+            tempUrl = $(this).val();
+            successFunction = function() {
+                $('#deleteIconDiv').hide();
+                $('#addIconDiv').show();
+            }
+
+        });
+
+        $("[id^=deleteScreenShotButton]").live("click", function (e) {
+            e.preventDefault();
+            showConfirmationModal('Delete Screen Shot');
+            tempUrl = $(this).val();
+            selectedElement = $(this);
+            successFunction = function() {
+                $(selectedElement).closest('.control-group').remove();
+            };
+
+        });
+
+        $('#confirmationModalSubmit').click(function () {
+            ajaxDeleteFile(tempUrl);
+        });
+
+
+        $('#btnAdd').click(function () {
+            var num = $('.clonedInput').length - 1;
+            var newNum = new Number(num + 1);
+
+            var newTextBoxDiv = $(document.createElement('div'))
+                    .attr("id", 'TextBoxDiv' + newNum);
+            newTextBoxDiv.addClass("clonedInput control-group");
+
+            var selectScreenShot = /*[[#{desktop.manageApplication.selectScreenShot}]]*/ "Select screen shot";
+            newTextBoxDiv.append('<label class="control-label" for="screenShot' + newNum + '">' + selectScreenShot + '</label>' + '<div class="controls"><input class="button" type="file" name="screenShots[' + newNum + ']" id="screenShot' + newNum + '" value="" ></div>');
+
+            newTextBoxDiv.appendTo("#TextBoxesGroup");
+
+            return false;
+
+        });
+
+        function ajaxDeleteFile(url) {
+            $.post(url, function (data) {
+                if (data.result) {
+                    $('#confirmationModal .modal-body .alert-error').hide();
+                    $('#confirmationModal .modal-body .alert-success').show();
+                    successFunction();
+                    hideModal(500);
+                } else {
+                    $('#confirmationModal .modal-body .alert-error').show();
+                    $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                    $('#confirmationModal .close').removeAttr('disabled');
+                }
+            });
+        }
+
+        function hideModal(delay) {
+            setTimeout(function () {
+                        $('.modal').modal('hide');
+                    }, delay
+            );
+        }
+
+        function showConfirmationModal(title) {
+            $('#confirmationModal .modal-header h3').text(title);
+            $('#confirmationModal').modal();
+        }
+
+        $('#confirmationModal').on('show', function () {
+            $('#confirmationModal .modal-body .alert').hide();
+            $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+            $('#confirmationModal .close').removeAttr('disabled');
+        });
+
+        $('#confirmationModal').on('hide', function () {
+            tempUrl = '';
+            selectedElement = '';
+            successFunction = '';
+        });
+
+    });
+    /*]]>*/
+</script>
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"></div>
+
+        <div class="span10">
+
+            <ul class="breadcrumb">
+                <li>
+                    <a th:href="@{'/manager/editGroup/' + ${parentGroupId}}" th:text="${parentGroupName}"></a>
+                    <span class="divider">/</span>
+                </li>
+                <li class="active">
+                    <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageApplication.createApplication}">Create Application</a>
+                    <a href="#" th:inline="text" th:if="${#bools.isTrue(isEdit)}">[[${uploadApplication.name}]]</a>
+                </li>
+            </ul>
+
+            <header class="jumbotron subhead" id="overview">
+                <h1 th:if="${#bools.isTrue(isEdit)}" style="text-align: left" th:text="#{desktop.manageApplication.updateApplication}">Update Application</h1>
+
+                <h1 th:if="${#bools.isFalse(isEdit)}" style="text-align: left" th:text="#{desktop.manageApplication.createApplication}">Create Application</h1>
+
+                <p class="lead" th:if="${#bools.isTrue(isEdit)}" th:text="#{desktop.manageApplication.modifyInformation}">
+                    Modify the information for this application.
+                </p>
+
+                <p class="lead" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageApplication.enterInformation}">
+                    Enter information for your new application.
+                </p>
+            </header>
+
+            <div class="tabbable">
+                <ul id="tab" class="nav nav-tabs">
+                    <li class="active"><a href="#application" data-toggle="tab" th:text="#{desktop.manageApplication.application}">Application</a></li>
+                    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
+                            [[#{desktop.manageApplication.versions}]]
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#versions" data-toggle="tab" th:text="#{desktop.manageApplication.view}">View</a></li>
+                            <li class="divider"></li>
+                            <li>
+                                <a th:href="@{'/manager/addVersion/' + ${uploadApplication.id} + '/' + ${uploadApplication.groupId}}" th:text="#{desktop.manageApplication.createNew}">Create
+                                    New</a></li>
+                        </ul>
+
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div id="application" class="tab-pane active">
+                        <div class="row-fluid">
+                            <div class="span7 well">
+
+                                <form id="applicationsForm" th:object="${uploadApplication}" th:action="@{/manager/uploadFile}"
+                                      method="POST"
+                                      enctype="multipart/form-data" class="form-horizontal">
+                                    <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                                        <h1 th:text="#{errors.header}"></h1>
+                                        <ul>
+                                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                                        </ul>
+                                    </div>
+                                    <fieldset>
+                                        <input type="hidden" name="id" th:field="*{id}"/>
+                                        <input type="hidden" name="groupId" th:field="*{groupId}"/>
+                                        <input type="hidden" name="orgStorageConfigId" th:field="*{orgStorageConfigId}"/>
+                                        <input type="hidden" id="editing" name="editing" th:value="${isEdit}"/>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="applicationType" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplication.applicationType}]]</label>
+
+                                            <div class="controls">
+                                                <select id="applicationType" th:field="*{applicationType}" autofocus="autofocus" required="required">
+                                                    <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                    <option th:each="applicationType : ${applicationTypes}"
+                                                            th:value="${applicationType}"
+                                                            th:text="${applicationType}"></option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="name" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplication.name}]]</label>
+
+                                            <div class="controls">
+                                                <input type="text" id="name" name="name" th:value="*{name}" required="required"/>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="description" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplication.description}]]</label>
+
+                                            <div class="controls">
+                                                <textarea id="description" name="description" th:text="*{description}"
+                                                          required="required" placeholder="Enter your description here." style="width: 98%; height:200px;"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="categoryId" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplication.category}]]</label>
+
+                                            <div class="controls">
+                                                <select id="categoryId" th:field="*{categoryId}" required="required">
+                                                    <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                    <option th:each="category : ${categories}" th:value="${category.id}"
+                                                            th:text="${category.name}"></option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group"
+                                             th:if="${#bools.isFalse(isEdit) and #sets.size(storageConfigurations) > 1}">
+                                            <label class="control-label" for="storageConfigurationId"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplication.storage}]]</label>
+
+                                            <div class="controls">
+                                                <select id="storageConfigurationId" name="storageConfigurationId"
+                                                        required="required">
+                                                    <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                    <option th:each="storageConfiguration : ${storageConfigurations}"
+                                                            th:selected="*{storageConfigurationId} == ${storageConfiguration.id}"
+                                                            th:value="${storageConfiguration.id}"
+                                                            th:text="${storageConfiguration.name}"></option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <input th:if="${#sets.size(storageConfigurations) == 1}" type="hidden"
+                                               id="storageConfigurationIdHidden" name="storageConfigurationId"
+                                               th:value="${storageConfigurations.get(0).id}"/>
+                                        <input type="hidden" id="orgStorageConfigId" name="orgStorageConfigId"
+                                               th:value="${orgStorageConfigId}"/>
+
+                                        <div class="control-group" id="addIconDiv">
+                                            <label class="control-label" for="icon" th:text="#{desktop.manageApplication.selectIcon}">Select icon image</label>
+
+                                            <div class="controls">
+                                                <input class="button" type="file" id="icon" name="icon"/>
+                                            </div>
+                                        </div>
+
+                                        <div id="deleteIconDiv" th:if="${isEdit}">
+                                            <div class="control-group" th:if="*{#bools.isTrue(icon)}">
+                                                <label class="control-label" for="deleteIcon" th:text="#{desktop.manageApplication.deleteIcon}">Delete icon image</label>
+
+                                                <div class="controls">
+                                                    <button class="btn btn-danger"
+                                                            th:value="@{'/manager/deleteIcon/' + *{id}}"
+                                                            id="deleteIcon" th:inline="text"><i class="icon-trash icon-white"></i>&nbsp;[[*{icon.name}]]
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="TextBoxesGroup">
+                                            <div class="clonedInput control-group" th:if="${#bools.isFalse(isEdit)}">
+                                                <label class="control-label" for="screenShot0" th:text="#{desktop.manageApplication.addScreenShot}">Add screen shot</label>
+
+                                                <div class="controls">
+                                                    <input class="button" type="file" id="screenShot0" name="screenShots[0]"/>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <div class="controls">
+                                                <button class="btn btn-success" id="btnAdd" th:inline="text"><i class="icon-plus icon-white"></i>&nbsp;[[#{desktop.manageApplication.addScreenShot}]]
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div th:each="screenShot,iterStat : *{screenShots}" class="control-group" th:id="'deleteScreenShotDiv' + ${iterStat.count}"
+                                             th:if="${isEdit}">
+                                            <label class="control-label" th:for="'deleteScreenShotButton' + ${iterStat.count}" th:text="#{desktop.manageApplication.deleteScreenShot}">Delete screen
+                                                shot</label>
+
+                                            <div class="controls">
+                                                <button class="btn btn-danger"
+                                                        th:value="@{'/manager/deleteScreenShot/' + *{id} + '/' + ${iterStat.index}}"
+                                                        th:id="'deleteScreenShotButton' + ${iterStat.count}" th:inline="text"><i
+                                                        class="icon-trash icon-white"></i>&nbsp;[[${screenShot.name}]]
+                                                </button>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn btn-primary" th:text="#{desktop.manageApplication.submit}">Submit</button>
+                                        </div>
+
+                                    </fieldset>
+
+                                    <div class="alert alert-info">
+                                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                                    </div>
+                                </form>
+
+                            </div>
+                            <div class="span5">
+                                <dl>
+                                    <dt th:text="#{desktop.manageApplication.applicationType}">Application Type</dt>
+                                    <dd th:text="#{desktop.manageApplication.applicationType.help}">The platform that this application supports.</dd>
+                                    <dt th:text="#{desktop.manageApplication.name}">Name</dt>
+                                    <dd th:text="#{desktop.manageApplication.name.help}">This is the name of the application that will display to users.</dd>
+                                    <dt th:text="#{desktop.manageApplication.description}">Description</dt>
+                                    <dd th:text="#{desktop.manageApplication.description.help}">The description of the application.</dd>
+                                    <dt th:text="#{desktop.manageApplication.category}">Category</dt>
+                                    <dd th:text="#{desktop.manageApplication.category.help}">The to which the application belongs.  An application can't belong to multiple categories.</dd>
+                                    <dt th:text="#{desktop.manageApplication.icon}">Icon</dt>
+                                    <dd th:text="#{desktop.manageApplication.icon.help}">The icon must be sqaure, at least 72x72 pixels and less than 800 kilobytes.</dd>
+                                    <dt th:text="#{desktop.manageApplication.screenShots}">Screen Shots</dt>
+                                    <dd th:text="#{desktop.manageApplication.screenShots.help}">The screen shots must be less than 800 kilobytes.</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="versions" class="tab-pane">
+                        <section class="">
+                            <table id="applicationVersionsTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                                <thead>
+                                <tr>
+                                    <th th:text="#{desktop.manageApplication.version}">Version</th>
+                                    <th th:text="#{desktop.manageApplication.state}">State</th>
+                                    <th th:text="#{desktop.manageApplication.edit}">Edit</th>
+                                    <th th:text="#{desktop.manageApplication.delete}">Delete</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="version : ${uploadApplication.applicationVersions}">
+                                    <td th:text="${version.versionName}">1</td>
+                                    <td th:text="#{${version.appState.messageKey}}">State</td>
+                                    <td><a href=""
+                                           th:href="@{'/manager/editVersion/' + ${uploadApplication.id} + '/' + ${version.id}}" th:text="#{desktop.manageApplication.edit}">Edit</a>
+                                    </td>
+                                    <td><a href=""
+                                           th:href="@{'/manager/deleteVersion/' + ${uploadApplication.id} + '/' + ${version.id}}" th:text="#{desktop.manageApplication.delete}">Delete</a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+    <section th:include="/includesTH :: table_scripts"/>
+    <section th:include="/includesTH :: wysiwyg_scripts"/>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active='managerNav',title=#{desktop.manager.title}" >
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+
+<script type="text/javascript" th:inline="javascript">
+/*<![CDATA[*/
+$(document).ready(function () {
+    var tmpOptions = {};
+
+    var tmpSelectedRowId;
+    var successFunction;
+
+    var pendingRequestsExist = /*[[${not #lists.isEmpty(pendingRequests)}]]*/ false;
+
+    var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
+
+    $('#pendingAppRequestsTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPage
+        },
+        "aoColumns": [
+            null,
+            null,
+            null,
+            { "sSortDataType": "dom-select" },
+            { "bSortable": false }
+        ]
+    });
+    var $pendingRequestsTable = $('#pendingRequestsTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPage
+        },
+        "aoColumns": [
+            null,
+            null,
+            null,
+            { "sSortDataType": "dom-select" },
+            { "bSortable": false },
+            { "bSortable": false }
+        ]
+    });
+    $('#groupAdminTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPage
+        },
+        "aoColumns": [
+            null,
+            null,
+            { "bSortable": false },
+            { "bSortable": false }
+        ]
+    });
+
+    checkForPendingActions();
+
+    function checkForPendingActions() {
+        var pendingAppStateRows = $('#pendingAppRequestsTable tbody tr');
+        var pendingUserRequestRows = $('#pendingRequestsTable tbody tr');
+        if (pendingAppStateRows.length <= 0 && pendingUserRequestRows.length <= 0) {
+            $('#pendingActionsAlertDiv').hide();
+            $('#noPendingActionsAlertDiv').show();
+        } else if (pendingAppStateRows.length > 0 || pendingUserRequestRows.length > 0) {
+            $('#pendingActionsAlertDiv').show();
+            $('#noPendingActionsAlertDiv').hide();
+        }
+
+        if (pendingAppStateRows.length > 0) {
+            $('#pendingAppRequestsDiv').show();
+            $('#pendingActionsAlertDiv').show();
+        } else {
+            $('#pendingAppRequestsDiv').hide();
+        }
+
+        if (pendingUserRequestRows.length > 0) {
+            $('#pendingRequestsDiv').show();
+            $('#pendingActionsAlertDiv').show();
+        } else {
+            $('#pendingRequestsDiv').hide();
+        }
+    }
+
+    function showConfirmationModal(title) {
+        $('#confirmationModal .modal-header h3').text(title);
+        $('#confirmationModal').modal();
+    }
+
+    if (pendingRequestsExist) {
+        $($pendingRequestsTable.fnGetNodes()).each(function() {
+            $(this).on('submit', 'form', function() {
+                processPendingRequest($(this).closest('tr').get(0), true);
+                return false;
+            });
+        });
+    }
+
+    $('#pendingRequestsTable').on('click', '.declineRequest', function() {
+        processPendingRequest($(this).closest('tr').get(0), false);
+    });
+
+    function processPendingRequest(row, status) {
+        tmpSelectedRowId = $(row).index();
+        var requestId = $(row).attr('data-request-id');
+        var userRole = $(row).children('td.select-td').children('select').val();
+        tmpOptions = { requestId:requestId, status:status, userRole:userRole };
+
+        if (status) {
+            showConfirmationModal('Accept Member Request');
+        } else {
+            showConfirmationModal('Decline Member Request');
+        }
+        $('#confirmationModalSubmit').click(function () {
+            ajaxMemberRequestSubmit();
+        });
+
+        successFunction = function() {
+            var rows = $('#pendingRequestsTable tbody tr');
+            $(rows[tmpSelectedRowId]).remove();
+        };
+    }
+
+    function ajaxMemberRequestSubmit(requestId, requestStatus) {
+        $('#confirmationModal .modal-footer .btn').attr('disabled', 'disabled');
+        $('#confirmationModal .close').attr('disabled', 'disabled');
+        var url = /*[[@{/manager/userRequest}]]*/ '/manager/userRequest';
+        $.post(
+                url,
+                tmpOptions,
+                function (data) {
+                    if (data.result) {
+                        $('#confirmationModal .modal-body .alert-error').hide();
+                        $('#confirmationModal .modal-body .alert-success').show();
+                        successFunction();
+                        checkForPendingActions();
+                        hideModal(500);
+                    } else {
+                        $('#confirmationModal .modal-body .alert-error').show();
+                        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                        $('#confirmationModal .close').removeAttr('disabled');
+                    }
+                }
+        );
+    }
+
+    function hideModal(delay) {
+        setTimeout(function () {
+                    $('.modal').modal('hide');
+                }, delay
+        );
+    }
+
+    $('#confirmationModal').on('show', function () {
+        $('#confirmationModal .modal-body .alert').hide();
+        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+        $('#confirmationModal .close').removeAttr('disabled');
+    });
+
+    $('#confirmationModal').on('hide', function () {
+        $('#confirmationModalSubmit').unbind('click');
+        tmpOptions = {};
+        successFunction = '';
+        tmpSelectedRowId = '';
+    });
+
+    function ajaxSubmit(dataSet) {
+        var url = /*[[@{/manager/updateAppVersionState}]]*/ '/manager/updateAppVersionState';
+        $.ajax({url:url, data:dataSet, success:function(data) {
+            if (data.result) {
+                $('#confirmationModal .modal-body .alert-error').hide();
+                $('#confirmationModal .modal-body .alert-success').show();
+                $('#confirmationModal').modal('show');
+                successFunction();
+                checkForPendingActions();
+                hideModal(500);
+            } else {
+                $('#confirmationModal .modal-body .alert-error').show();
+                $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                $('#confirmationModal .close').removeAttr('disabled');
+            }
+        }});
+    }
+
+    $('#pendingAppRequestsTable').on('click', '.updateAppState', function() {
+        var row = $(this).closest('tr').get(0);
+        tmpSelectedRowId = $(row).index();
+        var appVerId = $(row).attr('data-app-ver-id');
+        var appStateVal = $(row).children('td.select-td').children('select').val();
+        tmpOptions = { appVersionId:appVerId, appState:appStateVal };
+
+        showConfirmationModal('Update Application State');
+        $('#confirmationModalSubmit').click(function () {
+            ajaxSubmit(tmpOptions);
+        });
+
+        successFunction = function() {
+            var rows = $('#pendingAppRequestsTable tbody tr');
+            var selectedRow = $(rows[tmpSelectedRowId]);
+            var appStateVal = $(selectedRow).children('td.select-td').children('select').val();
+
+            if (appStateVal != 'ORG_PUBLISH_REQUEST') {
+                $(selectedRow).remove();
+            }
+        };
+    });
+});
+/*]]>*/
+</script>
+
+
+<div class="row-fluid">
+
+    <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"></div>
+
+    <div class="span10">
+
+        <div id="noPendingActionsAlertDiv" class="alert alert-info alert-block" style="display: none;">
+            <a class="close" data-dismiss="alert">x</a>
+            <h4 class="alert-heading" th:text="#{desktop.managerHome.info}">Info!</h4>
+            <span th:text="#{desktop.managerHome.noItems}">You have no items which require your attention at this time.</span>
+        </div>
+
+        <div id="pendingActionsAlertDiv" class="alert alert-warning alert-block" style="display: none;">
+            <a class="close" data-dismiss="alert">x</a>
+            <h4 class="alert-heading" th:text="#{desktop.managerHome.warning}">Warning!</h4>
+            <span th:text="#{desktop.managerHome.items}">There are items which require your attention at this time.</span>
+        </div>
+
+        <div id="pendingAppRequestsDiv" class="well" th:if="${user.systemOrOrganizationAdmin} and ${not #lists.isEmpty(applicationVersions)}">
+            <h4 th:text="#{desktop.managerHome.pendingAppRequests}">Pending application requests:</h4>
+            <table id="pendingAppRequestsTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" title="Pending application requests">
+                <thead>
+                <tr>
+                    <th th:text="#{desktop.managerHome.application}">Application</th>
+                    <th th:text="#{desktop.managerHome.version}">Version</th>
+                    <th th:text="#{desktop.managerHome.organization}">Organization</th>
+                    <th th:text="#{desktop.managerHome.availability}">Availability</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="request,iterStat : ${applicationVersions}" th:attr="data-app-ver-id=${request.applicationVersion.id}">
+                    <td><a th:href="@{'/detail/' + ${request.application.id}}" th:title="${request.application.name}" th:text="${request.application.name} + ' - ' + #{${request.application.applicationType.messageKey}}"/></td>
+                    <td th:text="${request.applicationVersion.versionName}">Version</td>
+                    <td th:text="${request.organization.name}">Organization</td>
+                    <td class="select-td">
+                        <select th:id="'appStateSelect' + ${iterStat.index}" required="required" style="width:20em">
+                            <option th:selected="${request.applicationVersion.appState == appState}" th:each="appState : ${appStates}" th:value="${appState}" th:text="#{${appState.messageKey}}"></option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="updateAppState" th:value="*{iterStat.index}" th:text="#{desktop.managerHome.update}">Update</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="pendingRequestsDiv" class="well" th:if="${user.anyAdmin} and ${not #lists.isEmpty(pendingRequests)}">
+            <h4 th:text="#{desktop.managerHome.pendingUserRequests}">Pending user requests:</h4>
+            <table id="pendingRequestsTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <th th:text="#{desktop.managerHome.name}">Name</th>
+                    <th th:text="#{desktop.managerHome.group}">Group</th>
+                    <th th:text="#{desktop.managerHome.organization}">Organization</th>
+                    <th th:text="#{desktop.managerHome.role}">Role</th>
+                    <th th:text="#{desktop.managerHome.accept}">Accept</th>
+                    <th th:text="#{desktop.managerHome.deny}">Deny</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="request,iterStat : ${pendingRequests}" th:attr="data-request-id=${request.id}">
+                    <form>
+                        <td th:text="${request.user.fullName}">1</td>
+                        <td><a th:href="@{/manager/editGroup/} + ${request.group.id}" th:text="${request.group.name}" /></td>
+                        <td th:text="${request.group.organization.name}">Organization</td>
+                        <td class="select-td">
+                            <select id="testId" required="required">
+                                <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                <option th:each="role : ${userRoles}" th:value="${role}"
+                                        th:text="#{${role.messageKey}}"></option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="acceptRequest" th:value="*{iterStat.index}" th:text="#{desktop.managerHome.accept}">Accept</button>
+                        </td>
+                    </form>
+
+                    <td>
+                        <button class="declineRequest" th:value="*{iterStat.index}" th:text="#{desktop.managerHome.decline}">Decline</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="well" th:if="${user.groupAdmin}">
+            <h4 th:text="#{desktop.managerHome.groupsAdministered}">Groups you are currently administering:</h4>
+            <div th:if="${#lists.isEmpty(adminGroups)}" th:text="#{desktop.managerHome.noGroups}">You are not currently an administrator for any groups.</div>
+                <table id="groupAdminTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" title="Groups you are currently administering">
+                    <thead>
+                    <tr>
+                        <th th:text="#{desktop.managerHome.name}">Name</th>
+                        <th th:text="#{desktop.managerHome.organization}">Organization</th>
+                        <th th:text="#{desktop.managerHome.edit}">Edit</th>
+                        <th th:text="#{desktop.managerHome.delete}">Delete</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="group : ${adminGroups}">
+                        <td><a th:href="@{'/manager/editGroup/' + ${group.id}}" th:text="${group.name}" th:title="${group.name}"/></td>
+                        <td th:text="${group.organization.name}">Organization</td>
+                        <td><a href="" th:href="@{'/manager/editGroup/' + ${group.id}}">Edit</a></td>
+                        <td><a href="" th:href="@{'/manager/deleteGroup/' + ${group.id}}">Delete</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+        </div>
+    </div>
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+    <section th:include="/includesTH :: table_scripts"/>
+</section>
+
+</body>
+</html>

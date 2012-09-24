@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack user activation notification</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<p th:text="#{greeting(${userName})}">
+    Hello, Peter Static!
+</p>
+<p th:inline="text">
+    <b>[[${applicationName}]] v.[[${applicationVersion}]]</b> has been made available for download.  Please navigate to the below url to view the application.
+</p>
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+<p>
+    Regards, <br />
+    &emsp; <em>The Knappsack Team</em>
+</p>
+</body>
+</html>

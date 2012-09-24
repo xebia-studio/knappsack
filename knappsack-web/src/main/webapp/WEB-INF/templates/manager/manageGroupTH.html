@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active='groupNav',title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightnav">
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    $(document).ready(function () {
+        var tmpOptions = {};
+        var tmpSelectedRows = [];
+        var groupId = /*[[${group.id}]]*/ '';
+
+        var isEdit = /*[[${isEdit}]]*/ false;
+        if (isEdit) {
+            $('#organizationId').attr('readonly', 'readonly');
+            $("#organizationId option").not(":selected").attr("disabled", "disabled");
+        }
+
+        var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
+        $('#applicationsTable').dataTable( {
+            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+            "sPaginationType": "bootstrap",
+            "oLanguage": {
+                "sLengthMenu": "_MENU_ " + recordsPerPage
+            },
+            "aoColumns": [
+                null,
+                null,
+                null,
+                { "bSortable": false },
+                { "bSortable": false }
+            ]
+        });
+
+        var $membersTable = $('#membersTable').dataTable( {
+            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+            "sPaginationType": "bootstrap",
+            "oLanguage": {
+                "sLengthMenu": "_MENU_ " + recordsPerPage
+            },
+            "aoColumns": [
+                { "bSortable": false },
+                null,
+                null,
+                null
+            ]
+        });
+        $('#membersTableRemoveBtn').data('table', $membersTable);
+        $('#membersTable').data('table', $membersTable);
+
+        var $pendingRequestsTable = $('#pendingRequestsTable').dataTable( {
+            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+            "sPaginationType": "bootstrap",
+            "oLanguage": {
+                "sLengthMenu": "_MENU_ " + recordsPerPage
+            },
+            "aoColumns": [
+                null,
+                { "sSortDataType": "dom-select" },
+                { "bSortable": false },
+                { "bSortable": false }
+            ]
+        });
+
+        function hideModal(delay) {
+            setTimeout(function () {
+                        $('.modal').modal('hide');
+                    }, delay
+            );
+        }
+
+        function showConfirmationModal(title) {
+            $('#confirmationModal .modal-header h3').text(title);
+            $('#confirmationModal').modal();
+        }
+
+        $('#confirmationModal').on('show', function () {
+            $('#confirmationModal .modal-body .alert').hide();
+            $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+            $('#confirmationModal .close').removeAttr('disabled');
+        });
+
+        $('#confirmationModal').on('hide', function () {
+            $('#confirmationModalSubmit').unbind('click');
+        });
+
+        function ajaxMemberRequestSubmit(dataTable, row) {
+            $('#confirmationModal .modal-footer .btn').attr('disabled', 'disabled');
+            $('#confirmationModal .close').attr('disabled', 'disabled');
+            var url = /*[[@{/manager/userRequest}]]*/ '/manager/userRequest';
+            $.post(url, tmpOptions, function (data) {
+                if (data.result) {
+                    $('#confirmationModal .modal-body .alert-error').hide();
+                    $('#confirmationModal .modal-body .alert-success').show();
+                    if (tmpOptions.status) {
+                        var newRow = $('<tr>').attr('data-user-id', $(row).attr('data-user-id'));
+                        var checkBoxTD = $('<td>').append($('<input>').addClass('check').attr('type', 'checkbox'));
+                        var nameTD = $('<td>').text($(row).attr('data-user-name'));
+                        var emailTD = $('<td>').text($(row).attr('data-user-email'));
+                        var roleTD = $('<td>').text($(row).find('.select-td').find('select option:selected').text());
+
+                        newRow.append(checkBoxTD).append(nameTD).append(emailTD).append(roleTD);
+
+                        $membersTable.fnAddTr($(newRow).get(0), true);
+                    }
+
+                    dataTable.fnDeleteRow(row);
+                    tmpOptions = {};
+                    hideModal(500);
+                    checkAndHidePendingRequests();
+                } else {
+                    $('#confirmationModal .modal-body .alert-error').show();
+                    $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                    $('#confirmationModal .close').removeAttr('disabled');
+                }
+            });
+        }
+
+        function ajaxRemoveMemberSubmit(dataTable) {
+            $('#confirmationModal .modal-footer .btn').attr('disabled', 'disabled');
+            $('#confirmationModal .close').attr('disabled', 'disabled');
+            var url = /*[[@{/manager/removeUsers}]]*/ '/manager/removeUsers';
+            $.ajax({
+                url:url,
+                data:tmpOptions,
+                type:"POST",
+                success:function (data) {
+                    if (data.result) {
+                        $('#confirmationModal .modal-body .alert-error').hide();
+                        $('#confirmationModal .modal-body .alert-success').show();
+                        $(tmpSelectedRows).each(function () {
+                            dataTable.fnDeleteRow(this);
+                        });
+                        tmpOptions = {};
+                        tmpSelectedRows = [];
+                        hideModal(500);
+                    } else {
+                        $('#confirmationModal .modal-body .alert-error').show();
+                        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                        $('#confirmationModal .close').removeAttr('disabled');
+                    }
+                }
+            });
+        }
+
+        function acceptPendingRequest(row) {
+            var requestId = $(row).attr('data-request-id');
+            var userRole = $(row).children('td.select-td').children('select').val();
+            tmpOptions = { requestId:requestId, status:true, userRole:userRole };
+            var title = /*[[#{desktop.manageGroup.confirmation.memberRequest.accept}]]*/ 'Accept Member Request';
+            showConfirmationModal(title);
+            $('#confirmationModalSubmit').click(function () {
+                ajaxMemberRequestSubmit($pendingRequestsTable, row);
+            });
+        }
+
+        $('#pendingRequestsTable').on('click', '.declineRequest', function() {
+            var row = $(this).closest('tr').get(0);
+            var requestId = $(row).attr('data-request-id');
+            tmpOptions = { requestId:requestId, status:false };
+            var title = /*[[#{desktop.manageGroup.confirmation.memberRequest.decline}]]*/ 'Decline Member Request';
+            showConfirmationModal(title);
+            $('#confirmationModalSubmit').click(function () {
+                ajaxMemberRequestSubmit($pendingRequestsTable, row);
+            });
+        });
+
+        $('#membersTableRemoveBtn').on('click', function (event) {
+            event.preventDefault();
+            var memberIdsToRemove = [];
+
+            var $dataTable = $(this).data('table');
+
+            var data = $dataTable.$('tr.row_selected');
+
+            $(data).each(function () {
+                memberIdsToRemove.push($(this).attr('data-user-id'));
+                tmpSelectedRows.push(this);
+            });
+
+            tmpOptions = { groupId:groupId, userIds:memberIdsToRemove };
+            var title = /*[[#{desktop.manageGroup.confirmation.removeMembers}]]*/ 'Remove Members';
+            showConfirmationModal(title);
+            $('#confirmationModalSubmit').click(function () {
+                ajaxRemoveMemberSubmit($dataTable);
+            });
+        });
+
+        $('#membersTable').on('click', '.check-all', function() {
+            var checked = $(this).is(':checked');
+
+            var $dataTable = $(this).closest('table').data('table');
+
+            $dataTable.$('td > :checkbox').each(function () {
+                if (checked) {
+                    $(this).attr('checked', 'checked');
+                    $(this).closest('tr').addClass('row_selected');
+                } else {
+                    $(this).removeAttr('checked');
+                    $(this).closest('tr').removeClass('row_selected');
+                }
+            });
+
+            checkButtonState($dataTable, $('#membersTableRemoveBtn'));
+        });
+
+        $('#membersTable').on('click', '.check', function() {
+            var checked = $(this).attr('checked')
+
+            if (checked) {
+                $(this).closest('tr').addClass('row_selected');
+            } else {
+                $(this).closest('tr').removeClass('row_selected');
+            }
+
+            checkButtonState($membersTable, $('#membersTableRemoveBtn'));
+        });
+
+        var pendingRequestsExist = /*[[${#bools.isTrue(hasPendingRequests)}]]*/ false;
+        if (pendingRequestsExist) {
+            $($pendingRequestsTable.fnGetNodes()).each(function() {
+                $(this).on('submit', 'form', function() {
+                    var row = $(this).closest('tr').get(0);
+                    acceptPendingRequest(row);
+                    return false;
+                });
+            });
+        }
+
+        function checkAndHidePendingRequests() {
+            //        var rows = $pendingRequestsTable.fnGetData().length;
+            if ($pendingRequestsTable.fnGetData().length == 0) {
+                $('#pendingRequestsSection').hide();
+                $('#membersTabAlertIcon').hide();
+            }
+        }
+
+        function checkButtonState(dataTable, button) {
+            if (!dataTable || !button) {
+                return;
+            }
+
+            var checkedLength = dataTable.$('td :checkbox:checked').length;
+
+            if (checkedLength > 0) {
+                $(button).removeAttr('disabled');
+            } else {
+                $(button).attr('disabled', 'disabled');
+            }
+        }
+
+    });
+    /*]]>*/
+</script>
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+        <div class="span10">
+
+            <ul class="breadcrumb">
+                <li class="active">
+                    <a href="#" th:text="${group.name}" th:if="${#bools.isTrue(isEdit)}"/>
+                    <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageGroup.createGroup}">Create Group</a>
+                </li>
+            </ul>
+
+            <header class="jumbotron subhead" id="overview">
+                <h1 th:if="${#bools.isTrue(isEdit)}" style="text-align: left" th:text="#{desktop.manageGroup.manageGroup}">Manage Group</h1>
+
+                <h1 th:if="${#bools.isFalse(isEdit)}" style="text-align: left" th:text="#{desktop.manageGroup.createGroup}">Create Group</h1>
+
+                <p class="lead" th:if="${#bools.isTrue(isEdit)}" th:text="#{desktop.manageGroup.manageInfo}">
+                    Manage the information for this group.
+                </p>
+
+                <p class="lead" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageGroup.enterInfo}">
+                    Enter information for your new group.
+                </p>
+            </header>
+
+            <div class="tabbable">
+
+                <ul id="tab" class="nav nav-tabs">
+                    <li class="active dropdown">
+                        <a href="#" th:text="#{desktop.manageGroup.group}" th:if="${#bools.isFalse(isEdit)}">Group</a>
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" th:text="#{desktop.manageGroup.group}" th:if="${#bools.isTrue(isEdit)}">Group</a>
+                        <ul class="dropdown-menu" th:if="${#bools.isTrue(isEdit)}">
+                            <li><a href="#group" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
+                            <li class="divider" th:if="${user.systemOrOrganizationAdmin}"></li>
+                            <li th:if="${user.systemOrOrganizationAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${group.id} + '/GROUP'" th:if="${isEdit}" th:text="#{desktop.manageGroup.preferences}">Preferences</a></li>
+                        </ul>
+                    </li>
+                    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                            <span th:text="#{desktop.manageGroup.applications}">Applications</span>
+                            <b class="caret"/>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#applications" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
+                            <li class="divider"></li>
+                            <li><a th:href="@{/manager/addApplication/} + ${group.id}" th:text="#{desktop.manageGroup.createNew}">Create New</a></li>
+                        </ul>
+
+                    </li>
+                    <li id="membersTab" th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <span th:text="#{desktop.manageGroup.members}">Members</span>
+                            <i id="membersTabAlertIcon" class="icon-exclamation-sign icon-black" th:if="${#bools.isTrue(hasPendingRequests)}"/>
+                            <b class="caret"/>
+                        </a>
+
+                        <ul class="dropdown-menu">
+                            <li><a href="#members" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
+                            <li class="divider"></li>
+                            <li><a href="inviteUserTH.html.html" th:href="@{/manager/inviteUser/}  + ${group.id} + '/GROUP'" th:if="${isEdit}" th:text="#{desktop.manageGroup.inviteMember}">Invite
+                                Member</a></li>
+                            <li><a href="inviteesTH.html" th:href="@{/manager/invitesPending/}  + ${group.id} + '/GROUP'" th:if="${isEdit}" th:text="#{desktop.manageGroup.invitesPending}">Invites Pending</a></li>
+                        </ul>
+
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div id="group" class="tab-pane active">
+                        <div class="row-fluid">
+                            <div class="span7">
+                                <div class="row well">
+                                    <form id="groupForm" th:object="${group}" th:action="@{'/manager/uploadGroup'}" method="POST"
+                                          enctype="multipart/form-data" class="form-horizontal">
+                                        <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                                            <h1 th:text="#{errors.header}"/>
+                                            <ul>
+                                                <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                                            </ul>
+                                        </div>
+                                        <fieldset>
+                                            <input type="hidden" id="id" name="id" th:value="*{id}"/>
+
+                                            <div class="control-group">
+                                                <label class="control-label" for="name" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageGroup.name}]]</label>
+
+                                                <div class="controls">
+                                                    <input id="name" name="name" class="field" th:value="*{name}" autofocus="autofocus" required="required" type="text"/>
+                                                </div>
+                                            </div>
+
+                                            <div class="control-group">
+                                                <label class="control-label" for="organizationId" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageGroup.selectOrg}]]</label>
+
+                                                <div class="controls" th:if="${not #lists.isEmpty(organizations)}">
+                                                    <select id="organizationId" name="organizationId" required="required">
+                                                        <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                        <option th:each="organization : ${organizations}"
+                                                                th:selected="*{organizationId} == ${organization.id}"
+                                                                th:value="${organization.id}" th:text="${organization.name}"></option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="control-group" th:if="${#bools.isTrue(isEdit)}">
+                                                <label class="control-label" id="accessCodeLabel" for="accessCode" th:text="#{desktop.manageGroup.accessCode}">Access Code</label>
+
+                                                <div class="controls">
+                                                    <p id="accessCode" th:inline="text">[[${accessCode}]]</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-actions">
+                                                <button type="submit" class="btn btn-primary" th:text="#{desktop.manageGroup.submit}">Submit</button>
+                                            </div>
+
+                                        </fieldset>
+
+                                        <div class="alert alert-info">
+                                            <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                                        </div>
+
+                                    </form>
+                                </div>
+                                <div class="row" th:if="${domainStatistics != null}">
+                                    <h3 th:text="#{desktop.manager.domainStatistics.statistics}"></h3>
+                                    <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalUsers(${domainStatistics.totalUsers})}"></span>
+                                    <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalApplications(${domainStatistics.totalApplications})}"></span>
+                                    <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalApplicationVersions(${domainStatistics.totalApplicationVersions})}"></span>
+                                    <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalMegabyteStorageUsed(${#numbers.formatDecimal(domainStatistics.totalMegabyteStorageAmount,1,3)})}"></span>
+                                </div>
+                            </div>
+                            <div class="span5">
+                                <dl>
+                                    <dt th:text="#{desktop.manageGroup.name}">Name</dt>
+                                    <dd th:text="#{desktop.manageGroup.name.help}">This is the name of the group that will be visible to users.</dd>
+                                    <dt th:text="#{desktop.manageGroup.name}">Organization</dt>
+                                    <dd th:text="#{desktop.manageGroup.org.help}">This is the organization to which the group belongs.</dd>
+                                    <dt th:if="${#bools.isTrue(isEdit)}" th:text="#{desktop.manageGroup.accessCode}">Access Code</dt>
+                                    <dd th:if="${#bools.isTrue(isEdit)}" th:text="#{desktop.manageGroup.accessCode.help}">In order for users to belong to this group, they must perform a group request using this access code.</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="applications" class="tab-pane" th:if="${#bools.isTrue(isEdit)}">
+                        <section class="">
+                            <h2 th:if="${#lists.isEmpty(applications)}" th:text="#{desktop.manageGroup.noApps}">There are currently no applications owned by this group.</h2>
+                            <table id="applicationsTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" th:if="${not #lists.isEmpty(applications)}">
+                                <thead>
+                                <tr>
+                                    <th th:text="#{desktop.manageGroup.name}">Name</th>
+                                    <th th:text="#{desktop.manageGroup.description}">Description</th>
+                                    <th th:text="#{desktop.manageGroup.type}">Type</th>
+                                    <th th:text="#{desktop.manageGroup.edit}">Edit</th>
+                                    <th th:text="#{desktop.manageGroup.delete}">Delete</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="application : ${applications}">
+                                    <td th:text="${application.name}">1</td>
+                                    <td th:text="${application.description}" class="striphtml">My Name</td>
+                                    <td th:text="#{${application.applicationType.messageKey}}">Type</td>
+                                    <td><a href="" th:href="@{'/manager/editApplication/' + ${application.id}}" th:text="#{desktop.manageGroup.edit}">Edit</a></td>
+                                    <td><a href="" th:href="@{'/manager/deleteApplication/' + ${application.id}}" th:text="#{desktop.manageGroup.delete}">Delete</a></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    </div>
+                    <div id="members" class="tab-pane" th:if="${#bools.isTrue(isEdit)}">
+                        <div id="pendingRequestsSection" th:if="${#bools.isTrue(hasPendingRequests)}" class="well">
+                            <div class="alert alert-block" th:inline="text">
+                                <h4 class="alert-heading" th:text="#{desktop.manageGroup.warning}">Warning!</h4>
+                                [[#{desktop.manageGroup.pendingGroupRequests}]]
+                            </div>
+
+                            <table id="pendingRequestsTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                                <thead>
+                                <tr>
+                                    <th th:text="#{desktop.manageGroup.name}">Name</th>
+                                    <th th:text="#{desktop.manageGroup.role}">Role</th>
+                                    <th th:text="#{desktop.manageGroup.accept}">Accept</th>
+                                    <th th:text="#{desktop.manageGroup.deny}">Deny</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="request,iterStat : ${pendingRequests}" th:attr="data-request-id=${request.id},data-user-id=${request.user.id},data-user-name=${request.user.fullName},data-user-email=${request.user.email}">
+                                    <form>
+                                        <td th:text="${request.user.fullName} + ' (' + ${request.user.email} + ')'">1</td>
+                                        <td class="select-td">
+                                            <select id="testId" required="required">
+                                                <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                <option th:each="role : ${userRoles}" th:value="${role}"
+                                                        th:text="#{${role.messageKey}}"></option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="acceptRequest" th:value="*{iterStat.index}" th:text="#{desktop.manageGroup.accept}">Accept</button>
+                                        </td>
+                                    </form>
+
+                                    <td>
+                                        <button class="declineRequest" th:value="*{iterStat.index}" th:text="#{desktop.manageGroup.decline}">Decline</button>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="" id="membersSection">
+                            <header class="jumbotron subhead" id="membersHeader">
+
+                                <p class="lead" th:text="#{desktop.manageGroup.manageMembers}">
+                                    Manage the members currently assigned to this group.
+                                </p>
+
+                            </header>
+                            <div>
+                                <div id="membersNavBar" style="margin-bottom: 9px;">
+                                    <button id="membersTableRemoveBtn" data-table="#membersTable" class="btn btn-danger" href="" disabled="disabled" th:inline="text"><i class="icon-remove icon-white"/> [[#{desktop.manageGroup.removeSelected}]]</button>
+                                </div>
+                                <table id="membersTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th><input type="checkbox" class="check-all"/></th>
+                                        <th th:text="#{desktop.manageGroup.name}">Name</th>
+                                        <th th:text="#{desktop.manageGroup.email}">Email</th>
+                                        <th th:text="#{desktop.manageGroup.role}">Role</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="groupUser : ${groupUsers}" th:attr="data-user-id=${groupUser.user.id}">
+                                        <td><input class="check" type="checkbox"/></td>
+                                        <td th:text="${groupUser.user.fullName}">User Name</td>
+                                        <td th:text="${groupUser.user.email}">User Email</td>
+                                        <td th:text="#{${groupUser.role.userRole.messageKey}}">Role</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+    <section th:include="/includesTH :: table_scripts"/>
+</section>
+
+</body>
+</html>

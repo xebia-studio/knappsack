@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='Knappsack'">
+<head th:substituteby="/mobile/includesTH :: mobileHead"></head>
+<body>
+<div data-role="page">
+
+    <div data-role="header" data-id="mainHeader" class="header">
+        <a th:href="@{/home}" data-icon="back" data-direction="reverse" th:text="#{mobile.categories.back}">Back</a>
+
+        <h1>Knappsack</h1>
+    </div>
+
+    <div data-role="content">
+        <span id="noResults" class="inset inset_span center" th:if="${#lists.isEmpty(categories)}" th:text="#{mobile.categories.noCategories}">No Categories</span>
+        <ul data-role="listview" data-inset="true" data-filter="false" th:if="${not #lists.isEmpty(categories)}">
+            <li th:each="category : ${categories}">
+                <a th:href="@{'/categories/' + ${category.id}}" data-transition="slide">
+                    <div class="li-floater" th:if="${#bools.isTrue(category.icon)}">
+                        <div class="thumb thumb-shadow">
+                            <img src="" th:src="@{${category.icon.url}}" class="li-thumbnail" />
+                        </div>
+                    </div>
+                    <h3 th:text="${category.name}"></h3>
+                    <p th:text="${category.description}"></p></a>
+            </li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>

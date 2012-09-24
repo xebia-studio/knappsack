@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active=${subNav},title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+        <div class="span10">
+
+            <ul class="breadcrumb">
+                <li>
+                    <a th:href="@{'/manager/editOrg/' + ${domain.id}}" th:text="${domain.name}" th:if="${domainType eq 'ORGANIZATION'}"/>
+                    <a th:href="@{'/manager/editGroup/' + ${domain.id}}" th:text="${domain.name}" th:if="${domainType eq 'GROUP'}"/>
+                    <span class="divider">/</span>
+                </li>
+                <li class="active">
+                    <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.domainConfiguration.preferences}">Preferences</a>
+                </li>
+            </ul>
+
+            <header class="jumbotron subhead" id="overview">
+                <h1 th:if="${#bools.isTrue(isEdit)}" style="text-align: left" th:text="#{desktop.domainConfiguration.managePreferences}">Manage Preferences</h1>
+
+                <p class="lead" th:if="${#bools.isTrue(isEdit)}" th:text="#{desktop.domainConfiguration.update}">
+                    Update the settings for this domain.
+                </p>
+
+            </header>
+
+            <div class="row-fluid">
+                <div class="span7 well">
+
+                    <div class="alert alert-success" th:if="${#bools.isTrue(success)}">
+                        <strong th:text="#{desktop.domainConfiguration.success}"></strong>
+                    </div>
+
+                    <form id="domainConfigurationForm" th:object="${domainConfiguration}" th:action="@{/manager/saveDomainConfiguration}"
+                          method="POST" class="form-horizontal">
+                        <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                            <h1 th:text="#{errors.header}"/>
+                            <ul>
+                                <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                            </ul>
+                        </div>
+                        <fieldset>
+                            <input type="hidden" th:field="*{id}"/>
+                            <input type="hidden" th:field="*{domainId}"/>
+                            <input type="hidden" th:field="*{domainType}"/>
+
+                            <div class="control-group">
+                                <label class="control-label" for="disabled" style="" th:text="#{desktop.domainConfiguration.disabled}">Disabled</label>
+
+                                <div class="controls">
+                                    <input type="checkbox" th:field="*{disabled}" placeholder="Disabled"/>
+                                </div>
+                            </div>
+                            <!--DisableLimitValidations-->
+                            <div class="control-group">
+                                <label class="control-label" for="disableLimitValidations" style="" th:text="#{desktop.domainConfiguration.disableLimitValidations}">Disable Limit Validations</label>
+
+                                <div class="controls">
+                                    <input type="checkbox" th:field="*{disableLimitValidations}" placeholder="Disable Limit Validations"/>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" for="userLimit"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.domainConfiguration.userLimit}">User Limit</span></label>
+
+                                <div class="controls">
+                                    <input id="userLimit" name="userLimit" th:value="*{userLimit}" placeholder="User Limit" required="required"
+                                           autofocus="autofocus" type="number"/>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" for="applicationLimit"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.domainConfiguration.applicationLimit}">Application Limit</span></label>
+
+                                <div class="controls">
+                                    <input id="applicationLimit" name="applicationLimit" th:value="*{applicationLimit}" placeholder="Application Limit" required="required" type="number"/>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="applicationVersionLimit"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.domainConfiguration.applicationVersionLimit}">Application Version Limit</span></label>
+
+                                <div class="controls">
+                                    <input id="applicationVersionLimit" name="applicationVersionLimit" th:value="*{applicationVersionLimit}" placeholder="Application Version Limit" required="required" type="number"/>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="megabyteStorageLimit"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.domainConfiguration.storageLimit}">Storage Limit (MB)</span></label>
+
+                                <div class="controls">
+                                    <input id="megabyteStorageLimit" name="megabyteStorageLimit" th:value="*{megabyteStorageLimit}" placeholder="Storage Limit (MB)" required="required" type="number"/>
+                                </div>
+                            </div>
+
+                            <!--<input type="hidden" id="domainId" name="domainId" th:value="${parentOrgId}"/>-->
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" th:text="#{desktop.domainConfiguration.submit}">Submit</button>
+                            </div>
+                        </fieldset>
+
+                        <div class="alert alert-info">
+                            <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="span5">
+                    <dl>
+                        <dt th:text="#{desktop.domainConfiguration.disabled}">Disabled</dt>
+                        <dd th:text="#{desktop.domainConfiguration.disabled.help}">Disable all uploads, downloads and email services.</dd>
+                        <dt th:text="#{desktop.domainConfiguration.disableLimitValidations}">Disable Limit Validations</dt>
+                        <dd th:text="#{desktop.domainConfiguration.disableLimitValidations.help}">Ignore all limits as configured in this section.  No application, version, storage or bandwidth limits will apply.</dd>
+                        <dt th:text="#{desktop.domainConfiguration.userLimit}">User Limit</dt>
+                        <dd th:text="#{desktop.domainConfiguration.userLimit.help}">This amount represents how many users are allowed in your organization.</dd>
+                        <dt th:text="#{desktop.domainConfiguration.applicationLimit}">Application Limit</dt>
+                        <dd th:text="#{desktop.domainConfiguration.applicationLimit.help}">The total number of applications allowed for your organization.</dd>
+                        <dt th:text="#{desktop.domainConfiguration.applicationVersionLimit}">Application Version Limit</dt>
+                        <dd th:text="#{desktop.domainConfiguration.applicationVersionLimit.help}">The total number of versions for an individual application.</dd>
+                        <dt th:text="#{desktop.domainConfiguration.storageLimit}">Storage Limit</dt>
+                        <dd th:text="#{desktop.domainConfiguration.storageLimit.help}">The total amount of physical storage allowed for all of your organization's applications.</dd>
+                    </dl>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+</body>
+</html>

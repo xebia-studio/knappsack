@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com" th:with="title=${selectedCategory.name}">
+<head th:substituteby="/includesTH :: head"></head>
+<body>
+
+<div th:substituteby="/includesTH :: header"></div>
+
+<div class="container">
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+
+            var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
+
+            $('.striphtml').striphtml();
+
+            var $applicationsTable = $('table').dataTable( {
+                "sDom": "<'table-inline'<'row'<'span6'l><'floatright'f>r>t<'row'<'span6'i><'floatright'p>>",
+                "sPaginationType": "bootstrap",
+                "iDisplayLength": 5,
+                "oLanguage": {
+                    "sLengthMenu": '<select>'+
+                            '<option value="5">5</option>'+
+                            '<option value="10">10</option>'+
+                            '<option value="25">25</option>'+
+                            '<option value="50">50</option>'+
+                            '<option value="-1">All</option>'+
+                            '</select> ' + recordsPerPageText
+                },
+                "aoColumns": [
+                    { "bSortable": false, "bSearchable": false, "sWidth": "100%"},
+                    { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%" },
+                    { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%" }
+                ],
+                "bAutoWidth": false
+            });
+
+            $('table').show();
+
+            $('tr', $applicationsTable).click(function() {
+                var url = /*[[@{/detail/}]]*/ '/detail/';
+                url += $(this).attr('data-id');
+                window.location = url;
+            });
+
+            var tablePlaceholderText = /*[[#{desktop.category.results.table.search.placeholder}]]*/ 'Application Name or Type'
+
+            $('.dataTables_filter input').attr("placeholder", tablePlaceholderText);
+
+        });
+        /*]]>*/
+    </script>
+
+    <header class="jumbotron subhead" id="overview">
+        <h1 th:text="#{desktop.category.results.overview.header}">Applications</h1>
+
+        <p class="lead" th:inline="text">
+            <span th:text="#{desktop.category.results.overview.lead}">All applications for category</span> <strong th:text="${selectedCategory.name}">Category name</strong>
+        </p>
+    </header>
+
+    <section class="">
+
+        <table id="applicationsTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" title="Applications" th:if="${not #lists.isEmpty(applications)}" style="display: none;">
+            <thead style="display: none;">
+            <tr>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="application : ${applications}" style="max-height: 72px; overflow-y: hidden; cursor: pointer;" th:attr="data-id=${application.id}" th:title="${application.name} + ' - ' + #{${application.applicationType.messageKey}}">
+                <td style="vertical-align: middle;">
+                    <div class="icon" style="float: left; margin-right: 8px;">
+                        <img th:src="@{${application.icon.url}}" th:if="${#bools.isTrue(application.icon)}" style="height: 72px; width: 72px;"/>
+                        <img src="" ks:src="@{/resources/img/default_icon.png}" style="height: 72px; width: 72px;" th:if="${#bools.isFalse(application.icon)}"/>
+                    </div>
+                    <div class="overflow-outer">
+                        <h3 style="margin: 0; display: inline;"><span th:text="${application.name} + ' - ' + #{${application.applicationType.messageKey}}">Application Name</span></h3> <a style="display: inline;" th:href="@{'/manager/editApplication/' + ${application.id}}" ks:canEditApplication="${application.id}">Edit</a>
+                        <div class="overflow-inner app-description">
+                            <span class="lead striphtml" th:text="${application.description}">description text</span>
+                        </div>
+                    </div>
+                </td>
+                <td th:text="${application.name}"/>
+                <td th:text="#{${application.applicationType.messageKey}}"/>
+            </tr>
+            </tbody>
+        </table>
+        <div class="alert alert-warning" th:if="${#lists.isEmpty(applications)}">
+            <h3 id="noResults1" th:if="${#lists.isEmpty(applications)}" th:text="#{desktop.category.results.empty.applications(${selectedCategory.name})}">No Applications for specified category.</h3>
+            <h3 id="noResults2" th:if="${not #bools.isTrue(selectedCategory)}" th:text="#{desktop.category.results.empty.applications.generic}">No applications for specified category.</h3>
+        </div>
+    </section>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+    <section th:include="/includesTH :: table_scripts"/>
+</section>
+
+</body>
+</html>

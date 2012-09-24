@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body class="lightNav">
+
+<div class="span2" th:fragment="sidebar-nav">
+
+    <script type="text/javascript" th:inline="javascript">
+
+        var $window = $(window)
+
+        /*<![CDATA[*/
+        $(document).ready(function () {
+
+            var domHeight = $(document).height();
+
+            $(document).on('DOMSubtreeModified', function() {
+                var height = $(this).height();
+                if (!isNaN(height) && !isNaN(domHeight) && height != domHeight) {
+                    domHeight = height;
+                    $('[data-spy="affix"]').each(function () {
+                      $(this).affix('refresh')
+                    });
+                }
+            });
+
+            // side bar
+            $('.bs-docs-sidenav').affix({
+                offset: {
+                    top: 0,
+                    bottom: 183
+                }
+            });
+
+            $(window).scroll(function() {
+                var width = $('#sidebar').outerWidth();
+                if (!isNaN(width) && width > 0) {
+                    $('#sidenav').width(width);
+                }
+            });
+
+            $(window).resize(function() {
+                var width = $('#sidebar').outerWidth();
+                if (!isNaN(width) && width > 0) {
+                    $('#sidenav').width(width);
+                }
+            });
+
+            var active = /*[[${active}]]*/ '';
+
+            if (active != '') {
+                $('#' + active).addClass('active');
+            }
+        });
+        /*]]>*/
+    </script>
+
+    <div id="sidebar" class="bs-docs-sidebar" style="display: inline-block; width: 100%;">
+        <ul id="sidenav" class="nav nav-list bs-docs-sidenav">
+            <li id="managerNav">
+                <a href="#" th:href="@{/manager}" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.home}]]</a>
+            </li>
+            <li id="storageNav" th:if="${user.systemAdmin}">
+                <a href="storageConfigsTH.html" th:href="@{/manager/viewStorageConfigs}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.storageConfigurations}]]</a>
+            </li>
+            <li id="organizationNav" th:if="${user.systemOrOrganizationAdmin}">
+                <a href="organizationsTH.html" th:href="@{/manager/viewOrgs}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.organizations}]]</a>
+            </li>
+            <li id="groupNav">
+                <a href="groupsTH.html" th:href="@{/manager/viewGroups}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.groups}]]</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>

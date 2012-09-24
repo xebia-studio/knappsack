@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_login=${true},title=#{desktop.error.403.title}">
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+<div th:substituteby="/includesTH :: header"></div>
+
+<div class="container">
+    <div class="alert alert-error" style="text-align: center;" th:text="#{desktop.error.403}">
+        We're sorry, but you don't have permission to access that page.
+    </div>
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+
+</body>
+
+</html>

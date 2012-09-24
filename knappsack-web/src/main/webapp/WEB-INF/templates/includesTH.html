@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com">
+
+<head th:fragment="head">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" th:content="#{knappsack.description}" content="All your apps, packed up, and ready to go" />
+    <meta name="author" th:content="#{knappsack.author}" content="Sparc LLC" />
+
+    <title th:text="#{knappsack.title(${title})}">Knappsack</title>
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+    <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!--<link href="../../resources/bootstrap/css/bootstrap.css"-->
+    <!--ks:href="@{/resources/bootstrap/css/bootstrap.css}" rel="stylesheet"/>-->
+    <link href="../../resources/bootstrap/css/bootstrap.css"
+          ks:href="@{/resources/bootstrap/css/bootstrap.css}" rel="stylesheet"/>
+    <link href="../../resources/bootstrap/css/bootstrap-responsive.css"
+          ks:href="@{/resources/bootstrap/css/bootstrap-responsive.css}" rel="stylesheet"/>
+    <link href="../../resources/bootstrap/css/docs.css" ks:href="@{/resources/bootstrap/css/docs.css}"
+          rel="stylesheet"/>
+    <link href="../../resources/bootstrap/css/custom.css"
+          ks:href="@{/resources/bootstrap/css/custom.css}" rel="stylesheet"/>
+
+    <link href="../../resources/css/login.css" ks:href="@{/resources/css/login.css}"
+          rel="stylesheet" th:if="${include_login}"/>
+
+    <link href="../../resources/DataTables/css/DT_bootstrap.css"
+          ks:href="@{/resources/DataTables/css/DT_bootstrap.css}" rel="stylesheet"/>
+    <link href="../../resources/css/prettify.css"
+          ks:href="@{/resources/css/prettify.css}" rel="stylesheet"/>
+
+    <link rel="shortcut icon" href="../../resources/img/favicon.png" ks:href="@{/resources/img/favicon.png}"/>
+
+    <script src="../../resources/js/jquery-1.7.1.min.js" ks:src="@{/resources/js/jquery-1.7.1.min.js}"
+            type="text/javascript"></script>
+
+    <script src="../../resources/js/knappsack.js" ks:src="@{/resources/js/knappsack.js}"
+            type="text/javascript"></script>
+
+    <script src="../../resources/js/openid.js" ks:src="@{/resources/js/openid.js}"
+            type="text/javascript" th:if="${include_login}"></script>
+
+    <script type="text/javascript">
+
+        $(document).ready(function() {
+
+            $('a[rel*=external]').click(function(){
+                window.open($(this).attr('href'));
+                return false;
+            });
+
+            $('.html').escapeHtml();
+            $('.striphtml').striphtml();
+
+        });
+
+    </script>
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top" th:fragment="header">
+    <div class="navbar-inner">
+        <div class="container-fluid">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+            <a class="brand" th:href="@{/}" href="/"><img src="../../resources/img/logo-header.png.png"
+                                                          ks:src="@{/resources/img/logo-header.png}"
+                                                          th:alt="#{desktop.includes.logo.alt}" alt="Knappsack"/></a>
+
+            <div class="nav-collapse" th:if="${user}">
+                <ul class="nav nav-pills">
+                    <li><a href="#" th:href="@{/home}" th:unless="${include_activate}" th:title="#{desktop.includes.header.home.title}" title="Home" th:text="#{desktop.includes.header.home}">Home</a></li>
+                    <li><a href="categoriesTH.html" th:href="@{/categories}" th:unless="${include_activate}" th:title="#{desktop.includes.header.categories.title}" title="Categories" th:text="#{desktop.includes.header.categories}">Categories</a></li>
+                    <!--<li><a href="searchTH.html" th:href="@{/search}" th:unless="${include_activate}" th:title="#{desktop.includes.header.search.title}" title="Search" th:text="#{desktop.includes.header.search}">Search</a></li>-->
+                    <li><a href="group_accessTH.html" th:href="@{/group/requestAccess}" th:unless="${include_activate}" th:title="#{desktop.includes.header.request.group.access.title}" title="Request Group Access" th:text="#{desktop.includes.header.request.group.access}">Request Group Access</a></li>
+                    <li><a href="manager/managerHomeTH.html" th:href="@{/manager/}" th:if="${user.anyAdmin}" th:unless="${include_activate}" th:title="#{desktop.includes.header.manage.title}" title="Manage Application" th:text="#{desktop.includes.header.manage}">Manage Application</a></li>
+                </ul>
+                <!--<div class="logoutNav">-->
+                <ul class="nav nav-pills pull-right">
+                    <li class="dropdown" id="account">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#"><span th:text="${user.fullName + ' (' + user.email + ')'}">User</span> <b class="caret"/> </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a id="changePassword" href="/profile/changePassword" th:href="@{/profile/changePassword}" th:text="#{desktop.includes.header.account.menu.change.password}">Change Password</a>
+                            </li>
+                            <li>
+                                <a id="logout" href="/auth/logout" th:href="@{/auth/logout}" th:text="#{desktop.includes.header.account.menu.logout}">Logout</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="nav-collapse" th:unless="${user}">
+                <div class="loginNav" th:inline="text">
+                    <a class="btn btn-primary" href="auth/login" th:href="@{/auth/login}" th:title="#{desktop.includes.header.login.title}" title="Login" th:text="#{desktop.includes.header.login}">Login</a>
+                </div>
+            </div>
+
+            <!--/.nav-collapse -->
+        </div>
+    </div>
+</div>
+
+<footer class="footer" th:fragment="footer">
+    <div class="container-fluid">
+        <hr/>
+            <div class="span8">
+                <a href="http://www.sparcedge.com/"><strong>&copy; 2012 Sparc LLC</strong></a>
+                <br />
+                All rights reserved.
+            </div>
+
+            <div class="icons span4">
+                <ul class="pull-right">
+                    <li><a id = "facebookFooter" href="https://www.facebook.com/knappsackapp" class="facebook" rel="external" target="_blank" th:title="#{desktop.includes.footer.facebook.title}" title="Facebook" th:text="#{desktop.includes.footer.facebook}">Facebook</a>
+                    </li>
+                    <li><a id = "twitterFooter" href="https://twitter.com/knappsackapp" class="twitter" rel="external" target="_blank" th:title="#{desktop.includes.footer.twitter.title}" title="Twitter" th:text="#{desktop.includes.footer.twitter}">Twitter</a>
+                    </li>
+                </ul>
+            </div>
+    </div>
+</footer>
+
+<div></div>
+
+<section id="scripts">
+    <section th:fragment="required_scripts">
+        <script src="../../resources/js/prettify.js"
+                ks:src="@{/resources/js/prettify.js}" type="text/javascript"></script>
+        <script src="../../resources/bootstrap/js/bootstrap.min.js"
+                ks:src="@{/resources/bootstrap/js/bootstrap.min.js}"></script>
+    </section>
+
+    <section th:fragment="table_scripts">
+        <script src="../../resources/DataTables/js/jquery.dataTables.min.js"
+                ks:src="@{/resources/DataTables/js/jquery.dataTables.min.js}"></script>
+        <script src="../../resources/DataTables/js/DT_bootstrap.js"
+                ks:src="@{/resources/DataTables/js/DT_bootstrap.js}"></script>
+    </section>
+
+    <section th:fragment="wysiwyg_scripts">
+        <link href="../../resources/bootstrap-wysihtml5/css/bootstrap-wysihtml5-0.0.2.css"
+              ks:href="@{/resources/bootstrap-wysihtml5/css/bootstrap-wysihtml5-0.0.2.css}"
+              rel="stylesheet"/>
+        <script src="../../resources/bootstrap-wysihtml5/js/wysihtml5-0.3.0.min.js"
+                ks:src="@{/resources/bootstrap-wysihtml5/js/wysihtml5-0.3.0.min.js}" type="text/javascript"></script>
+        <script src="../../resources/bootstrap-wysihtml5/js/bootstrap-wysihtml5-0.0.2.min.js"
+                ks:src="@{/resources/bootstrap-wysihtml5/js/bootstrap-wysihtml5-0.0.2.min.js}" type="text/javascript"></script>
+    </section>
+
+    <section id="individual_scripts">
+        <script src="../../resources/bootstrap/js/bootstrap-inputmask.js"
+                ks:src="@{/resources/bootstrap/js/bootstrap-inputmask.js}" th:fragment="inputmask_script"></script>
+    </section>
+</section>
+
+<!--</div>-->
+
+<div id="confirmationModal" class="modal hide fade" style="display: none;" th:fragment="confirmation_modal">
+    <div class="modal-header">
+        <a class="close" data-dismiss="modal" th:text="#{desktop.alert.close}">x</a>
+        <h3 th:text="#{desktop.includes.confirmation.modal.title}">Title</h3>
+    </div>
+    <div class="modal-body">
+        <div class="alert alert-success" style="display: none;">
+            <h2 th:text="#{desktop.includes.confirmation.modal.success}">Success!!</h2>
+        </div>
+        <div class="alert alert-error" style="display: none;">
+            <h2 th:text="#{desktop.includes.confirmation.modal.failure}">An error has occurred. Please try again.</h2>
+        </div>
+        <p th:text="#{desktop.includes.confirmation.modal.body}">Are you sure you want to continue?</p>
+    </div>
+    <div class="modal-footer">
+        <a id="confirmationModalSubmit" href="#" class="btn btn-primary" th:text="#{desktop.includes.confirmation.modal.submit}">Yes</a>
+        <a id="modalCancel" href="#" class="btn" data-dismiss="modal" th:text="#{desktop.includes.confirmation.modal.cancel}">No</a>
+    </div>
+</div>
+
+</body>
+
+</html>

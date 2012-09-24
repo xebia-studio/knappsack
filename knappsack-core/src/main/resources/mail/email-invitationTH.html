@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack Invitation</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<p>
+    Hello!
+</p>
+
+
+<div th:if="${domainType eq 'ORGANIZATION'}">
+    <p th:inline="text" th:if="${#bools.isTrue(existingUser)}">
+        <span th:unless="${#strings.isEmpty(adminName)}"><b th:text="${adminName}"/> has added you </span>
+        <span th:if="${#strings.isEmpty(adminName)}">You have been added </span>
+        to <b>[[${invitationDomain}]]</b> at <a th:href="${url}">Knappsack</a>! No further action is necessary.
+    </p>
+
+    <p th:inline="text" th:if="${#bools.isFalse(existingUser)}">
+        <span th:unless="${#strings.isEmpty(adminName)}"><b th:text="${adminName}"/> has invited you </span>
+        <span th:if="${#strings.isEmpty(adminName)}">You have been invited </span>
+        to join <b>[[${invitationDomain}]]</b> at <a th:href="${url}">Knappsack</a>! Please follow the link and sign up at Knappsack in order
+        to access applications.
+    </p>
+</div>
+
+<div th:if="${domainType eq 'GROUP'}">
+    <p th:inline="text" th:if="${#bools.isTrue(existingUser)}">
+        <span th:unless="${#strings.isEmpty(adminName)}"><b th:text="${adminName}"/> has added you </span>
+        <span th:if="${#strings.isEmpty(adminName)}">You have been added </span>
+        to the group <b>[[${invitationDomain}]]</b> at <a th:href="${url}">Knappsack</a>! No further action is necessary.
+    </p>
+
+    <p th:inline="text" th:if="${#bools.isFalse(existingUser)}">
+        <span th:unless="${#strings.isEmpty(adminName)}"><b th:text="${adminName}"/> has invited you </span>
+        <span th:if="${#strings.isEmpty(adminName)}">You have been invited </span>
+        to join the group <b>[[${invitationDomain}]]</b> at <a th:href="${url}">Knappsack</a>! Please follow the link and sign up at Knappsack in order
+        to access applications.
+    </p>
+</div>
+
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+
+<p>
+    Regards, <br/>
+    &emsp; <em>The Knappsack Team</em>
+</p>
+</body>
+</html>

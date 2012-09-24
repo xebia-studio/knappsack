@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_login=${true},title='Knappsack'" >
+<head th:substituteby="/mobile/includesTH :: mobileHead">
+</head>
+<body>
+
+<div id="loginPage" data-role="page" data-dom-cache="false" data-url="#loginPage">
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        $('#loginPage').bind('pagebeforecreate', function() {
+            var activeTab = /*[[${activeTab}]]*/ 'login';
+
+            if (activeTab == 'register') {
+                $.mobile.changePage('#signUp', { transition : "flip" });
+            }
+        });
+
+        $('#loginPage').bind('pageinit', function() {
+
+            var imagePath = /*[[@{/resources/img/openid/}]]*/ '/resources/img/openid/';
+
+            $(providers).each(function() {
+                var anchor = $('<a>').attr('data-provider', this.url).addClass('openid_btn').css('background-image', 'url(' + imagePath + this.image + ')').css('background-repeat', 'no-repeat').css('background-position', 'center');
+                $('#openid_btns').append(anchor);
+            });
+
+            $('#openid_btns a').click(function(e) {
+                e.preventDefault();
+
+                var providerUrl = $(this).attr('data-provider');
+                $('#openid_identifier').val(providerUrl);
+
+                $('#openidForm').submit();
+            });
+
+            $('#loginForm').validate();
+
+            var error = /*[[${error}]]*/ 'Error';
+            var logout = /*[[${logout}]]*/ false;
+
+            if (logout == null) {
+                logout = false;
+            }
+
+            if ((error == null || error == "") && logout == true) {
+                $("#login-error").hide();
+
+                var logoutSuccess = /*mobile.login.logoutSuccess*/ "Successfully logged out!";
+                $("#login-header").text(logoutSuccess)
+            } else if (error != null && error != "" && logout == false ) {
+                $("#login-error").show();
+
+                var loginError = /*mobile.login.loginError*/ "Error while logging you in!";
+                $("#login-header").text(loginError)
+            } else {
+                $("#login-error").hide();
+
+                var welcome = /*mobile.login.welcome*/ "Welcome to Knappsack!";
+                $("#login-header").text(welcome)
+            }
+        });
+        /*]]>*/
+    </script>
+
+    <div data-role="header">
+        <h1>Login</h1>
+    </div>
+
+    <div data-role="content">
+
+        <div id="main">
+
+            <div class="main-header">
+                <h2 style="text-align: center" th:text="#{mobile.login.welcome}">Welcome to Knappsack!</h2>
+            </div>
+
+            <div class="login-header">
+                <p th:text="#{mobile.login.pleaseLogin}">Please login:</p>
+
+                <div id="login-error" class="alert alert-error" th:if="${#bools.isTrue(error)}">
+                    <p th:text="#{${error.messageKey}}"/>
+                </div>
+
+                <div th:if="${registrationSuccess != null}">
+                    <div class="alert alert-success" th:if="${#bools.isTrue(registrationSuccess)}">
+                        <p th:inline="text">[[#{registration.success}]]</p>
+                    </div>
+                    <div class="alert alert-error" th:if="${#bools.isFalse(registrationSuccess)}">
+                        <p th:inline="text">[[#{registration.failure}]]</p>
+                    </div>
+                </div>
+            </div>
+
+            <form id="openidForm" th:action="@{/j_spring_openid_security_check}" method="post" data-ajax="false">
+                <input type="hidden" name="action" value="verify" />
+                <input id="openIdRememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked" data-role="none" style="display: none;"/>
+                <fieldset>
+                    <div id="openid_choice">
+                        <div id="openid_btns"></div>
+                    </div>
+                    <input id="openid_identifier" name="openid_identifier" type="hidden" />
+                </fieldset>
+            </form>
+
+            <div class="hr"/>
+
+            <form id="loginForm" action="/j_spring_security_check" th:action="@{/j_spring_security_check}" method="post" class="form-horizontal" data-ajax="false">
+                <input type="hidden" name="action" value="verify"/>
+
+                <fieldset>
+                    <div class="control-group">
+                        <input type="email" id="j_username" name="j_username" class="required email" required="required" placeholder="Email:" value=""/>
+                    </div>
+                    <div class="control-group">
+                        <input type="password" id="j_password" name="j_password" class="required" required="required" placeholder="Password:" value=""/>
+                    </div>
+                    <div class="control-group">
+                        <label class="checkbox" data-mini="true" th:inline="text">
+                            <input id="rememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked"/>
+                            [[#{mobile.login.rememberMe}]] </label>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-large btn-primary" href="#" data-mini="true" data-theme="b" th:text="#{mobile.login.login}">Login</button>
+                    </div>
+                </fieldset>
+            </form>
+
+            <div class="account-controls">
+                <p>
+                    <a href="#forgotPassword" data-rel="page" data-transition="flip" th:text="#{mobile.login.forgotPassword}">Forgot Password?</a> | <a href="#signUp" data-rel="page" data-transition="flip" th:text="#{mobile.login.signUp}">Sign Up</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="signUp" data-role="page" data-dom-cache="false" data-url="#signUp">
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        $('#signUp').bind('pageinit', function() {
+
+            $('#signUpForm').validate();
+
+//            $('#signUpForm').submit(function(e) {
+//                e.preventDefault();
+//
+//                var isValid = $(this).valid();
+//                if (!isValid) {
+//                    return false;
+//                }
+//
+//                return true;
+//            });
+
+        });
+        /*]]>*/
+    </script>
+
+    <div data-role="header" data-theme="b">
+        <h1>Knappsack</h1>
+    </div>
+    <div data-role="content">
+
+        <h3 style="text-align: center" th:text="#{mobile.login.signUp}">Sign Up</h3>
+        <div data-role="collapsible">
+            <h3 th:text="#{mobile.login.invitationOnly}">Please note! Invitation only!</h3>
+            <p th:text="#{mobile.login.invitationOnlyMessage}">The use of Knappsack is currently by invitation only.  If you have not received an invitation, you will not be able to create an account.</p>
+        </div>
+
+        <form id="signUpForm" th:object="${registrationForm}" th:action="@{/auth/register}" action="/auth/register" method="post" data-ajax="false">
+            <div id="errors"  class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                <h3 th:text="#{errors.header}"/>
+                <ul>
+                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                </ul>
+            </div>
+            <fieldset>
+                <div class="control-group">
+                    <input type="text" id="firstName" name="firstName" th:value="*{firstName}" placeholder="First:" class="required" required="required" autofocus="autofocus" />
+                </div>
+                <div class="control-group">
+                    <input type="text" id="lastName" name="lastName" th:value="*{lastName}" placeholder="Last:" class="required" required="required" />
+                </div>
+                <div class="control-group">
+                    <input type="email" id="email" name="email" th:value="*{email}" placeholder="Email:" class="required email" required="required" />
+                </div>
+                <div class="control-group">
+                    <input type="password"  id="password1" name="firstPassword" placeholder="Password:" class="required" required="required" />
+                </div>
+                <div class="control-group">
+                    <input type="password" id="password2" name="secondPassword" placeholder="Confirm Password:" class="required" required="required" />
+                </div>
+                <div class="form-actions">
+                    <a href="#tos" data-rel="page" data-transition="pop" th:text="#{mobile.login.toc}">Terms and Conditions</a>
+                </div>
+                <div class="form-actions">
+                    <a href="#privacy" data-rel="page" data-transition="pop" th:text="#{mobile.login.privacyPolicy}">Privacy Policy</a>
+                </div>
+                <div class="control-group" th:inline="text">
+                    <label class="checkbox" data-mini="true" style="width: 100%;">
+                        <input type="checkbox" id="termsOfService" name="termsOfService" class="required" required="required" />
+                        [[#{mobile.login.acceptTOC}]]
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button data-role="submit" value="Submit" data-mini="true" data-theme="b"/>
+                </div>
+            </fieldset>
+        </form>
+
+        <div class="account-controls">
+            <p>
+                <a href="#loginPage" data-rel="page" data-transition="flip" th:text="#{mobile.login.login}">Login</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div id="forgotPassword" data-role="page" data-dom-cache="false" data-url="#forgotPassword">
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        $('#forgotPassword').bind('pageinit', function() {
+
+            $('#forgotPasswordForm').validate();
+
+            $('#forgotPasswordForm').submit(function(e) {
+                e.preventDefault();
+
+                var isValid = $(this).valid();
+                if (!isValid) {
+                    return false;
+                }
+
+                $.mobile.showPageLoadingMsg();
+
+                var url = /*[[@{/auth/forgotPassword}]]*/ '/auth/forgotPassword';
+                var data = { email : $('#forgotPasswordEmail').val()};
+                $.post(url, data, function(data) {
+                    $.mobile.hidePageLoadingMsg();
+                    $.mobile.changePage('#passwordReset');
+                });
+
+                return false;
+            });
+
+        });
+        /*]]>*/
+    </script>
+
+    <div data-role="header" data-theme="b">
+        <h1>Knappsack</h1>
+    </div>
+    <div data-role="content">
+
+        <h3 th:text="#{mobile.login.forgotPassword}">Forgot Password?</h3>
+
+        <p class="instructions" th:text="#{mobile.login.forgotPassword.help}">To reset your password, please enter the email associated with your account below.
+            <br />Your new password will be sent to your email account. </p>
+
+        <form id="forgotPasswordForm" href="#passwordReset" data-ajax="false">
+            <fieldset>
+                <div class="control-group">
+                    <input type="email" id="forgotPasswordEmail" name="email" class="required email" required="required" placeholder="Email:" value=""/>
+                </div>
+                <div class="form-actions">
+                    <button data-role="submit" data-mini="true" data-theme="b" value="Submit"/>
+                </div>
+            </fieldset>
+        </form>
+
+        <div class="account-controls">
+            <p>
+                <a href="#loginPage" data-rel="page" data-transition="flip">Login</a> | <a href="#signUp" data-rel="page" data-transition="flip">Sign Up</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div id="passwordReset" data-role="dialog" data-dom-cache="false" data-url="#passwordReset">
+
+    <div data-role="header" data-theme="e">
+        <h1 th:text="#{mobile.login.success}">Success</h1>
+    </div>
+    <div data-role="content">
+        <p class="instructions"><span th:text="#{mobile.login.passwordInstructions.1}">Thank you. Your password has been reset. Please check your email for your new password and</span> <a href="#loginPage" data-rel="page" data-transition="flip" th:text="#{mobile.login.passwordInstructions.2}">login</a>. </p>
+
+        <div class="account-controls">
+            <p>
+                <a href="#loginPage" data-rel="page" data-transition="flip">Login</a> | <a href="#signUp" data-rel="page" data-transition="flip" th:text="#{mobile.login.signUp}">Sign Up</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div id="tos" data-role="page" data-dom-cache="false" data-url="#tos">
+    <div data-role="header" data-theme="b">
+        <h1 th:text="#{mobile.login.termsOfUse}">Terms of Use</h1>
+    </div>
+    <div data-role="content">
+        <div th:substituteby="/legal/termsOfUseTH :: termsOfUse"></div>
+        <div class="account-controls">
+            <p>
+                <a href="#" data-rel="back" data-icon="back" data-direction="reverse" th:text="#{mobile.login.back}">Back</a>
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<div id="privacy" data-role="page" data-dom-cache="false" data-url="#privacy">
+    <div data-role="header" data-theme="b">
+        <h1 th:text="#{mobile.login.privacyPolicy}">Privacy Policy</h1>
+    </div>
+    <div data-role="content">
+        <div th:substituteby="/legal/privacyTH :: privacy"></div>
+        <div class="account-controls">
+            <p>
+                <a href="#" data-rel="back" data-icon="back" data-direction="reverse" th:text="#{mobile.login.back}">Back</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+<div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
+
+</body>
+</html>

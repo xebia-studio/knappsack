@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active=${subNav},title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+
+            $('#invitationModal .modal-body .alert-error').show();
+            $('#invitationModal .modal-body .alert-success').hide();
+            $('#invitationModal').modal('show');
+
+            if ($('#invitation-data > tbody > tr').length <= 0) {
+                $('#submitBtn').attr('disabled', 'disabled');
+            }
+
+            var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
+            var $dataTable = $('#invitation-data').dataTable( {
+                "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+                "sPaginationType": "bootstrap",
+                "oLanguage": {
+                    "sLengthMenu": "_MENU_ " + recordsPerPage
+                },
+                "aoColumns": [
+                    { "bSortable": false },
+                    null,
+                    null,
+                    { "sSortDataType": "dom-select" }
+                ]
+            });
+
+            $('.check-all').click(function () {
+                var checked = $(this).attr('checked');
+
+                var parentTable = $(this).closest('table');
+
+                $(parentTable).find('tbody tr').find('td :checkbox').each(function () {
+                    if (checked) {
+                        $(this).attr('checked', 'checked');
+                        $(this).closest('tr').addClass('row_selected');
+                    } else {
+                        $(this).removeAttr('checked');
+                        $(this).closest('tr').removeClass('row_selected');
+                    }
+                });
+            });
+
+            var singleUrl = /*[[@{/group/requestAccess/}]]*/ '';
+            var batchUrl = /*[[@{/manager/sendBatchInvitations}]]*/ '';
+//            $('#invitationForm').submit(function () {
+//                url = url + $('#accessCode').val();
+//                $(this).attr('action', url);
+//                return true;
+//            })
+
+            $('form').submit(function(e) {
+                var $form = $(this);
+                $(':submit').attr("disabled", "disabled");
+
+                $($dataTable.fnGetHiddenNodes()).each(function() {
+                    var inputs = $('input', this);
+                    $(inputs).each(function() {
+                        var input;
+                        if ($(this).is(':checkbox')) {
+                            input = $('<input>')
+                                    .attr('name', $(this).attr('name'))
+                                    .attr('type', 'hidden')
+                                    .val($(this).is(':checked'));
+                        } else {
+                            input = $(this).detach().attr('type', 'hidden');
+                        }
+                        $(input).appendTo($form);
+                    });
+                    var select = $('select', this);
+                    var selectInput = $('<input>').attr('name', $(select).attr('name')).attr('type', 'hidden').val($(select).val());
+                    $(selectInput).appendTo($form);
+                });
+                return true;
+            });
+
+        });
+
+        /*]]>*/
+    </script>
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+        <div class="span10">
+            <ul class="breadcrumb">
+                <li>
+                    <a th:href="@{'/manager/editOrg/' + ${domainId}}" th:text="${domainName}" th:if="${domainType eq 'ORGANIZATION'}"/>
+                    <a th:href="@{'/manager/editGroup/' + ${domainId}}" th:text="${domainName}" th:if="${domainType eq 'GROUP'}"/>
+                    <span class="divider">/</span>
+                </li>
+                <li class="active">
+                    <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.inviteBatchUsers.inviteMember}">Invite Member</a>
+                </li>
+            </ul>
+
+
+            <div class="well">
+                <form id="invitationForm" th:object="${invitationForm}" th:action="@{/manager/sendBatchInvitations}" method="POST" class="form-horizontal">
+
+                    <div th:if="${#fields.hasErrors('*')}">
+                        <div class="alert alert-warning" th:if="${#bools.isFalse(emailError)}">
+                            <div class="" th:if="${#fields.hasErrors('*')}">
+                                <a data-toggle="collapse" data-target="#errors" th:text="#{desktop.inviteBatchUsers.emailWarning}">
+                                    Warning: The following emails were not added to the list due to the following errors
+                                </a>
+                            </div>
+
+                            <div id="errors" class="collapse" th:if="${#fields.hasErrors('*')}">
+                                <ul>
+                                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-error" th:if="${#bools.isTrue(emailError)}">
+                        <strong th:text="#{desktop.alert.error.prefix}">Oh snap!</strong> <span th:text="#{desktop.manager.batch.invite.error.generic}">Invitations could not be sent to the below email addresses.</span>
+                    </div>
+
+                    <fieldset>
+
+                        <input type="hidden" id="domainId" name="domainId" th:value="*{domainId}"/>
+                        <input type="hidden" id="domainType" name="domainType" th:value="*{domainType}"/>
+
+                        <section>
+                            <table id="invitation-data" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                                <thead>
+                                <tr>
+                                    <th th:text="#{desktop.inviteBatchUsers.doNotInvite}"><input type="checkbox" class="check-all"/> Don't Invite</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="inviteeForm,iterStat : *{inviteeForms}">
+                                    <td><input type="checkbox" th:field="*{inviteeForms[__${iterStat.index}__].delete}"/></td>
+                                    <td th:inline="text">[[${invitationForm.inviteeForms[__${iterStat.index}__].name}]]
+                                        <input type="hidden" th:field="*{inviteeForms[__${iterStat.index}__].name}"/>
+                                    </td>
+                                    <td th:inline="text">[[${invitationForm.inviteeForms[__${iterStat.index}__].email}]]
+                                        <input type="hidden" th:field="*{inviteeForms[__${iterStat.index}__].email}"/>
+                                    </td>
+                                    <td class="select-td">
+                                        <select th:field="*{inviteeForms[__${iterStat.index}__].userRole}">
+                                            <option th:each="userRole : ${userRoles}"
+                                                    th:selected="${invitationForm.inviteeForms[__${iterStat.index}__].userRole} == ${userRole}"
+                                                    th:value="${userRole}" th:text="#{${userRole.messageKey}}"></option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </section>
+
+
+                        <div>
+                            <button id="submitBtn" type="submit" class="btn btn-primary" th:text="#{desktop.inviteBatchUsers.sendInvitations}">Send Invitations</button>
+                        </div>
+                    </fieldset>
+
+                </form>
+
+            </div>
+
+            <div id="invitationModal" class="modal hide fade" style="display: none;">
+                <div class="modal-header">
+                    <a class="close" data-dismiss="modal">x</a>
+
+                    <h3 th:text="#{desktop.inviteBatchUsers.invitations}">Invitations</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success" style="display: none;">
+                        <h2 th:text="#{desktop.inviteBatchUsers.pleaseMakeSure}">Please make sure these are the correct email addresses.
+                            If they are, click "Send" to send the invitations via email.
+                        </h2>
+                    </div>
+                    <div class="alert alert-error" style="display: none;">
+                        <p th:text="#{desktop.inviteBatchUsers.correctEmailAddresses}">Please make sure these are the correct email addresses.</p>
+
+                        <p th:text="#{desktop.inviteBatchUsers.ifTheyAre}">If they are, click "Send" to send the invitations via email.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a id="modalCancel" href="#" class="btn" data-dismiss="modal" th:text="#{desktop.inviteBatchUsers.okay}">Okay</a>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+    <section th:include="/includesTH :: table_scripts"/>
+</section>
+
+</body>
+</html>
