@@ -17,6 +17,7 @@
         var unsubscribePopoverContent = /*[[#{detail.unsubscribe.popover.content}]]*/ 'By clicking this button you are unsubscribing from this applications  What that means is when a new version becomes available you will not be notified by email.';
 
         $('.nl2br').nl2br();
+        $('.html').escapeHtml();
 
         var description = /*[[${selectedApplication.description}]]*/ '';
         $('#description').addHtml(description);

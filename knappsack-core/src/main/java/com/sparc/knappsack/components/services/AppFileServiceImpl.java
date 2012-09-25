@@ -5,6 +5,7 @@ import com.sparc.knappsack.components.entities.AppFile;
 import com.sparc.knappsack.components.entities.StorageConfiguration;
 import com.sparc.knappsack.models.AppFileModel;
 import com.sparc.knappsack.models.ImageModel;
+import com.sparc.knappsack.util.WebRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,7 @@ public class AppFileServiceImpl implements AppFileService {
         if (appFile != null) {
             StorageService storageService = storageServiceFactory.getStorageService(appFile.getStorageType());
             if (storageService instanceof LocalStorageService) {
-                return "/image/" + appFile.getId();
+                return WebRequest.getInstance().generateURL("/image/" + appFile.getId());
             }
         }
 

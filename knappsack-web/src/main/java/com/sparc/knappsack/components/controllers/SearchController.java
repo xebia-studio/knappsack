@@ -60,12 +60,6 @@ public class SearchController extends AbstractController {
         Collections.sort(applications, chain);
 
         List<ApplicationModel> applicationModels = applicationService.createApplicationModels(applications);
-        for (ApplicationModel applicationModel : applicationModels) {
-            ImageModel imageModel = applicationModel.getIcon();
-            if (imageModel != null) {
-                imageModel.setUrl(WebRequest.getInstance().generateURL(imageModel.getUrl()));
-            }
-        }
         model.addAttribute("applications", applicationModels);
 
         return "searchTH";

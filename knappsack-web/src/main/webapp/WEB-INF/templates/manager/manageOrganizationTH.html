@@ -19,6 +19,8 @@ $(document).ready(function () {
     var tmpSelectedRows = [];
     var organizationId = /*[[${org.id}]]*/ '';
 
+    $('.striphtml').striphtml();
+
     var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
     var $membersTable = $('#membersTable').dataTable( {
         "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
@@ -327,7 +329,7 @@ $(document).ready(function () {
     </li>
     <li id="applicationsTab" th:if="${#bools.isTrue(isEdit)}"><a href="#applications" data-toggle="tab" th:inline="text">[[#{desktop.manageOrganization.applications}]]<i
             id="applicationsTabAlertIcon" th:if="${#bools.isTrue(hasApplicationRequests)}"
-            class="icon-exclamation-sign"/></a></li>
+            class="icon-exclamation-sign icon-black"/></a></li>
 </ul>
 
 <div class="tab-content">

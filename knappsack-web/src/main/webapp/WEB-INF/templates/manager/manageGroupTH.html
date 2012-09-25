@@ -13,6 +13,8 @@
         var tmpSelectedRows = [];
         var groupId = /*[[${group.id}]]*/ '';
 
+        $('.striphtml').striphtml();
+
         var isEdit = /*[[${isEdit}]]*/ false;
         if (isEdit) {
             $('#organizationId').attr('readonly', 'readonly');

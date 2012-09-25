@@ -3,6 +3,7 @@ package com.sparc.knappsack.components.services;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.models.ImageModel;
+import com.sparc.knappsack.util.WebRequest;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -57,6 +58,7 @@ public class AppFileServiceIT extends AbstractServiceTests {
 
     @Test
     public void createImageModelTest() {
+        WebRequest.getInstance("http", "serverName", 80, "/knappsack");
         AppFile appFile = getAppFile();
         appFileService.add(appFile);
 
@@ -65,7 +67,7 @@ public class AppFileServiceIT extends AbstractServiceTests {
 
         ImageModel imageModel = appFileService.createImageModel(appFile);
         assertNotNull(imageModel);
-        assertTrue(imageModel.getUrl().equals("/image/" + appFile.getId()));
+        assertTrue(imageModel.getUrl().equals("http://serverName/knappsack/image/" + appFile.getId()));
     }
 
     private AppFile getAppFile() {

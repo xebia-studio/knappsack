@@ -48,7 +48,7 @@
 //                    $('.tdfield').width(width);
                 });
 
-                $('tr', $applicationsTable).click(function() {
+                $applicationsTable.$('tr').on('click', function() {
                     var url = /*[[@{/detail/}]]*/ '/detail/';
                     url += $(this).attr('data-id');
                     window.location = url;

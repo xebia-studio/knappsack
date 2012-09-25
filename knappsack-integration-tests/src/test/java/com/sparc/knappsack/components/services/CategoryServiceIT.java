@@ -7,6 +7,7 @@ import com.sparc.knappsack.components.entities.Organization;
 import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.forms.CategoryForm;
 import com.sparc.knappsack.models.CategoryModel;
+import com.sparc.knappsack.util.WebRequest;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -133,6 +134,8 @@ public class CategoryServiceIT extends AbstractServiceTests {
 
     @Test
     public void createModelTest() {
+        WebRequest.getInstance("http", "serverName", 80, "/knappsack");
+
         Organization organization = new Organization();
         organization.setName("Test Organization");
         organizationService.add(organization);
