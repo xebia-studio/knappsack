@@ -9,6 +9,7 @@ import com.sparc.knappsack.components.services.ApplicationVersionService;
 import com.sparc.knappsack.components.services.GroupService;
 import com.sparc.knappsack.components.validators.ApplicationVersionValidator;
 import com.sparc.knappsack.enums.AppState;
+import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.Result;
 import com.sparc.knappsack.forms.UploadApplicationVersion;
 import org.slf4j.Logger;
@@ -56,105 +57,126 @@ public class ApplicationVersionController extends AbstractController {
         binder.setBindEmptyMultipartFiles(false);
     }
 
-    @PreAuthorize("hasAccessToApplicationVersion(#appVersionId) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("canEditApplicationVersion(#appVersionId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/updateAppVersionState", method = RequestMethod.GET)
     public
     @ResponseBody
     Result updateAppState(@RequestParam Long appVersionId, @RequestParam String appState) {
-        boolean success = applicationVersionControllerService.updateApplicationVersionState(appVersionId, AppState.valueOf(appState));
         Result result = new Result();
+        try {
+            checkRequiredEntity(applicationVersionService, appVersionId);
+        } catch (EntityNotFoundException ex) {
+            log.info(String.format("Attempted to update state for non-existent application version: %s", appVersionId));
+            result.setResult(false);
+            return result;
+        }
+        boolean success = applicationVersionControllerService.updateApplicationVersionState(appVersionId, AppState.valueOf(appState));
         result.setResult(success);
         return result;
     }
 
 
-    @PreAuthorize("isOrganizationAdminForGroup(#groupId) or isGroupAdmin(#groupId) or hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/addVersion/{parentId}/{groupId}", method = RequestMethod.GET)
-    public String addApplicationVersion(Model model, @PathVariable Long parentId, @PathVariable Long groupId) {
+    @PreAuthorize("canEditApplication(#parentId) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/addVersion/{parentId}", method = RequestMethod.GET)
+    public String addApplicationVersion(Model model, @PathVariable Long parentId) {
+
+        checkRequiredEntity(applicationService, parentId);
 
         Application application = applicationService.get(parentId);
-        model.addAttribute("parentApplicationId", application.getId());
-        model.addAttribute("parentApplicationName", application.getName());
-        Group group = groupService.get(groupId);
-        model.addAttribute("parentGroupId", group.getId());
-        model.addAttribute("parentGroupName", group.getName());
+        Group group = groupService.getOwnedGroup(application);
 
-        if (!model.containsAttribute("version")) {
-            UploadApplicationVersion version = new UploadApplicationVersion();
-            version.setParentId(parentId);
-            version.setGroupId(groupId);
-            version.setStorageConfigurationId(application.getStorageConfiguration().getId());
+        if (group != null) {
+            model.addAttribute("parentApplicationId", application.getId());
+            model.addAttribute("parentApplicationName", application.getName());
+            model.addAttribute("parentGroupId", group.getId());
+            model.addAttribute("parentGroupName", group.getName());
 
-            model.addAttribute("version", version);
+            if (!model.containsAttribute("version")) {
+                UploadApplicationVersion version = new UploadApplicationVersion();
+                version.setParentId(parentId);
+                version.setGroupId(group.getId());
+                version.setStorageConfigurationId(application.getStorageConfiguration().getId());
+
+                model.addAttribute("version", version);
+            }
+
+            model.addAttribute("currentGuestGroupIds", new ArrayList<Group>());
+            List<Group> groups = new ArrayList<Group>(group.getOrganization().getGroups());
+            groups.remove(group);
+            model.addAttribute("groups", groups);
+            model.addAttribute("appStates", AppState.values());
+            model.addAttribute("isEdit", false);
+
+            return "manager/manageApplicationVersionTH";
+        } else {
+            throw new EntityNotFoundException(String.format("Group Entity not found for Application: %s", application.getId()));
         }
-
-        model.addAttribute("currentGuestGroupIds", new ArrayList<Group>());
-        List<Group> groups = new ArrayList<Group>(group.getOrganization().getGroups());
-        groups.remove(group);
-        model.addAttribute("groups", groups);
-        model.addAttribute("appStates", AppState.values());
-        model.addAttribute("isEdit", false);
-
-        return "manager/manageApplicationVersionTH";
     }
 
     @PreAuthorize("canEditApplication(#parentId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editVersion/{parentId}/{versionId}", method = RequestMethod.GET)
     public String editApplicationVersion(Model model, @PathVariable Long parentId, @PathVariable Long versionId) {
+        checkRequiredEntity(applicationVersionService, versionId);
+        checkRequiredEntity(applicationService, parentId);
+
         ApplicationVersion version = applicationVersionService.get(versionId);
-
         Application application = applicationService.get(parentId);
-        model.addAttribute("parentApplicationId", application.getId());
-        model.addAttribute("parentApplicationName", application.getName());
         Group group = groupService.getOwnedGroup(application);
-        model.addAttribute("parentGroupId", group.getId());
-        model.addAttribute("parentGroupName", group.getName());
+        if (group != null) {
+            model.addAttribute("parentApplicationId", application.getId());
+            model.addAttribute("parentApplicationName", application.getName());
 
-        UploadApplicationVersion uploadApplicationVersion;
-        if (model.containsAttribute("version")) {
-            uploadApplicationVersion = (UploadApplicationVersion) model.asMap().get("version");
-        } else {
-            uploadApplicationVersion = new UploadApplicationVersion();
-        }
+            model.addAttribute("parentGroupId", group.getId());
+            model.addAttribute("parentGroupName", group.getName());
 
-        uploadApplicationVersion.setId(version.getId());
-        uploadApplicationVersion.setRecentChanges(version.getRecentChanges());
-        uploadApplicationVersion.setVersionName(version.getVersionName());
-        uploadApplicationVersion.setParentId(parentId);
-        uploadApplicationVersion.setAppState((version.getAppState()));
-        uploadApplicationVersion.setStorageConfigurationId(application.getStorageConfiguration().getId());
-
-        if (version.getInstallationFile() != null) {
-            MockMultipartFile multipartFile = new MockMultipartFile(version.getInstallationFile().getName(), version.getInstallationFile().getName(), version.getInstallationFile().getType(), new byte[0]);
-            uploadApplicationVersion.setAppFile(multipartFile);
-        }
-
-        if (version.getProvisioningProfile() != null) {
-            MockMultipartFile multipartFile = new MockMultipartFile(version.getProvisioningProfile().getName(), version.getProvisioningProfile().getName(), version.getProvisioningProfile().getType(), new byte[0]);
-            uploadApplicationVersion.setProvisioningProfile(multipartFile);
-        }
-
-        model.addAttribute("version", uploadApplicationVersion);
-
-        //Put this app versions guest groups on the model so we can highlight them in the multi-select box
-        List<Group> currentGuestGroups = groupService.getGuestGroups(version);
-        Set<Long> currentGuestGroupIds = new HashSet<Long>();
-        if (currentGuestGroups != null) {
-            for (Group guestGroup : currentGuestGroups) {
-                currentGuestGroupIds.add(guestGroup.getId());
+            UploadApplicationVersion uploadApplicationVersion;
+            if (model.containsAttribute("version")) {
+                uploadApplicationVersion = (UploadApplicationVersion) model.asMap().get("version");
+            } else {
+                uploadApplicationVersion = new UploadApplicationVersion();
             }
+
+            uploadApplicationVersion.setId(version.getId());
+            uploadApplicationVersion.setRecentChanges(version.getRecentChanges());
+            uploadApplicationVersion.setVersionName(version.getVersionName());
+            uploadApplicationVersion.setParentId(parentId);
+            uploadApplicationVersion.setAppState((version.getAppState()));
+            uploadApplicationVersion.setStorageConfigurationId(application.getStorageConfiguration().getId());
+
+            if (version.getInstallationFile() != null) {
+                MockMultipartFile multipartFile = new MockMultipartFile(version.getInstallationFile().getName(), version.getInstallationFile().getName(), version.getInstallationFile().getType(), new byte[0]);
+                uploadApplicationVersion.setAppFile(multipartFile);
+            }
+
+            if (version.getProvisioningProfile() != null) {
+                MockMultipartFile multipartFile = new MockMultipartFile(version.getProvisioningProfile().getName(), version.getProvisioningProfile().getName(), version.getProvisioningProfile().getType(), new byte[0]);
+                uploadApplicationVersion.setProvisioningProfile(multipartFile);
+            }
+
+            model.addAttribute("version", uploadApplicationVersion);
+
+            //Put this app versions guest groups on the model so we can highlight them in the multi-select box
+            List<Group> currentGuestGroups = groupService.getGuestGroups(version);
+            Set<Long> currentGuestGroupIds = new HashSet<Long>();
+            if (currentGuestGroups != null) {
+                for (Group guestGroup : currentGuestGroups) {
+                    currentGuestGroupIds.add(guestGroup.getId());
+                }
+            }
+            model.addAttribute("currentGuestGroupIds", currentGuestGroupIds);
+            model.addAttribute("groupId", group.getId());
+            //We don't want the group that owns the application in the list of guest groups
+            List<Group> groups = new ArrayList<Group>(group.getOrganization().getGroups());
+            groups.remove(group);
+            model.addAttribute("groups", groups);
+            model.addAttribute("appStates", Arrays.asList(AppState.values()));
+
+            model.addAttribute("isEdit", true);
+
+            return "manager/manageApplicationVersionTH";
+        } else {
+            throw new EntityNotFoundException(String.format("Group Entity not found for Application: %s", application.getId()));
         }
-        model.addAttribute("currentGuestGroupIds", currentGuestGroupIds);
-        model.addAttribute("groupId", group.getId());
-        //We don't want the group that owns the application in the list of guest groups
-        List<Group> groups = new ArrayList<Group>(group.getOrganization().getGroups());
-        groups.remove(group);
-        model.addAttribute("groups", groups);
-        model.addAttribute("appStates", Arrays.asList(AppState.values()));
-
-        model.addAttribute("isEdit", true);
-
-        return "manager/manageApplicationVersionTH";
     }
 
     @RequestMapping(value = "/manager/applicationVersionUploadProgress", method = RequestMethod.POST)
@@ -191,7 +213,7 @@ public class ApplicationVersionController extends AbstractController {
             if (uploadApplicationVersion.isEditing()) {
                 return editApplicationVersion(model, uploadApplicationVersion.getParentId(), uploadApplicationVersion.getId());
             }
-            return addApplicationVersion(model, uploadApplicationVersion.getParentId(), uploadApplicationVersion.getGroupId());
+            return addApplicationVersion(model, uploadApplicationVersion.getParentId());
         }
 
         Long parentId = uploadApplicationVersion.getParentId();
@@ -205,6 +227,9 @@ public class ApplicationVersionController extends AbstractController {
     @PreAuthorize("canEditApplication(#parentId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteVersion/{parentId}/{versionId}")
     public String deleteVersion(@PathVariable Long parentId, @PathVariable Long versionId) {
+        checkRequiredEntity(applicationService, parentId);
+        checkRequiredEntity(applicationVersionService, versionId);
+
         applicationVersionService.delete(versionId);
 
         return "redirect:/manager/editApplication/" + parentId;

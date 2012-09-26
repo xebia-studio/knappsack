@@ -1,7 +1,9 @@
 package com.sparc.knappsack.components.controllers;
 
 import com.sparc.knappsack.components.entities.User;
+import com.sparc.knappsack.components.services.EntityService;
 import com.sparc.knappsack.components.services.UserService;
+import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,9 +25,24 @@ public class AbstractController {
         return createModelAndView(request, ex, "errorTH");
     }
 
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ModelAndView handleEntityNotFoundException(Exception ex, HttpServletRequest request) {
+        return handleGenericException(ex, request);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ModelAndView handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
         return createModelAndView(request, ex, "statusCodes/403TH");
+    }
+
+    public void checkRequiredEntity(EntityService entityService, Long id) {
+        if (entityService != null) {
+            if (!entityService.doesEntityExist(id)) {
+                throw new EntityNotFoundException();
+            }
+        } else {
+            throw new RuntimeException("EntityService not found while checking if entity exists");
+        }
     }
 
     private ModelAndView createModelAndView(HttpServletRequest request, Exception ex, String viewName) {

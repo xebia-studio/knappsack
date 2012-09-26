@@ -125,6 +125,7 @@ public class GroupController extends AbstractController{
         return "manager/groupsTH";
     }
 
+    @PreAuthorize("isOrganizationAdmin() or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/addGroup", method = RequestMethod.GET)
     public String addGroup(Model model) {
 
@@ -140,6 +141,7 @@ public class GroupController extends AbstractController{
     @PreAuthorize("isOrganizationAdminForGroup(#id) or isGroupAdmin(#id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editGroup/{id}", method = RequestMethod.GET)
     public String editGroup(Model model, @PathVariable Long id) {
+        checkRequiredEntity(groupService, id);
 
         Group existingGroup = groupService.get(id);
 
@@ -198,6 +200,7 @@ public class GroupController extends AbstractController{
     @PreAuthorize("isOrganizationAdminForGroup(#id) or isGroupAdmin(#id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteGroup/{id}", method = RequestMethod.GET)
     public String deleteGroup(@PathVariable Long id) {
+        checkRequiredEntity(groupService, id);
         groupService.delete(id);
 
         return "redirect:/manager/viewGroups";

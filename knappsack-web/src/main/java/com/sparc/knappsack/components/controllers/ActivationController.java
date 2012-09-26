@@ -6,7 +6,6 @@ import com.sparc.knappsack.components.events.EventDeliveryFactory;
 import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.enums.EventType;
 import com.sparc.knappsack.forms.Result;
-import com.sparc.knappsack.util.WebRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +55,7 @@ public class ActivationController extends AbstractController {
     }
 
     @RequestMapping(value = "/sendCode", method = RequestMethod.GET)
-    public @ResponseBody Result sendCode(WebRequest request) {
+    public @ResponseBody Result sendCode() {
         Result result = new Result();
         result.setResult(false);
 

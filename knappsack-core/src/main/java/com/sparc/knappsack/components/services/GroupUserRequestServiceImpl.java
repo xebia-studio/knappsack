@@ -159,4 +159,9 @@ public class GroupUserRequestServiceImpl implements GroupUserRequestService {
 
         return success;
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

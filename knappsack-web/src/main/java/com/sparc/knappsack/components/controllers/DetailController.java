@@ -1,6 +1,5 @@
 package com.sparc.knappsack.components.controllers;
 
-import com.sparc.knappsack.components.entities.AppFile;
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.ApplicationVersion;
 import com.sparc.knappsack.components.entities.User;
@@ -10,7 +9,6 @@ import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.forms.EnumEditor;
 import com.sparc.knappsack.models.ApplicationModel;
-import com.sparc.knappsack.models.ImageModel;
 import com.sparc.knappsack.util.UserAgentInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -58,6 +55,7 @@ public class DetailController extends AbstractController {
     @PreAuthorize("hasAccessToApplication(#id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/detail/{id}", method = RequestMethod.GET)
     public String loadDetailPage(HttpServletRequest request, Model model,  @PathVariable Long id, UserAgentInfo userAgentInfo) {
+        checkRequiredEntity(applicationService, id);
         User user = userService.getUserFromSecurityContext();
         Application application = applicationService.get(id);
 
@@ -65,18 +63,6 @@ public class DetailController extends AbstractController {
         model.addAttribute("selectedApplication", applicationModel);
         model.addAttribute("applicationType", applicationModel.getApplicationType().name());
 
-        List<String> imageUrls = new ArrayList<String>();
-        for (ImageModel imageModel : applicationModel.getScreenShots()) {
-            AppFile appFile = appFileService.get(imageModel.getId());
-            if (appFile != null) {
-                StorageService storageService = storageServiceFactory.getStorageService(appFile.getStorageType());
-                if (storageService != null && storageService instanceof LocalStorageService) {
-                    imageModel.setUrl(request.getContextPath() + imageModel.getUrl());
-                }
-                imageUrls.add(imageModel.getUrl());
-            }
-        }
-        model.addAttribute("imageUrls", imageUrls);
         model.addAttribute("deviceType", userAgentInfo.getApplicationType());
 
         boolean iosDetected = false;

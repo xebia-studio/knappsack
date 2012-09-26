@@ -362,4 +362,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
         return applications;
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

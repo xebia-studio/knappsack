@@ -25,4 +25,11 @@ public interface EntityService<Entity> {
      * @see Entity
      */
     public void update(Entity entity);
+
+    /**
+     * Checks to see if an entity with the given Id exists
+     * @param id Long - ID of the entity to check
+     * @return whether the entity exists or not
+     */
+    public boolean doesEntityExist(Long id);
 }

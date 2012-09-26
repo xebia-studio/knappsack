@@ -338,4 +338,9 @@ public class ApplicationServiceImpl implements ApplicationService {
         DomainConfiguration domainConfiguration = domain.getDomainConfiguration();
         return domainConfiguration.getApplicationVersionLimit() <= appVersionCount;
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

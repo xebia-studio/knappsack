@@ -151,6 +151,11 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryModel;
     }
 
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
+
     private StorageService getStorageService(Long storageConfigurationId) {
         return storageServiceFactory.getStorageService(getStorageConfiguration(storageConfigurationId).getStorageType());
     }

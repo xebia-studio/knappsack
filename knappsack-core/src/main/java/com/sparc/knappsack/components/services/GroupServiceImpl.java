@@ -244,4 +244,9 @@ public class GroupServiceImpl implements GroupService {
         }
         return model;
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

@@ -41,4 +41,9 @@ public class OrgStorageConfigServiceImpl implements OrgStorageConfigService {
         return orgStorageConfigDao.get(prefix);
     }
 
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
+
 }

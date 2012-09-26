@@ -56,6 +56,11 @@ public class AppFileServiceImpl implements AppFileService {
     }
 
     @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
+
+    @Override
     public void delete(AppFile appFile) {
         if (appFile != null) {
             StorageService storageService = getStorageService(appFile.getStorable().getStorageConfiguration().getId());

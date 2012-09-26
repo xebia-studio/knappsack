@@ -71,6 +71,8 @@ public class StorageController extends AbstractController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteStorageConfiguration/{id}", method = RequestMethod.GET)
     public String deleteStorageConfiguration(@PathVariable Long id) {
+        checkRequiredEntity(storageConfigurationService, id);
+
         storageConfigurationService.delete(id);
 
         return "redirect:/manager/viewStorageConfigs";
@@ -93,6 +95,8 @@ public class StorageController extends AbstractController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editStorageConfiguration/{id}", method = RequestMethod.GET)
     public String editStorageConfiguration(Model model, @PathVariable Long id) {
+        checkRequiredEntity(storageConfigurationService, id);
+
         StorageConfiguration storageConfiguration = storageConfigurationService.get(id);
 
         if (storageConfiguration != null) {

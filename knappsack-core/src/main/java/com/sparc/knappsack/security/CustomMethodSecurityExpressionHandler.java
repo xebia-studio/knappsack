@@ -1,5 +1,7 @@
 package com.sparc.knappsack.security;
 
+import com.sparc.knappsack.components.services.ApplicationVersionService;
+import com.sparc.knappsack.components.services.CategoryService;
 import com.sparc.knappsack.components.services.GroupService;
 import com.sparc.knappsack.components.services.UserService;
 import org.aopalliance.intercept.MethodInvocation;
@@ -29,6 +31,10 @@ public class CustomMethodSecurityExpressionHandler extends DefaultMethodSecurity
         root.setGroupService(groupService);
         UserService userService = (UserService) applicationContext.getBean("userService");
         root.setUserService(userService);
+        ApplicationVersionService applicationVersionService = applicationContext.getBean(ApplicationVersionService.class);
+        root.setApplicationVersionService(applicationVersionService);
+        CategoryService categoryService = applicationContext.getBean(CategoryService.class);
+        root.setCategoryService(categoryService);
 
         return root;
     }

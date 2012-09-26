@@ -148,4 +148,9 @@ public class UserDomainServiceImpl implements UserDomainService {
             userDomainDao.removeAllFromDomain(domainId, domainType);
         }
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

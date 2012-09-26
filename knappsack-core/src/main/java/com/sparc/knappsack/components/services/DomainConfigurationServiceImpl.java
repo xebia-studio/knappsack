@@ -33,4 +33,9 @@ public class DomainConfigurationServiceImpl implements DomainConfigurationServic
     public void update(DomainConfiguration domainConfiguration) {
         domainConfigurationDao.update(domainConfiguration);
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

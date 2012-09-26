@@ -90,6 +90,7 @@ public class InvitationController extends AbstractController {
         model.addAttribute("userRoles", roles);
     }
 
+    @PreAuthorize("isDomainAdmin(#id, #domainType) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/inviteUser/{id}/{domainType}", method = RequestMethod.GET)
     public String inviteUser(Model model, @PathVariable Long id, @PathVariable String domainType) {
         DomainType dt = DomainType.valueOf(domainType);
@@ -103,6 +104,8 @@ public class InvitationController extends AbstractController {
         return "manager/inviteUserTH";
     }
 
+
+    @PreAuthorize("isDomainAdmin(#id, #domainType) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/invitesPending/{id}/{domainType}", method = RequestMethod.GET)
     public String invitesPending(Model model, @PathVariable Long id, @PathVariable String domainType) {
         DomainType dt = DomainType.valueOf(domainType);

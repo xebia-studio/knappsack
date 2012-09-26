@@ -183,4 +183,9 @@ public class InvitationServiceImpl implements InvitationService {
 
         return inviteeList;
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

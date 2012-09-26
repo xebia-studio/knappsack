@@ -60,8 +60,10 @@ public class CategoryController extends AbstractController {
         binder.registerCustomEditor(StorageType.class, new EnumEditor(StorageType.class));
     }
 
+    @PreAuthorize("hasAccessToCategory(#id, #userAgentInfo.applicationType) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/categories/{id}", method = RequestMethod.GET)
     public String displayApplicationsForCategory(@PathVariable Long id, Model model, UserAgentInfo userAgentInfo) {
+        checkRequiredEntity(categoryService, id);
 
         Category category = categoryService.get(id);
 
@@ -99,6 +101,7 @@ public class CategoryController extends AbstractController {
     @PreAuthorize("isOrganizationAdmin(#orgId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/addCategory/{orgId}", method = RequestMethod.GET)
     public String addCategory(Model model, @PathVariable Long orgId) {
+        checkRequiredEntity(organizationService, orgId);
 
         Organization organization = organizationService.get(orgId);
 
@@ -172,8 +175,13 @@ public class CategoryController extends AbstractController {
     @PreAuthorize("isOrganizationAdmin(#orgId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteCategory/{id}/{orgId}", method = RequestMethod.GET)
     public String deleteCategory(@PathVariable Long id, @PathVariable Long orgId) {
+        checkRequiredEntity(categoryService, id);
+
         Category category = categoryService.get(id);
         Long organizationId = category.getOrganization().getId();
+        if (!orgId.equals(organizationId)) {
+            throw new RuntimeException("Attempted to delete category for organization with different Id");
+        }
 
         categoryService.delete(id);
 
@@ -183,7 +191,13 @@ public class CategoryController extends AbstractController {
     @PreAuthorize("isOrganizationAdmin(#orgId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteCategoryIcon/{id}/{orgId}", method = RequestMethod.POST)
     public String deleteCategoryIcon(Model model, @PathVariable Long id, @PathVariable Long orgId) {
+        checkRequiredEntity(categoryService, id);
+
         Category category = categoryService.get(id);
+        Long organizationId = category.getOrganization().getId();
+        if (!orgId.equals(organizationId)) {
+            throw new RuntimeException("Attempted to delete category icon for organization with different Id");
+        }
         categoryService.deleteIcon(category);
 
         return editCategory(model, id, orgId);
@@ -192,8 +206,13 @@ public class CategoryController extends AbstractController {
     @PreAuthorize("isOrganizationAdmin(#orgId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editCategory/{id}/{orgId}", method = RequestMethod.GET)
     public String editCategory(Model model, @PathVariable Long id, @PathVariable Long orgId) {
+        checkRequiredEntity(categoryService, id);
 
         Category category = categoryService.get(id);
+        Long organizationId = category.getOrganization().getId();
+        if (!orgId.equals(organizationId)) {
+            throw new RuntimeException("Attempted to edit category for organization with different Id");
+        }
 
         if (!model.containsAttribute("category")) {
 

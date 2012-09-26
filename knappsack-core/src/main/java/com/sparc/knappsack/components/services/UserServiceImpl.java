@@ -449,4 +449,9 @@ public class UserServiceImpl implements UserService {
 
         return canEdit;
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

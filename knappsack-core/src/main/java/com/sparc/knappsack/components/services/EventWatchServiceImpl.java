@@ -137,4 +137,9 @@ public class EventWatchServiceImpl implements EventWatchService {
 
         return eventWatches;
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

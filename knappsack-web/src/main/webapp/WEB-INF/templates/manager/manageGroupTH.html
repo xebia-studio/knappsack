@@ -294,7 +294,10 @@
                 <ul id="tab" class="nav nav-tabs">
                     <li class="active dropdown">
                         <a href="#" th:text="#{desktop.manageGroup.group}" th:if="${#bools.isFalse(isEdit)}">Group</a>
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" th:text="#{desktop.manageGroup.group}" th:if="${#bools.isTrue(isEdit)}">Group</a>
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" th:if="${#bools.isTrue(isEdit)}">
+                            <span th:text="#{desktop.manageGroup.group}">Group</span>
+                            <b class="caret"/>
+                        </a>
                         <ul class="dropdown-menu" th:if="${#bools.isTrue(isEdit)}">
                             <li><a href="#group" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
                             <li class="divider" th:if="${user.systemOrOrganizationAdmin}"></li>

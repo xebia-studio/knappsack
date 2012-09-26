@@ -238,6 +238,11 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
         return model;
     }
 
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
+
     private ApplicationVersion createApplicationVersion(UploadApplicationVersion uploadApplicationVersion) {
         ApplicationVersion applicationVersion;
         if (uploadApplicationVersion.getId() != null && uploadApplicationVersion.getId() > 0) {

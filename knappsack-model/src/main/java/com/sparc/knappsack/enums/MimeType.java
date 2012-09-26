@@ -9,7 +9,10 @@ public enum MimeType {
     FIREFOX("xpi", "application/x-xpinstall", ContentType.APPLICATION),
     WINPHONE("xap", "application/x-silverlight-app", ContentType.APPLICATION),
     BLACKBERRY_COD("cod", "application/vnd.rim.cod", ContentType.APPLICATION),
-    BLACKBERRY_JAD("jad", "text/vnd.sun.j2me.app-descriptor", ContentType.TEXT);
+    BLACKBERRY_JAD("jad", "text/vnd.sun.j2me.app-descriptor", ContentType.TEXT),
+    PNG("png", "image/png", ContentType.IMAGE),
+    JPG("jpg", "image/jpeg", ContentType.IMAGE),
+    JPEG("jpeg", "image/jpeg", ContentType.IMAGE);
 
     private final String extension;
     private final String mimeType;
@@ -31,6 +34,15 @@ public enum MimeType {
 
     public ContentType getContentType() {
         return contentType;
+    }
+
+    public static ContentType getContentTypeForMimeType(String mimeType) {
+        for (MimeType type : MimeType.values()) {
+            if (type.getMimeType().equalsIgnoreCase(mimeType)) {
+                return type.getContentType();
+            }
+        }
+        return null;
     }
 
     public static MimeType getForFilename(String filename) {

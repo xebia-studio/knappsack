@@ -10,8 +10,11 @@ import com.sparc.knappsack.enums.EventType;
 import com.sparc.knappsack.forms.PasswordForm;
 import com.sparc.knappsack.forms.Result;
 import com.sparc.knappsack.util.WebRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -23,6 +26,8 @@ import javax.validation.Valid;
 @Controller
 @RequestMapping("/profile")
 public class ProfileController extends AbstractController {
+
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Qualifier("passwordValidator")
     @Autowired(required = true)
@@ -110,6 +115,7 @@ public class ProfileController extends AbstractController {
         return result;
     }
 
+    @PreAuthorize("hasAccessToApplication(#applicationId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/subscribe/{applicationId}", method = RequestMethod.GET)
     public
     @ResponseBody Result subscribe(@PathVariable Long applicationId) {

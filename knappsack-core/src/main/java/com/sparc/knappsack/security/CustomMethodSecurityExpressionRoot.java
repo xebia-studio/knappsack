@@ -1,13 +1,14 @@
 package com.sparc.knappsack.security;
 
-import com.sparc.knappsack.components.entities.ApplicationVersion;
-import com.sparc.knappsack.components.entities.Group;
-import com.sparc.knappsack.components.entities.User;
-import com.sparc.knappsack.components.entities.UserDomain;
+import com.sparc.knappsack.components.entities.*;
+import com.sparc.knappsack.components.services.ApplicationVersionService;
+import com.sparc.knappsack.components.services.CategoryService;
 import com.sparc.knappsack.components.services.GroupService;
 import com.sparc.knappsack.components.services.UserService;
+import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import org.springframework.security.access.expression.SecurityExpressionRoot;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.FilterInvocation;
@@ -20,6 +21,10 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
     private GroupService groupService;
 
     private UserService userService;
+
+    private ApplicationVersionService applicationVersionService;
+
+    private CategoryService categoryService;
 
     /**
      * @param authentication Authentication
@@ -56,6 +61,9 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
     @SuppressWarnings("unused")
     public boolean isOrganizationAdminForGroup(Long groupId) {
         Group group = groupService.get(groupId);
+        if (group == null) {
+            throw new EntityNotFoundException();
+        }
         Long organizationId = group.getOrganization().getId();
         return isUserInDomain(organizationId, DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN);
     }
@@ -130,7 +138,8 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
         return false;
     }
 
-    @SuppressWarnings("unused")
+
+
     public boolean canEditApplication(Long applicationId) {
         User user = getUser();
         if(user == null) {
@@ -138,6 +147,36 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
         }
 
         return userService.canUserEditApplication(user.getId(), applicationId);
+    }
+
+    @SuppressWarnings("unused")
+    public boolean canEditApplicationVersion(Long applicationVersionId) {
+        User user = getUser();
+        if (user == null) {
+            return false;
+        }
+        ApplicationVersion applicationVersion = applicationVersionService.get(applicationVersionId);
+        if (applicationVersion == null || applicationVersion.getApplication() == null) {
+            throw new EntityNotFoundException();
+        }
+
+        return canEditApplication(applicationVersion.getApplication().getId());
+    }
+
+    @SuppressWarnings("unused")
+    public boolean hasAccessToCategory(Long categoryId, ApplicationType applicationType) {
+        User user = getUser();
+        if (user == null) {
+            return false;
+        }
+
+        for (Category category : userService.getCategoriesForUser(user, applicationType)) {
+            if (category.getId().equals(categoryId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean isUserInDomain(Long id, DomainType domainType, UserRole... userRoles) {
@@ -166,6 +205,14 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
 
     public void setUserService(UserService userService) {
         this.userService = userService;
+    }
+
+    public void setApplicationVersionService(ApplicationVersionService applicationVersionService) {
+        this.applicationVersionService = applicationVersionService;
+    }
+
+    public void setCategoryService(CategoryService categoryService) {
+        this.categoryService = categoryService;
     }
 
     private User getUser() {

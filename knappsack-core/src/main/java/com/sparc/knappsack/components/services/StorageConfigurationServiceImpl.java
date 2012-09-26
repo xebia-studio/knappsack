@@ -119,4 +119,9 @@ public class StorageConfigurationServiceImpl implements StorageConfigurationServ
 
         return storageService.toStorageConfiguration(storageForm);
     }
+
+    @Override
+    public boolean doesEntityExist(Long id) {
+        return get(id) != null;
+    }
 }

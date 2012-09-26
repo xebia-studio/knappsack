@@ -5,6 +5,8 @@ import com.sparc.knappsack.components.services.AppFileService;
 import com.sparc.knappsack.components.services.LocalStorageService;
 import com.sparc.knappsack.components.services.StorageService;
 import com.sparc.knappsack.components.services.StorageServiceFactory;
+import com.sparc.knappsack.enums.ContentType;
+import com.sparc.knappsack.enums.MimeType;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +38,12 @@ public class ImageController extends AbstractController {
 
     @RequestMapping(value = "/image/{id}", method = RequestMethod.GET)
     public ResponseEntity<byte[]> getImage(@PathVariable long id) {
+        checkRequiredEntity(appFileService, id);
         AppFile appFile = appFileService.get(id);
+
+        if (!ContentType.IMAGE.equals(MimeType.getForFilename(appFile.getName()).getContentType())) {
+            throw new RuntimeException(String.format("Attempted to pull file which wasn't an image: %s", id));
+        }
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(appFile.getType()));
 

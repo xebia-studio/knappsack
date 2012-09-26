@@ -8,12 +8,14 @@ import com.sparc.knappsack.components.validators.OrganizationValidator;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.OrganizationForm;
 import com.sparc.knappsack.forms.Result;
 import com.sparc.knappsack.models.DomainStatisticsModel;
 import com.sparc.knappsack.models.OrganizationModel;
 import com.sparc.knappsack.models.UserDomainModel;
-import com.sparc.knappsack.util.WebRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,6 +32,8 @@ import java.util.List;
 
 @Controller
 public class OrganizationController extends AbstractController {
+
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Qualifier("organizationService")
     @Autowired(required = true)
@@ -82,8 +86,9 @@ public class OrganizationController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin(#id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editOrg/{id}", method = RequestMethod.GET)
-    public String editOrganization(Model model, @PathVariable Long id) {
+    public String editOrganization(Model model, @PathVariable Long id)  {
 
+        checkRequiredEntity(organizationService, id);
         Organization existingOrg = organizationService.get(id);
 
         if (existingOrg != null) {
@@ -119,24 +124,26 @@ public class OrganizationController extends AbstractController {
             model.addAttribute("organizationGuests", organizationGuests);
 
             model.addAttribute("domainStatistics", getDomainStatisticsModel(existingOrg));
+
+            List<UserRole> userRoles = new ArrayList<UserRole>();
+            userRoles.add(UserRole.ROLE_ORG_ADMIN);
+            userRoles.add(UserRole.ROLE_ORG_USER);
+            model.addAttribute("userRoles", userRoles);
+
+
+            model.addAttribute("storageConfigurations", storageConfigurationService.getAll());
+            model.addAttribute("isEdit", true);
+
+            return "manager/manageOrganizationTH";
         }
-
-        List<UserRole> userRoles = new ArrayList<UserRole>();
-        userRoles.add(UserRole.ROLE_ORG_ADMIN);
-        userRoles.add(UserRole.ROLE_ORG_USER);
-        model.addAttribute("userRoles", userRoles);
-
-
-        model.addAttribute("storageConfigurations", storageConfigurationService.getAll());
-        model.addAttribute("isEdit", true);
-
-        return "manager/manageOrganizationTH";
+        throw new EntityNotFoundException(String.format("Organization not found: %s", id));
     }
 
     //TODO: Make it so OrgAdmins can also delete
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteOrg/{id}", method = RequestMethod.GET)
     public String deleteOrganization(Model model, @PathVariable Long id) {
+        checkRequiredEntity(organizationService, id);
         organizationService.delete(id);
 
         return addOrganization(model);
@@ -144,7 +151,7 @@ public class OrganizationController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin(#organizationForm.id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadOrg", method = RequestMethod.POST)
-    public String uploadOrganization(Model model, @ModelAttribute("org") @Valid OrganizationForm organizationForm, BindingResult bindingResult, WebRequest webRequest) {
+    public String uploadOrganization(Model model, @ModelAttribute("org") @Valid OrganizationForm organizationForm, BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             if(!model.containsAttribute("org")) {
@@ -194,6 +201,20 @@ public class OrganizationController extends AbstractController {
     public @ResponseBody
     Result updateOrgMemberRole(@RequestParam Long orgId, @RequestParam Long userId, @RequestParam UserRole userRole) {
         Result result = new Result();
+        try {
+            checkRequiredEntity(organizationService, orgId);
+        } catch (EntityNotFoundException ex) {
+            log.info(String.format("Attempted to update organization member role for non-existent organization: %s", orgId));
+            result.setResult(false);
+            return result;
+        }
+        try {
+            checkRequiredEntity(userService, userId);
+        } catch (EntityNotFoundException ex) {
+            log.info(String.format("Attempted to update organization member role for non-existent user: %s", userId));
+            result.setResult(false);
+            return result;
+        }
         result.setResult(true);
 
         userDomainService.updateUserDomainRole(userId, orgId, DomainType.ORGANIZATION, userRole);
@@ -207,6 +228,14 @@ public class OrganizationController extends AbstractController {
     @ResponseBody
     Result removeUsers(@RequestParam Long organizationId, @RequestParam(value = "userIds[]") List<Long> userIds) {
         Result result = new Result();
+
+        try {
+            checkRequiredEntity(organizationService, organizationId);
+        } catch (EntityNotFoundException ex) {
+            log.info(String.format("Attempted to update member role for non-existent organization: %s", organizationId));
+            result.setResult(false);
+            return result;
+        }
 
         if (organizationId != null && organizationId > 0 && userIds != null) {
             for (Long userId : userIds) {
