@@ -133,7 +133,7 @@
         <div style="display: inline-block; width: 100%">
             <div class="li-floater">
                 <div class="thumb">
-                    <img src="" th:src="@{'/image/' + ${selectedApplication.icon.id}}" class="li-thumbnail" th:if="${#bools.isTrue(selectedApplication.icon)}"/>
+                    <img src="" th:src="@{${selectedApplication.icon.url}}" class="li-thumbnail" th:if="${#bools.isTrue(selectedApplication.icon)}"/>
                     <img src="" ks:src="@{/resources/img/default_icon.png}" class="li-thumbnail" th:if="${#bools.isFalse(selectedApplication.icon)}"/>
                 </div>
             </div>
