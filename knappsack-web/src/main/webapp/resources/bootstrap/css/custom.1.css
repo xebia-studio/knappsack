@@ -574,3 +574,8 @@ table td div.overflow-inner {
 .app-description {
     margin-left: 2px;
 }
+
+.controls .vertical-align {
+    padding-top: 5px;
+    display: inline-block;
+}
