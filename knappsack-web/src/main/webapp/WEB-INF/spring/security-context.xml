@@ -8,6 +8,11 @@
 
     <beans:beans profile="dev">
         <context:property-placeholder location="classpath:properties/security_dev.properties" ignore-unresolvable="true"/>
+        <beans:bean id="tokenRepository"
+                    class="com.sparc.knappsack.security.CustomJdbcTokenRepositoryImpl">
+            <beans:property name="dataSource" ref="dataSource"/>
+            <beans:property name="createTableOnStartup"  value="true"/>
+        </beans:bean>
     </beans:beans>
 
     <beans:beans profile="dev">
@@ -74,9 +79,6 @@
         <!--</beans:bean>-->
 
         <!--BEANS-->
-        <beans:bean id="tokenRepository"
-                    class="org.springframework.security.web.authentication.rememberme.InMemoryTokenRepositoryImpl"/>
-
         <beans:bean id="openIDAuthenticationFailureHandler" class="com.sparc.knappsack.security.OpenIDAuthenticationFailureHandler">
             <beans:property name="defaultFailureUrl" value="${default.failure.url}"/>
             <beans:property name="openIdRegistrationUrl" value="/auth/register"/>
