@@ -197,6 +197,7 @@
           }
         },
         setupManual: function() {
+            alert("test");
           slider.controlNav = slider.manualControls;
           methods.controlNav.active();
           

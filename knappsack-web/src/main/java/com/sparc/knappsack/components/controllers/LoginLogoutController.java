@@ -86,9 +86,10 @@ public class LoginLogoutController extends AbstractController {
 
         log.debug("Received request to show login page");
 
-        invalidateSession(request, response);
+//        invalidateSession(request, response);
 
 //        request.getSession(false).removeAttribute("continueAttribute");
+
 
         if (error) {
             model.put("error", generateLoginErrorMessage(request.getSession(false)));
@@ -107,7 +108,7 @@ public class LoginLogoutController extends AbstractController {
     @RequestMapping(value = "/register", method = RequestMethod.GET)
     public String showRegistrationPage(HttpServletRequest request, HttpServletResponse response, Model model, @RequestParam(required = false) String email) {
 
-        invalidateSession(request, response);
+//        invalidateSession(request, response);
 
         if (!model.containsAttribute("registrationForm")) {
             RegistrationForm registrationForm = new RegistrationForm();
@@ -137,7 +138,7 @@ public class LoginLogoutController extends AbstractController {
             return showRegistrationPage(request, response, model, null);
         }
 
-        invalidateSession(request, response);
+//        invalidateSession(request, response);
 
         UserModel userModel = new UserModel();
         userModel.setEmail(registrationForm.getEmail().trim());
@@ -171,7 +172,7 @@ public class LoginLogoutController extends AbstractController {
 
     @RequestMapping(value = "/logout")
     public String logout(HttpServletRequest request, HttpServletResponse response) {
-        invalidateSession(request, response);
+//        invalidateSession(request, response);
 
         return "redirect:/auth/login";
     }

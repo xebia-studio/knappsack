@@ -32,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -258,8 +259,11 @@ public class ApplicationController extends AbstractController {
     public void downloadApplicationIos(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, UserAgentInfo userAgentInfo) {
         checkRequiredEntity(applicationVersionService, Long.valueOf(id));
 
-        request.getSession().invalidate();
-        request.getSession().removeAttribute("continueAttribute");
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+            session.removeAttribute("continueAttribute");
+        }
         addApplicationToResponse(response, id, userAgentInfo);
     }
 

@@ -19,17 +19,19 @@
 
         <http pattern="/ios/**" disable-url-rewriting="true" security="none"/>
 
-        <http use-expressions="true" disable-url-rewriting="true" auto-config="true" create-session="ifRequired" access-decision-manager-ref="accessDecisionManager">
-
+        <http use-expressions="true" disable-url-rewriting="true" auto-config="true" create-session="never" access-decision-manager-ref="accessDecisionManager">
             <expression-handler ref="customMethodSecurityExpressionHandler"/>
 
-            <session-management invalid-session-url="/auth/login" session-fixation-protection="none"/>
+            <session-management invalid-session-url="/auth/login" session-fixation-protection="newSession">
+                <concurrency-control max-sessions="1" expired-url="/auth/logout"/>
+            </session-management>
 
             <intercept-url pattern="/ios/**" access="permitAll"/>
             <intercept-url pattern="/auth/**" access="permitAll"/>
             <intercept-url pattern="/legal/**" access="permitAll"/>
             <intercept-url pattern="/resources/**" access="permitAll"/>
             <intercept-url pattern="/signup/**" access="permitAll"/>
+            <intercept-url pattern="/favicon.ico" access="permitAll"/>            
             <intercept-url pattern="/manager/**" access="isAnyAdmin()"/>
             <intercept-url pattern="/**" access="hasRole('ROLE_USER')" requires-channel="${requires.channel}"/>
 
@@ -53,7 +55,7 @@
 
             <remember-me user-service-ref="userDetailsService" token-repository-ref="tokenRepository" token-validity-seconds="86400" key="key" />
 
-            <logout invalidate-session="true" logout-success-url="/auth/login" logout-url="/auth/logout"/>
+            <logout invalidate-session="true" logout-success-url="/auth/login" logout-url="/auth/logout" delete-cookies="JSESSIONID"/>
 
         </http>
 

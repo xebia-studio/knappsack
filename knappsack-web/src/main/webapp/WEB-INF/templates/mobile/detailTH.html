@@ -12,109 +12,105 @@
     /*<![CDATA[*/
     var selectedVersionId = /*[[${initialVersionId}]]*/ '';
 
-    $("#detailPage").bind('pageinit', function() {
+    $('#detailPage').live('pageinit', function(event) {
+        var slider;
 
-        var description = /*[[${selectedApplication.description}]]*/ '';
-        $('#description').addHtml(description);
-
-        var recentChanges = /*[[${versions.get(0).recentChanges}]]*/ '';
-        $('#recentChanges').addHtml(recentChanges);
-
-        var instance, indicators;
-
-        $('p').nl2br();
-
-        $('#detailPage').bind('pagebeforeshow', function() {
+        $("#detailPage").live('pageshow', function(event) {
             var screenShots = /*[[${selectedApplication.screenShots}]]*/ '';
             if (screenShots.length <= 0) {
                 $('.image-container').hide();
-            }
-            setupPage();
-        });
-
-        $('#detailPage').bind('pageshow', function() {
-            var screenShots = /*[[${selectedApplication.screenShots}]]*/ '';
-
-            if (screenShots.length > 0) {
-                $('.flexslider').flexslider({
+            } else {
+                slider = $('.flexslider').flexslider({
                     animation: "slide",
                     controlsContainer: ".controls-container",
-                    smoothHeight: true
+                    smoothHeight: true,
+                    directionNav: false,
+                    startAt: 0
                 });
-            } else {
-                $('.image-container').hide();
             }
         });
 
-        $("#installBtn").bind("click", function() {
+        $('#detailPage').bind('pagebeforeshow', function() {
 
-            var selectedAppId = /*[[${selectedApplication.id}]]*/ '';
-            var generateDownloadApplicationUrl = /*[[@{/generateDownloadApplicationUrl/}]]*/ '';
-            var downloadDirectly = /*[[${downloadDirectly}]]*/ true;
-
-            if (downloadDirectly) {
-                $.ajax({
-                    type:"POST",
-                    url:generateDownloadApplicationUrl + selectedVersionId,
-                    cache:false,
-                    dataType:"text",
-                    data:({id:selectedAppId}),
-                    async:true,
-                    success:onSuccess,
-                    error:onError
-                });
-            } else {
-                $('.tab').hide();
-                $('.tab-link').removeClass('ui-btn-active');
-                $('#installContent').show();
-            }
-
-        });
-
-        $("#installContent #download").click(function() {
-            var url = /*[[@{/downloadApplication/}]]*/ '/downloadApplication/';
-            window.location = url + selectedVersionId;
-        });
-
-        function onSuccess(data) {
-//                $.mobile.loadPage(data);
-            window.location = data;
-//                $.mobile.changePage(data);
-        }
-
-        function onError(jqXHR, textStatus, errorThrown) {
-            console.log(jqXHR);
-            console.log(textStatus);
-            console.log(errorThrown);
-        }
-
-        function setupPage() {
             $('.tab').hide();
             $('#installContent').hide();
             $('#tab1Div').show();
-        }
 
-        $('#versionSelect').change(function() {
-            var recentChanges = $('#versionSelect option:selected').attr('data-recent-changes');
-            selectedVersionId = $('#versionSelect option:selected').attr('data-id');
+            var description = /*[[${selectedApplication.description}]]*/ '';
+            $('#description').addHtml(description);
 
+            var recentChanges = /*[[${versions.get(0).recentChanges}]]*/ '';
             $('#recentChanges').addHtml(recentChanges);
+
+            var instance, indicators;
+
+            $('p').nl2br();
+
+            $("#installBtn").on("click", function() {
+
+                var selectedAppId = /*[[${selectedApplication.id}]]*/ '';
+                var generateDownloadApplicationUrl = /*[[@{/generateDownloadApplicationUrl/}]]*/ '';
+                var downloadDirectly = /*[[${downloadDirectly}]]*/ true;
+
+                if (downloadDirectly) {
+                    $.ajax({
+                        type:"POST",
+                        url:generateDownloadApplicationUrl + selectedVersionId,
+                        cache:false,
+                        dataType:"text",
+                        data:({id:selectedAppId}),
+                        async:true,
+                        success:onSuccess,
+                        error:onError
+                    });
+                } else {
+                    $('.tab').hide();
+                    $('.tab-link').removeClass('ui-btn-active');
+                    $('#installContent').show();
+                }
+
+            });
+
+            $("#installContent #download").click(function() {
+                var url = /*[[@{/downloadApplication/}]]*/ '/downloadApplication/';
+                window.location = url + selectedVersionId;
+            });
+
+            function onSuccess(data) {
+                //                $.mobile.loadPage(data);
+                window.location = data;
+                //                $.mobile.changePage(data);
+            }
+
+            function onError(jqXHR, textStatus, errorThrown) {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+            }
+
+            $('#versionSelect').change(function() {
+                var recentChanges = $('#versionSelect option:selected').attr('data-recent-changes');
+                selectedVersionId = $('#versionSelect option:selected').attr('data-id');
+
+                $('#recentChanges').addHtml(recentChanges);
+            });
+
+            $('.tab-link').bind('click', function() {
+                $('.tab-link').removeClass('ui-btn-active');
+                $(this).addClass("ui-btn-active");
+                $('.tab').hide();
+                switch ($(this).attr('id')) {
+                    case "tab1":
+                        $("#tab1Div").show();
+                        break;
+                    case "tab2":
+                        $("#tab2Div").show();
+                        break;
+                }
+                return false;
+            });
         });
 
-        $('.tab-link').bind('click', function() {
-            $('.tab-link').removeClass('ui-btn-active');
-            $(this).addClass("ui-btn-active");
-            $('.tab').hide();
-            switch ($(this).attr('id')) {
-                case "tab1":
-                    $("#tab1Div").show();
-                    break;
-                case "tab2":
-                    $("#tab2Div").show();
-                    break;
-            }
-            return false;
-        });
     });
     /*]]>*/
 </script>

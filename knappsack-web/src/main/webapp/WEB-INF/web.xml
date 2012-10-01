@@ -44,6 +44,10 @@
     <listener>
         <listener-class>com.sparc.knappsack.components.server.WebAppContextListener</listener-class>
     </listener>
+    
+    <listener>
+        <listener-class>org.springframework.security.web.session.HttpSessionEventPublisher</listener-class>
+    </listener>
 
     <!-- Processes application requests -->
     <servlet>

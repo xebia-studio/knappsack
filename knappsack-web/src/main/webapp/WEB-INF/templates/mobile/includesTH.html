@@ -19,6 +19,7 @@
 
     <script src="../../../resources/js/jquery-1.7.1.min.js" ks:src="@{/resources/js/jquery-1.7.1.min.js}"></script>
     <script src="../../../resources/js/knappsack.js" ks:src="@{/resources/js/knappsack.js}"></script>
+    <script type="text/javascript" src="../../../resources/js/openid.js" ks:src="@{/resources/js/openid.js}"></script>
     <script th:inline="javascript">
         /*<![CDATA[*/
         $(document).live("mobileinit", function() {
@@ -48,7 +49,7 @@
 <body>
 
 <div th:fragment="pageSpecificImports">
-    <link type="text/css" rel="stylesheet" href="../../../resources/css/flexslider.css" ks:href="@{/resources/css/flexslider.css}" th:if="${include_detail}"/>
+    <link type="text/css" rel="stylesheet" href="../../../resources/flexslider/flexslider.css" ks:href="@{/resources/flexslider/flexslider.css}" th:if="${include_detail}"/>
     <link type="text/css" rel="stylesheet" href="../../../resources/css/detail.css" ks:href="@{/resources/css/detail.css}" th:if="${include_detail}"/>
 
     <script type="text/javascript" th:if="${include_home}">
@@ -58,8 +59,7 @@
         };
     </script>
     <script type="text/javascript" src="../../../resources/js/add2home.js" ks:src="@{/resources/js/add2home.js}" th:if="${include_home}"></script>
-    <script type="text/javascript" src="../../../resources/js/jquery.flexslider.js" ks:src="@{/resources/js/jquery.flexslider.js}" th:if="${include_detail}"></script>
-    <script type="text/javascript" src="../../../resources/js/openid.js" ks:src="@{/resources/js/openid.js}" th:if="${include_login}"></script>
+    <script type="text/javascript" src="../../../resources/flexslider/jquery.flexslider.js" ks:src="@{/resources/flexslider/jquery.flexslider.js}" th:if="${include_detail}"></script>
     <script type="text/javascript" src="../../../resources/js/jquery.validate.js" ks:src="@{/resources/js/jquery.validate.js}"></script>
 
 </div>

@@ -51,7 +51,7 @@ public class AbstractController {
 
         User user = userService.getUserFromSecurityContext();
         if (user == null) {
-            HttpSession session = request.getSession();
+            HttpSession session = request.getSession(false);
             if (session != null) {
                 SecurityContext context = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
                 if (context != null) {
