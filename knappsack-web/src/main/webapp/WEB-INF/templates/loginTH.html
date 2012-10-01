@@ -9,7 +9,8 @@
     /*<![CDATA[*/
     $(document).ready(function () {
 
-        var imagePath = /*[[@{/resources/img/openid/}]]*/ '/resources/img/openid/';
+        var contextPath = /*[[${#httpServletRequest.contextPath}]]*/ "";
+        var imagePath = contextPath + '/resources/img/openid/';
         $(providers).each(function() {
             var anchor = $('<a>').attr({'data-provider': this.url, 'title': this.name}).addClass('openid_btn').css('background-image', 'url(' + imagePath + this.image + ')').css('background-repeat', 'no-repeat').css('background-position', 'center');
             $('#openid_btns').append(anchor);

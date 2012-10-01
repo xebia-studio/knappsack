@@ -5,12 +5,12 @@
 </head>
 <body>
 
-<div id="loginPage" data-role="page" data-dom-cache="false" data-url="#loginPage">
+<div id="loginPage" data-role="page" data-dom-cache="false" data-url="#loginPage" data-ajax="false">
 
     <script th:inline="javascript">
         /*<![CDATA[*/
 
-        $('#loginPage').bind('pagebeforecreate', function() {
+        $('#loginPage').live('pagebeforecreate', function() {
             var activeTab = /*[[${activeTab}]]*/ 'login';
 
             if (activeTab == 'register') {
@@ -18,9 +18,10 @@
             }
         });
 
-        $('#loginPage').bind('pageinit', function() {
+        $('#loginPage').live('pageinit', function() {
 
-            var imagePath = /*[[@{/resources/img/openid/}]]*/ '/resources/img/openid/';
+            var contextPath = /*[[${#httpServletRequest.contextPath}]]*/ "";
+            var imagePath = contextPath + '/resources/img/openid/';
 
             $(providers).each(function() {
                 var anchor = $('<a>').attr('data-provider', this.url).addClass('openid_btn').css('background-image', 'url(' + imagePath + this.image + ')').css('background-repeat', 'no-repeat').css('background-position', 'center');
