@@ -13,6 +13,8 @@
             <beans:property name="dataSource" ref="dataSource"/>
             <beans:property name="createTableOnStartup"  value="true"/>
         </beans:bean>
+        <beans:bean id="sessionRegistry" class="org.springframework.security.core.session.SessionRegistryImpl"/>
+        <!--<beans:bean id="sessionRegistry" class="com.sparc.knappsack.security.MemCachedSessionRegistryImpl"/>        -->
     </beans:beans>
 
     <beans:beans profile="dev">
@@ -27,9 +29,7 @@
         <http use-expressions="true" disable-url-rewriting="true" auto-config="true" create-session="never" access-decision-manager-ref="accessDecisionManager">
             <expression-handler ref="customMethodSecurityExpressionHandler"/>
 
-            <session-management invalid-session-url="/auth/login" session-fixation-protection="newSession">
-                <concurrency-control max-sessions="1" expired-url="/auth/logout"/>
-            </session-management>
+            <session-management invalid-session-url="/auth/login" session-authentication-strategy-ref="sas"/>
 
             <intercept-url pattern="/ios/**" access="permitAll"/>
             <intercept-url pattern="/auth/**" access="permitAll"/>
@@ -74,9 +74,10 @@
             </beans:property>
         </beans:bean>
 
-        <!--<beans:bean class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">-->
-            <!--<beans:property name=""-->
-        <!--</beans:bean>-->
+        <beans:bean id="sas" class="org.springframework.security.web.authentication.session.ConcurrentSessionControlStrategy">
+            <beans:constructor-arg name="sessionRegistry" ref="sessionRegistry"/>
+            <beans:property name="maximumSessions" value="-1"/>
+        </beans:bean>
 
         <!--BEANS-->
         <beans:bean id="openIDAuthenticationFailureHandler" class="com.sparc.knappsack.security.OpenIDAuthenticationFailureHandler">
@@ -90,7 +91,6 @@
         </beans:bean>
 
         <authentication-manager alias="authenticationManager">
-            <!--<authentication-provider ref="openIdAuthenticationProvider"/>-->
             <authentication-provider ref="usernamePasswordAuthenticationProvider"/>
             <authentication-provider ref="rememberMeAuthenticationProvider"/>
         </authentication-manager>
