@@ -1,13 +1,8 @@
 package com.sparc.knappsack.security;
 
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
-@Scope("singleton")
 public class SingleUseTokenRepositoryImpl implements SingleUseTokenRepository {
     private final Map<String, SingleUseToken> tokens = new HashMap<String, SingleUseToken>();
 

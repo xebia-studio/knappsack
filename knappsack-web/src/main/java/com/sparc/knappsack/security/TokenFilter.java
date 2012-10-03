@@ -1,12 +1,15 @@
 package com.sparc.knappsack.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 
@@ -16,6 +19,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +29,7 @@ public class TokenFilter extends AbstractAuthenticationProcessingFilter {
     @Value("${singleuse.token.validity.seconds}")
     private int tokenValiditySecond;
 
+    @Qualifier("singleUseTokenRepository")
     @Autowired(required = true)
     private SingleUseTokenRepository tokenRepository;
 
@@ -44,7 +49,10 @@ public class TokenFilter extends AbstractAuthenticationProcessingFilter {
             IOException, ServletException {
 
         boolean authenticated = false;
-        request.getSession(false).setAttribute("continueAttribute", true);
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.setAttribute("continueAttribute", true);
+        }
 
         String tokenParam = request.getParameter("token");
 
@@ -94,13 +102,21 @@ public class TokenFilter extends AbstractAuthenticationProcessingFilter {
 
     @Override
     protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
-        Object continueAttribute = request.getSession(false).getAttribute("continueAttribute");
-        if (request.getServletPath().equals("/auth/login")) {
+        SecurityContext context = SecurityContextHolder.getContext();
+        HttpSession session = request.getSession();
+        if (context != null && context.getAuthentication() != null) {
+            Object continueAttribute = null;
+            if (session != null) {
+                continueAttribute = session.getAttribute("continueAttribute");
+            }
+            if (request.getServletPath().equals("/auth/login")) {
+                return false;
+            } else if (request.getServletPath().startsWith("/ios/downloadApplication")) {
+                return continueAttribute == null;
+            }
             return false;
-        } else if (request.getServletPath().startsWith("/ios/downloadApplication")) {
-            return continueAttribute == null;
         }
-        return false;
+        return true;
     }
 
 }

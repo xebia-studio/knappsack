@@ -262,7 +262,6 @@ public class ApplicationController extends AbstractController {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
-            session.removeAttribute("continueAttribute");
         }
         addApplicationToResponse(response, id, userAgentInfo);
     }

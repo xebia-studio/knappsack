@@ -9,7 +9,9 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,6 +38,7 @@ public class TokenFilterTest {
     public void before() throws Exception {
         httpServletRequest = getHttpServletRequest();
         httpServletResponse = getHttpServletResponse();
+        SecurityContextHolder.clearContext();
     }
 
     @After
@@ -77,16 +80,24 @@ public class TokenFilterTest {
      */
     @Test
     public void testRequiresAuthentication() throws Exception {
-        Mockito.when(httpServletRequest.getServletPath()).thenReturn("/auth/login");
+        SecurityContextHolder.getContext().setAuthentication(null);
         boolean isRequiredAuth = tokenFilter.requiresAuthentication(httpServletRequest, httpServletResponse);
+        assertTrue(isRequiredAuth);
+
+        HttpSession session = Mockito.mock(HttpSession.class);
+
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("test", "test"));
+        Mockito.when(httpServletRequest.getSession()).thenReturn(session);
+        Mockito.when(httpServletRequest.getServletPath()).thenReturn("/auth/login");
+        isRequiredAuth = tokenFilter.requiresAuthentication(httpServletRequest, httpServletResponse);
         assertFalse(isRequiredAuth);
 
+        Mockito.when(httpServletRequest.getSession()).thenReturn(session);
         Mockito.when(httpServletRequest.getServletPath()).thenReturn("/ios/downloadApplication");
         isRequiredAuth = tokenFilter.requiresAuthentication(httpServletRequest, httpServletResponse);
         assertTrue(isRequiredAuth);
 
-        HttpSession session = Mockito.mock(HttpSession.class);
-        Mockito.when(httpServletRequest.getSession(false)).thenReturn(session);
+        Mockito.when(httpServletRequest.getSession()).thenReturn(session);
         Mockito.when(session.getAttribute("continueAttribute")).thenReturn(new Object());
         isRequiredAuth = tokenFilter.requiresAuthentication(httpServletRequest, httpServletResponse);
         assertFalse(isRequiredAuth);

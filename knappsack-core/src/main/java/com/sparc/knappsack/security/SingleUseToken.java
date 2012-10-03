@@ -3,9 +3,12 @@ package com.sparc.knappsack.security;
 import com.sparc.knappsack.exceptions.TokenException;
 import org.hsqldb.lib.MD5;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class SingleUseToken {
+public class SingleUseToken implements Serializable {
+
+    private static final long serialVersionUID = 7627478913836974129L;
 
     private Date date;
     private String sessionIdHash;
