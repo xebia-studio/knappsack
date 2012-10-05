@@ -1,6 +1,8 @@
 package com.sparc.knappsack.components.services;
 
-import com.sparc.knappsack.components.entities.*;
+import com.sparc.knappsack.components.entities.Application;
+import com.sparc.knappsack.components.entities.Category;
+import com.sparc.knappsack.components.entities.Domain;
 import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.forms.UploadApplication;
 import com.sparc.knappsack.models.ApplicationModel;
@@ -85,4 +87,9 @@ public interface ApplicationService extends EntityService<Application> {
      * @return boolean true if the amount of versions allowed for this application and domain has reached its maximum.
      */
     boolean isApplicationVersionLimit(Application application, Domain domain);
+
+    /**
+     * @return Count of all Applications
+     */
+    long countAll();
 }

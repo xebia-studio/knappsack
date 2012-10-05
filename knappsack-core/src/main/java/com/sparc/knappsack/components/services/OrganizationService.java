@@ -52,4 +52,9 @@ public interface OrganizationService extends EntityService<Organization> {
     OrganizationModel createOrganizationModel(Long organizationId);
 
     List<Application> getAllOrganizationApplications(Long organizationId);
+
+    /**
+     * @return Count of all Organizations
+     */
+    long countAll();
 }

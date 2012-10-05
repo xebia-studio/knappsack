@@ -10,6 +10,7 @@ import com.sparc.knappsack.models.ApplicationModel;
 import com.sparc.knappsack.models.ImageModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -342,5 +343,11 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public boolean doesEntityExist(Long id) {
         return get(id) != null;
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @Override
+    public long countAll() {
+        return applicationDao.countAll();
     }
 }

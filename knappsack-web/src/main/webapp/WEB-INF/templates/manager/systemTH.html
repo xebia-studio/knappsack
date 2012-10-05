@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active='systemNav',title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightnav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+        <div class="span10">
+
+
+            <header class="jumbotron subhead" id="overview">
+                <h1 style="text-align: left" th:text="#{desktop.manager.system.header.overview}">Manage Knappsack</h1>
+            </header>
+
+            <div class="tabbable">
+
+                <ul id="tab" class="nav nav-tabs">
+                    <li class="active dropdown">
+                        <a href="#metrics" th:text="#{desktop.manager.system.tab.metrics}">Metrics</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div id="metrics" class="tab-pane active">
+                        <div class="row-fluid">
+                            <h3 th:text="#{desktop.manager.system.metrics}"></h3>
+                            <span style="display:block"><span th:text="#{desktop.manager.system.metrics.organizationCount}">Organizations:</span> <b th:text="${organizationCount}"/></span>
+                            <span style="display:block"><span th:text="#{desktop.manager.system.metrics.applicationCount}">Applications:</span> <b th:text="${applicationCount}"/></span>
+                            <span style="display:block"><span th:text="#{desktop.manager.system.metrics.userCount}">Users:</span> <b th:text="${userCount}"/></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+
+</body>
+</html>

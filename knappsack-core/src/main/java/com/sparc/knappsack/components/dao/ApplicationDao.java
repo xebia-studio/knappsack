@@ -39,4 +39,9 @@ public interface ApplicationDao extends Dao<Application> {
      * @return List of Application entities for a given Category and ApplicationType
      */
     List<Application> getByCategoryAndApplicationType(Category category, ApplicationType applicationType);
+
+    /**
+     * @return Count of all Applications
+     */
+    long countAll();
 }

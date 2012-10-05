@@ -72,4 +72,9 @@ public class ApplicationDaoImpl extends BaseDao implements ApplicationDao {
     public void update(Application application) {
         getEntityManager().merge(application);
     }
+
+    @Override
+    public long countAll() {
+        return query().from(application).count();
+    }
 }

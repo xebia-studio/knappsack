@@ -16,4 +16,9 @@ public interface OrganizationDao extends Dao<Organization> {
      * @return Organization with the given name
      */
     Organization get(String name);
+
+    /**
+     * @return Total number of Organizations
+     */
+    long countAll();
 }

@@ -38,4 +38,9 @@ public class OrganizationDaoImpl extends BaseDao implements OrganizationDao {
     public Organization get(String name) {
         return query().from(organization).where(organization.name.equalsIgnoreCase(name)).uniqueResult(organization);
     }
+
+    @Override
+    public long countAll() {
+        return query().from(organization).count();
+    }
 }
