@@ -1,5 +1,6 @@
 package com.sparc.knappsack.components.entities;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.persistence.*;
@@ -10,7 +11,11 @@ import java.util.UUID;
 @MappedSuperclass
 public class BaseEntity implements Serializable {
 
+    @Transient
     private static final long serialVersionUID = -8027314860537763026L;
+
+    @Transient
+    private static final String AUTOMATED_USER = "automatedUser";
 
     @Version
     @Column(name = "VERSION")
@@ -79,11 +84,18 @@ public class BaseEntity implements Serializable {
 
     @PrePersist
     protected void onCreate() {
-        Object user = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(user instanceof User) {
-            changedBy = ((User)SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-        } else if(user instanceof String) {
-            changedBy = (String) user;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object user = authentication.getPrincipal();
+            if(user instanceof User) {
+                changedBy = ((User) user).getUsername();
+            } else if(user instanceof String) {
+                changedBy = (String) user;
+            } else {
+                changedBy = AUTOMATED_USER;
+            }
+        } else {
+            changedBy = AUTOMATED_USER;
         }
         lastUpdate = createDate = new Date();
 
@@ -93,11 +105,18 @@ public class BaseEntity implements Serializable {
 
     @PreUpdate
     protected void onUpdate() {
-        Object user = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(user instanceof User) {
-            changedBy = ((User)SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUsername();
-        } else if(user instanceof String) {
-            changedBy = (String) user;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object user = authentication.getPrincipal();
+            if(user instanceof User) {
+                changedBy = ((User) user).getUsername();
+            } else if(user instanceof String) {
+                changedBy = (String) user;
+            } else {
+                changedBy = AUTOMATED_USER;
+            }
+        } else {
+            changedBy = AUTOMATED_USER;
         }
         lastUpdate = new Date();
     }

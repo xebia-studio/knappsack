@@ -29,25 +29,27 @@ public class ImplicitObjectsInterceptor extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
         HttpSession session = request.getSession();
-        SecurityContext context = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
-        if (context != null) {
-            if (context.getAuthentication() != null && context.getAuthentication().getPrincipal() != null && context.getAuthentication().getPrincipal() instanceof User) {
-                User user = userService.getUserFromSecurityContext();
+        if (session != null) {
+            SecurityContext context = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
+            if (context != null) {
+                if (context.getAuthentication() != null && context.getAuthentication().getPrincipal() != null && context.getAuthentication().getPrincipal() instanceof User) {
+                    User user = userService.getUserFromSecurityContext();
 
-                String servletPath = request.getServletPath();
+                    String servletPath = request.getServletPath();
 
-                if (!servletPath.startsWith("/auth") && !servletPath.startsWith("/resources") && user != null) {
-                    if (!user.isActivated() && !servletPath.startsWith("/activate")) {
-                        String requestURL = request.getContextPath() + "/activate";
+                    if (!servletPath.startsWith("/auth") && !servletPath.startsWith("/resources") && user != null) {
+                        if (!user.isActivated() && !servletPath.startsWith("/activate")) {
+                            String requestURL = request.getContextPath() + "/activate";
 
-                        response.sendRedirect(requestURL);
-                    } else if (user.isPasswordExpired() && !servletPath.startsWith("/profile/changePassword") && !servletPath.startsWith("/auth/forgotPassword")) {
-                        String requestURL = request.getContextPath() + "/profile/changePassword";
+                            response.sendRedirect(requestURL);
+                        } else if (user.isPasswordExpired() && !servletPath.startsWith("/profile/changePassword") && !servletPath.startsWith("/auth/forgotPassword")) {
+                            String requestURL = request.getContextPath() + "/profile/changePassword";
 
-                        response.sendRedirect(requestURL);
+                            response.sendRedirect(requestURL);
+                        }
                     }
-                }
 //                }
+                }
             }
         }
 
