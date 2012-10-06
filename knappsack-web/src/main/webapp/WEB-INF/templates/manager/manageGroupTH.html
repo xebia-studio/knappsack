@@ -9,6 +9,7 @@
 <script type="text/javascript" th:inline="javascript">
     /*<![CDATA[*/
     $(document).ready(function () {
+        $(this).tabState();
         var tmpOptions = {};
         var tmpSelectedRows = [];
         var groupId = /*[[${group.id}]]*/ '';
@@ -292,7 +293,7 @@
             <div class="tabbable">
 
                 <ul id="tab" class="nav nav-tabs">
-                    <li class="active dropdown">
+                    <li class="active dropdown tab">
                         <a href="#" th:text="#{desktop.manageGroup.group}" th:if="${#bools.isFalse(isEdit)}">Group</a>
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" th:if="${#bools.isTrue(isEdit)}">
                             <span th:text="#{desktop.manageGroup.group}">Group</span>
@@ -304,7 +305,7 @@
                             <li th:if="${user.systemOrOrganizationAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${group.id} + '/GROUP'" th:if="${isEdit}" th:text="#{desktop.manageGroup.preferences}">Preferences</a></li>
                         </ul>
                     </li>
-                    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+                    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
                         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                             <span th:text="#{desktop.manageGroup.applications}">Applications</span>
                             <b class="caret"/>
@@ -316,7 +317,7 @@
                         </ul>
 
                     </li>
-                    <li id="membersTab" th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+                    <li id="membersTab" th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                             <span th:text="#{desktop.manageGroup.members}">Members</span>
                             <i id="membersTabAlertIcon" class="icon-exclamation-sign icon-black" th:if="${#bools.isTrue(hasPendingRequests)}"/>

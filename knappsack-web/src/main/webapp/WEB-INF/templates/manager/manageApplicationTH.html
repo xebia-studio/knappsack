@@ -13,6 +13,7 @@
     <script type="text/javascript" th:inline="javascript">
     /*<![CDATA[*/
     $(document).ready(function () {
+        $(this).tabState();
 
         var tempUrl, selectedElement;
 
@@ -172,8 +173,8 @@
 
             <div class="tabbable">
                 <ul id="tab" class="nav nav-tabs">
-                    <li class="active"><a href="#application" data-toggle="tab" th:text="#{desktop.manageApplication.application}">Application</a></li>
-                    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+                    <li class="active tab"><a href="#application" data-toggle="tab" th:text="#{desktop.manageApplication.application}">Application</a></li>
+                    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
                         <a class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
                             [[#{desktop.manageApplication.versions}]]
                             <b class="caret"></b>

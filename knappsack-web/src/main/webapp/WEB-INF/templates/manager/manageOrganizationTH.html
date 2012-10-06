@@ -12,7 +12,10 @@
 
 <script type="text/javascript" th:inline="javascript">
 /*<![CDATA[*/
+
 $(document).ready(function () {
+    $(this).tabState();
+
     var isEdit = /*[[${isEdit}]]*/ false;
     var tmpOptions = {};
     var successFunction;
@@ -287,7 +290,7 @@ $(document).ready(function () {
 <div class="tabbable">
 <section id="tabs">
 <ul id="tab" class="nav nav-tabs">
-    <li class="active dropdown">
+    <li class="active dropdown tab">
         <a href="#" th:text="#{desktop.manageOrganization.org}" th:if="${#bools.isFalse(isEdit)}">Organization</a>
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" th:inline="text" th:if="${#bools.isTrue(isEdit)}">
             [[#{desktop.manageOrganization.org}]]
@@ -300,7 +303,7 @@ $(document).ready(function () {
         </ul>
     </li>
 
-    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
             [[#{desktop.manageOrganization.categories}]]
             <b class="caret"/>
@@ -313,7 +316,7 @@ $(document).ready(function () {
         </ul>
 
     </li>
-    <li id="membersTab" th:if="${#bools.isTrue(isEdit)}" class="dropdown">
+    <li id="membersTab" th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
             [[#{desktop.manageOrganization.members}]]
             <b class="caret"/>
@@ -327,7 +330,7 @@ $(document).ready(function () {
         </ul>
 
     </li>
-    <li id="applicationsTab" th:if="${#bools.isTrue(isEdit)}"><a href="#applications" data-toggle="tab" th:inline="text">[[#{desktop.manageOrganization.applications}]]<i
+    <li id="applicationsTab" th:if="${#bools.isTrue(isEdit)}" class="tab"><a href="#applications" data-toggle="tab" th:inline="text">[[#{desktop.manageOrganization.applications}]]<i
             id="applicationsTabAlertIcon" th:if="${#bools.isTrue(hasApplicationRequests)}"
             class="icon-exclamation-sign icon-black"/></a></li>
 </ul>
@@ -581,6 +584,7 @@ $(document).ready(function () {
 <section id="scripts">
     <section th:include="/includesTH :: required_scripts"/>
     <section th:include="/includesTH :: table_scripts"/>
+    <script th:substituteby="/includesTH :: cookie_script"></script>
 </section>
 
 </body>

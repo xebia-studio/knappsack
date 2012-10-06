@@ -40,3 +40,23 @@
         }
     });
 })(jQuery);
+
+(function($){
+    $.fn.tabState = function() {
+        $('a[data-toggle="tab"]').on('shown', function(e){
+            //save the latest tab using a cookie:
+            $.cookie('last_tab', $(e.target).attr('href'));
+        });
+
+        var lastTab = $.cookie('last_tab');
+        if (lastTab) {
+            var $tab = $('a[href='+ lastTab +']').parents('li.tab');
+            if ($tab != undefined) {
+                $('ul.nav-tabs').children().removeClass('active');
+                $tab.addClass('active');
+                $('div.tab-content').children().removeClass('active');
+                $(lastTab).addClass('active');
+            }
+        }
+    };
+})(jQuery);
