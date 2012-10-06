@@ -14,7 +14,7 @@
             var activeTab = /*[[${activeTab}]]*/ 'login';
 
             if (activeTab == 'register') {
-                $.mobile.changePage('#signUp', { transition : "flip" });
+                $.mobile.changePage('#register', { transition : "flip" });
             }
         });
 
@@ -131,7 +131,7 @@
 
             <div class="account-controls">
                 <p>
-                    <a href="#forgotPassword" data-rel="page" data-transition="flip" th:text="#{mobile.login.forgotPassword}">Forgot Password?</a> | <a href="#signUp" data-rel="page" data-transition="flip" th:text="#{mobile.login.signUp}">Sign Up</a>
+                    <a href="#forgotPassword" data-rel="page" data-transition="flip" th:text="#{mobile.login.forgotPassword}">Forgot Password?</a> | <a href="#register" data-rel="page" data-transition="flip" th:text="#{mobile.login.register}">Register</a>
                 </p>
             </div>
 
@@ -139,25 +139,14 @@
     </div>
 </div>
 
-<div id="signUp" data-role="page" data-dom-cache="false" data-url="#signUp">
+<div id="register" data-role="page" data-dom-cache="false" data-url="#register">
 
     <script th:inline="javascript">
         /*<![CDATA[*/
 
-        $('#signUp').bind('pageinit', function() {
+        $('#register').bind('pageinit', function() {
 
-            $('#signUpForm').validate();
-
-//            $('#signUpForm').submit(function(e) {
-//                e.preventDefault();
-//
-//                var isValid = $(this).valid();
-//                if (!isValid) {
-//                    return false;
-//                }
-//
-//                return true;
-//            });
+            $('#registerForm').validate();
 
         });
         /*]]>*/
@@ -168,13 +157,13 @@
     </div>
     <div data-role="content">
 
-        <h3 style="text-align: center" th:text="#{mobile.login.signUp}">Sign Up</h3>
+        <h3 style="text-align: center" th:text="#{mobile.login.register}">Register</h3>
         <div data-role="collapsible">
             <h3 th:text="#{mobile.login.invitationOnly}">Please note! Invitation only!</h3>
             <p th:text="#{mobile.login.invitationOnlyMessage}">The use of Knappsack is currently by invitation only.  If you have not received an invitation, you will not be able to create an account.</p>
         </div>
 
-        <form id="signUpForm" th:object="${registrationForm}" th:action="@{/auth/register}" action="/auth/register" method="post" data-ajax="false">
+        <form id="registerForm" th:object="${registrationForm}" th:action="@{/auth/register}" action="/auth/register" method="post" data-ajax="false">
             <div id="errors"  class="alert alert-error" th:if="${#fields.hasErrors('*')}">
                 <h3 th:text="#{errors.header}"/>
                 <ul>
@@ -280,7 +269,7 @@
 
         <div class="account-controls">
             <p>
-                <a href="#loginPage" data-rel="page" data-transition="flip">Login</a> | <a href="#signUp" data-rel="page" data-transition="flip">Sign Up</a>
+                <a href="#loginPage" data-rel="page" data-transition="flip">Login</a> | <a href="#register" data-rel="page" data-transition="flip">Register</a>
             </p>
         </div>
     </div>
@@ -296,7 +285,7 @@
 
         <div class="account-controls">
             <p>
-                <a href="#loginPage" data-rel="page" data-transition="flip">Login</a> | <a href="#signUp" data-rel="page" data-transition="flip" th:text="#{mobile.login.signUp}">Sign Up</a>
+                <a href="#loginPage" data-rel="page" data-transition="flip">Login</a> | <a href="#register" data-rel="page" data-transition="flip" th:text="#{mobile.login.register}">Register</a>
             </p>
         </div>
     </div>
