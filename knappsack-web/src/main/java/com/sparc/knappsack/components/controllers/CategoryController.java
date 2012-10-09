@@ -8,12 +8,15 @@ import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.components.validators.CategoryValidator;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.StorageType;
+import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.CategoryForm;
 import com.sparc.knappsack.forms.EnumEditor;
 import com.sparc.knappsack.forms.Result;
 import com.sparc.knappsack.models.ApplicationModel;
 import com.sparc.knappsack.models.CategoryModel;
 import com.sparc.knappsack.util.UserAgentInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mock.web.MockMultipartFile;
@@ -33,6 +36,8 @@ import java.util.List;
 
 @Controller
 public class CategoryController extends AbstractController {
+    private static final Logger log = LoggerFactory.getLogger(CategoryController.class);
+
     @Qualifier("categoryService")
     @Autowired
     private CategoryService categoryService;
@@ -190,17 +195,33 @@ public class CategoryController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin(#orgId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteCategoryIcon/{id}/{orgId}", method = RequestMethod.POST)
-    public String deleteCategoryIcon(Model model, @PathVariable Long id, @PathVariable Long orgId) {
-        checkRequiredEntity(categoryService, id);
+    public @ResponseBody
+    Result deleteCategoryIcon(Model model, @PathVariable Long id, @PathVariable Long orgId) {
+        Result result = new Result();
+        try {
+            checkRequiredEntity(categoryService, id);
+        } catch (EntityNotFoundException ex) {
+            log.info(String.format("Attempted to delete an icon for a non-existent category: %s", id));
+            result.setResult(false);
+            return result;
+        }
 
         Category category = categoryService.get(id);
         Long organizationId = category.getOrganization().getId();
         if (!orgId.equals(organizationId)) {
-            throw new RuntimeException("Attempted to delete category icon for organization with different Id");
+            log.info("Attempted to delete category icon for organization with different Id");
         }
-        categoryService.deleteIcon(category);
+        categoryService.deleteIcon(id);
 
-        return editCategory(model, id, orgId);
+        category = categoryService.get(id);
+
+        if (category != null && category.getIcon() == null) {
+            result.setResult(true);
+        } else {
+            result.setResult(true);
+        }
+
+        return result;
     }
 
     @PreAuthorize("isOrganizationAdmin(#orgId) or hasRole('ROLE_ADMIN')")

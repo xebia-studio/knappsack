@@ -90,7 +90,7 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
         }
 
         if (category != null) {
-            deleteIcon(category);
+            deleteIcon(id);
             Organization organization = category.getOrganization();
             organization.getCategories().remove(category);
 
@@ -149,10 +149,13 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
     }
 
     @Override
-    public void deleteIcon(Category category) {
-        AppFile appFile = category.getIcon();
-        category.setIcon(null);
-        appFileService.delete(appFile);
+    public void deleteIcon(Long categoryId) {
+        Category category = get(categoryId);
+        if (category != null) {
+            AppFile appFile = category.getIcon();
+            category.setIcon(null);
+            appFileService.delete(appFile);
+        }
     }
 
     @Override

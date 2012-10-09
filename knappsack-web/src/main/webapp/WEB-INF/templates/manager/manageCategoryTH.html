@@ -9,6 +9,8 @@
 <script type="text/javascript" th:inline="javascript">
     /*<![CDATA[*/
     $(document).ready(function () {
+        var tempUrl, successFunction;
+
         $("#progressDiv").hide();
 
         var isEdit = /*[[${isEdit}]]*/ false;
@@ -23,23 +25,60 @@
 
         }
 
-        $("#deleteIcon").live("click", function () {
-            var confirmText = /*[[#{desktop.manageCategory.areYouSure}]]*/ "Are you sure you want to delete this icon?";
-            var answer = confirm(confirmText);
-            if (answer) {
-                $("#addIconDiv").show();
-                $("#deleteIconDiv").hide();
-//                    $('#icon').attr('required', 'required');
-                deleteFile($("#deleteIcon").attr("value"));
+        $("#deleteIcon").live("click", function (e) {
+            e.preventDefault();
+            var deleteIconText = /*[[#{desktop.manageCategory.deleteIcon}]]*/ 'Delete icon';
+            showConfirmationModal(deleteIconText);
+            tempUrl = $(this).val();
+            successFunction = function() {
+                $('#deleteIconDiv').hide();
+                $('#addIconDiv').show();
                 hasIcon = false;
-                $("#progressDiv").show();
             }
+
         });
 
-        function deleteFile(url) {
-            $.post(url, function(data) {
+        function ajaxDeleteFile(url) {
+            $.post(url, function (data) {
+                if (data.result) {
+                    $('#confirmationModal .modal-body .alert-error').hide();
+                    $('#confirmationModal .modal-body .alert-success').show();
+                    successFunction();
+                    hideModal(500);
+                } else {
+                    $('#confirmationModal .modal-body .alert-error').show();
+                    $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                    $('#confirmationModal .close').removeAttr('disabled');
+                }
             });
         }
+
+        function hideModal(delay) {
+            setTimeout(function () {
+                        $('.modal').modal('hide');
+                    }, delay
+            );
+        }
+
+        function showConfirmationModal(title) {
+            $('#confirmationModal .modal-header h3').text(title);
+            $('#confirmationModal').modal();
+        }
+
+        $('#confirmationModalSubmit').click(function () {
+            ajaxDeleteFile(tempUrl);
+        });
+
+        $('#confirmationModal').on('show', function () {
+            $('#confirmationModal .modal-body .alert').hide();
+            $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+            $('#confirmationModal .close').removeAttr('disabled');
+        });
+
+        $('#confirmationModal').on('hide', function () {
+            tempUrl = '';
+            successFunction = '';
+        });
 
         $('#categoryForm').submit(function() {
             return true;
@@ -179,7 +218,7 @@
 
                             <div class="control-group" id="deleteIconDiv" th:if="${isEdit}">
                                 <div th:if="*{#bools.isTrue(icon)}">
-                                    <label class="control-label" for="deleteIcon" th:text="#{desktop.manageCategory.deleteIcon}">Delete icon image</label>
+                                    <label class="control-label" for="deleteIcon" th:text="#{desktop.manageCategory.deleteIcon}">Delete icon</label>
                                     <div class="controls">
                                         <button class="btn btn-danger"
                                                 th:value="@{'/manager/deleteCategoryIcon/' + *{id} + '/' + ${parentOrgId}}"
@@ -225,6 +264,8 @@
     </div>
 
 </div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
 
 <footer th:substituteby="/includesTH :: footer"></footer>
 

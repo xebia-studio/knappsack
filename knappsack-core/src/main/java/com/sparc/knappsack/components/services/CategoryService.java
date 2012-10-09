@@ -25,9 +25,9 @@ public interface CategoryService extends EntityService<Category> {
     Category saveCategory(CategoryForm categoryForm);
 
     /**
-     * @param category Category - delete the icon from this Category
+     * @param categoryId Long - delete the icon from this Category
      */
-    void deleteIcon(Category category);
+    void deleteIcon(Long categoryId);
 
     /**
      * @param category Category
