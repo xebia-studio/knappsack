@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,7 +28,9 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Controller
@@ -64,6 +67,7 @@ public class OrganizationController extends AbstractController {
     @InitBinder("organizationForm")
     protected void initBinder(WebDataBinder binder) {
         binder.setValidator(organizationValidator);
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(new SimpleDateFormat("MM/dd/yyyy"), true));
     }
 
     @PreAuthorize("isOrganizationAdmin() or hasRole('ROLE_ADMIN')")
@@ -252,6 +256,12 @@ public class OrganizationController extends AbstractController {
         result.setResult(true);
 
         return result;
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/organizationList", method = RequestMethod.GET)
+    public @ResponseBody List<OrganizationModel> getOrganizationsForRange(@RequestParam Date minDate, @RequestParam Date maxDate) {
+        return organizationService.getAllOrganizationsForCreateDateRange(minDate, maxDate);
     }
 
     private DomainStatisticsModel getDomainStatisticsModel(Organization organization) {

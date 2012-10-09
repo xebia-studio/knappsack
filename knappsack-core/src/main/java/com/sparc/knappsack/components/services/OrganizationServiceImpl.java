@@ -342,6 +342,23 @@ public class OrganizationServiceImpl implements OrganizationService {
             model = new OrganizationModel();
             model.setId(organization.getId());
             model.setName(organization.getName());
+            model.setCreateDate(organization.getCreateDate());
+            OrgStorageConfig orgStorageConfig = organization.getOrgStorageConfig();
+            if (orgStorageConfig != null && orgStorageConfig.getStorageConfigurations() != null) {
+                model.setStorageConfigurationId(orgStorageConfig.getStorageConfigurations().get(0).getId());
+                model.setStoragePrefix(orgStorageConfig.getPrefix());
+            }
+        }
+        return model;
+    }
+
+    private OrganizationModel createOrganizationModel(Organization organization) {
+        OrganizationModel model = null;
+        if (organization != null) {
+            model = new OrganizationModel();
+            model.setId(organization.getId());
+            model.setName(organization.getName());
+            model.setCreateDate(organization.getCreateDate());
             OrgStorageConfig orgStorageConfig = organization.getOrgStorageConfig();
             if (orgStorageConfig != null && orgStorageConfig.getStorageConfigurations() != null) {
                 model.setStorageConfigurationId(orgStorageConfig.getStorageConfigurations().get(0).getId());
@@ -373,5 +390,26 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public long countAll() {
         return organizationDao.countAll();
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN'")
+    @Override
+    public List<OrganizationModel> getAllOrganizationsForCreateDateRange(Date minDate, Date maxDate) {
+        List<OrganizationModel> models = new ArrayList<OrganizationModel>();
+        if (minDate == null && maxDate == null) {
+            return models;
+        }
+        List<Organization> organizations = organizationDao.getAllForCreateDateRange(minDate, maxDate);
+
+        if (organizations != null) {
+            for (Organization organization : organizations) {
+                OrganizationModel model = createOrganizationModel(organization);
+                if (model != null) {
+                    models.add(model);
+                }
+            }
+        }
+
+        return models;
     }
 }

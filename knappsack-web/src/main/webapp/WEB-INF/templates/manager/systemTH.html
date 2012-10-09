@@ -10,6 +10,61 @@
 
 <div class="container-fluid">
 
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+            var orgDateRangeUrl = /*[[@{/manager/organizationList}]]*/ '/manager/organizationList';
+
+            $('#datepicker_min').inputmask({
+                mask: '99/99/9999'
+            });
+
+            $('#datepicker_max').inputmask({
+                mask: '99/99/9999'
+            });
+
+            $('table').dataTable( {
+                "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+                "sPaginationType": "bootstrap",
+                "oLanguage": {
+                    "sLengthMenu": "_MENU_ " + 'Num of records'
+                },
+                "aoColumns": [
+                    null,
+                    null
+                ],
+                "sAjaxSource": buildOrganizationUrl()
+            });
+
+            function buildOrganizationUrl() {
+                return orgDateRangeUrl + "?" + $.param({'minDate':minDate, 'maxDate':maxDate});
+            }
+
+            $.fn.dataTableExt.afnFiltering.push(
+              function( oSettings, aData, iDataIndex ) {
+                if ( typeof aData._date == 'undefined' ) {
+                  aData._date = new Date(aData[1]).getTime();
+                }
+
+                if ( minDateFilter && !isNaN(minDateFilter) ) {
+                  if ( aData._date < minDate ) {
+                    return false;
+                  }
+                }
+
+                if ( maxDateFilter && !isNaN(maxDateFilter) ) {
+                  if ( aData._date > maxDate ) {
+                    return false;
+                  }
+                }
+
+                return true;
+              }
+            );
+        });
+        /*]]>*/
+    </script>
+
     <div class="row-fluid">
 
         <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
@@ -36,6 +91,18 @@
                             <span style="display:block"><span th:text="#{desktop.manager.system.metrics.organizationCount}">Organizations:</span> <b th:text="${organizationCount}"/></span>
                             <span style="display:block"><span th:text="#{desktop.manager.system.metrics.applicationCount}">Applications:</span> <b th:text="${applicationCount}"/></span>
                             <span style="display:block"><span th:text="#{desktop.manager.system.metrics.userCount}">Users:</span> <b th:text="${userCount}"/></span>
+                            <hr />
+                            <p>Min date: <input type="text" id="datepicker_min" class="date-filter"></p>
+                            <p>Max date: <input type="text" id="datepicker_max" class="date-filter"></p>
+                            <table id="orgsTable" class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <td>Name</td>
+                                        <td>Create Date</td>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -54,6 +121,7 @@
 
 <section id="scripts">
     <section th:include="/includesTH :: required_scripts"/>
+    <script th:substituteby="/includesTH :: inputmask_script"></script>
 </section>
 
 </body>

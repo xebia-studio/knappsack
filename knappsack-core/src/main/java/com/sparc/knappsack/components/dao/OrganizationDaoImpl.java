@@ -4,6 +4,7 @@ import com.sparc.knappsack.components.entities.Organization;
 import com.sparc.knappsack.components.entities.QOrganization;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 
 @Repository("organizationDao")
@@ -42,5 +43,10 @@ public class OrganizationDaoImpl extends BaseDao implements OrganizationDao {
     @Override
     public long countAll() {
         return query().from(organization).count();
+    }
+
+    @Override
+    public List<Organization> getAllForCreateDateRange(Date minDate, Date maxDate) {
+        return query().from(organization).where(organization.createDate.between(minDate, maxDate)).list(organization);
     }
 }

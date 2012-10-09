@@ -57,4 +57,6 @@ public interface OrganizationService extends EntityService<Organization> {
      * @return Count of all Organizations
      */
     long countAll();
+
+    List<OrganizationModel> getAllOrganizationsForCreateDateRange(Date minDate, Date maxDate);
 }

@@ -2,6 +2,7 @@ package com.sparc.knappsack.components.dao;
 
 import com.sparc.knappsack.components.entities.Organization;
 
+import java.util.Date;
 import java.util.List;
 
 public interface OrganizationDao extends Dao<Organization> {
@@ -21,4 +22,12 @@ public interface OrganizationDao extends Dao<Organization> {
      * @return Total number of Organizations
      */
     long countAll();
+
+    /**
+     * Get a list of all Organizations for a given Date range
+     * @param minDate
+     * @param maxDate
+     * @return
+     */
+    List<Organization> getAllForCreateDateRange(Date minDate, Date maxDate);
 }
