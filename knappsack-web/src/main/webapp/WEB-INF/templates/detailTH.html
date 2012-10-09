@@ -180,6 +180,10 @@
             </div>
         </div>
         <br/>
+        <div class="alert alert-info" th:if="${applicationType == 'ANDROID'} or ${applicationType == 'IOS'} or ${applicationType == 'IPHONE'} or ${applicationType == 'IPAD'}">
+            <span><b th:text="#{desktop.alert.info.prefix}">Heads up!</b> <span th:text="#{desktop.detail.mobileInstallInfo}">Go to https://app.knappsack.com from your mobile device to directly install apps.</span></span>
+        </div>
+
     </div>
 
     <section id="tabs" class="tabbable">
