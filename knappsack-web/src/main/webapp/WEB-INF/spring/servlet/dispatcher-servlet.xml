@@ -51,6 +51,7 @@
         <beans:property name="prefix" value="/WEB-INF/jsp/"/>
         <beans:property name="suffix" value=".jsp"/>
         <beans:property name="order" value="2"/>
+        <beans:property name="contentType" value="text/html;charset=UTF-8" />
     </beans:bean>
 
     <beans:bean class="org.thymeleaf.spring3.view.ThymeleafViewResolver">
