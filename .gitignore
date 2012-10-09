@@ -20,3 +20,4 @@ knappsack-integration-tests/dropDDL.jdbc
 /*.DS_Store
 /createDDL.jdbc
 /dropDDL.jdbc
+/maintenance/
