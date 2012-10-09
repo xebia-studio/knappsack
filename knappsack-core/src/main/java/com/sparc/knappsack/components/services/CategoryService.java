@@ -34,4 +34,7 @@ public interface CategoryService extends EntityService<Category> {
      * @return CategoryModel - return a CategoryModel with data populated from the Category
      */
     CategoryModel createCategoryModel(Category category);
+
+    List<Category> createDefaultCategories(Long organizationId);
+
 }

@@ -46,6 +46,9 @@ public class OrganizationController extends AbstractController {
     @Autowired(required = true)
     private ApplicationVersionService applicationVersionService;
 
+    @Autowired(required = true)
+    private CategoryService categoryService;
+
     @Qualifier("organizationValidator")
     @Autowired
     private OrganizationValidator organizationValidator;
@@ -191,6 +194,7 @@ public class OrganizationController extends AbstractController {
                 bindingResult.addError(error);
                 return addOrganization(model);
             }
+            categoryService.createDefaultCategories(organization.getId());
         }
 
         return viewOrgs(model);

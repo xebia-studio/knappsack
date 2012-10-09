@@ -5,18 +5,32 @@ import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.AppFileType;
 import com.sparc.knappsack.forms.CategoryForm;
 import com.sparc.knappsack.models.CategoryModel;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 @Transactional( propagation = Propagation.REQUIRED )
 @Service("categoryService")
-public class CategoryServiceImpl implements CategoryService {
+public class CategoryServiceImpl implements CategoryService, ApplicationContextAware {
+
+    private static final Logger log = LoggerFactory.getLogger(CategoryServiceImpl.class);
+
+    private static ApplicationContext ctx = null;
 
     @Qualifier("categoryDao")
     @Autowired(required = true)
@@ -41,6 +55,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Qualifier("appFileService")
     @Autowired
     private AppFileService appFileService;
+
+    private static MultipartFile entertainmentIcon;
+    private static MultipartFile productivityIcon;
+    private static MultipartFile utilitiesIcon;
 
     @Override
     public List<Category> getAll() {
@@ -156,11 +174,103 @@ public class CategoryServiceImpl implements CategoryService {
         return get(id) != null;
     }
 
+    public List<Category> createDefaultCategories(Long organizationId) {
+        List<Category> defaultCategories = new ArrayList<Category>();
+        Organization organization = organizationService.get(organizationId);
+        StorageConfiguration storageConfiguration = organization.getOrgStorageConfig().getStorageConfigurations().get(0);
+        Long storageConfigId = storageConfiguration.getId();
+        Long orgStorageConfigId = organization.getOrgStorageConfig().getId();
+
+        /**
+         * Create entertainment category
+         */
+        Category entertainmentCategory = new Category();
+        entertainmentCategory.setName("Entertainment");
+        entertainmentCategory.setDescription("Applications featuring a bit of levity.");
+        entertainmentCategory.setStorageConfiguration(storageConfiguration);
+        AppFile icon = createIcon(entertainmentIcon, orgStorageConfigId, storageConfigId, entertainmentCategory.getUuid());
+        if (icon != null) {
+            icon.setStorable(entertainmentCategory);
+            entertainmentCategory.setIcon(icon);
+        }
+        entertainmentCategory.setOrganization(organization);
+        organization.getCategories().add(entertainmentCategory);
+        add(entertainmentCategory);
+        defaultCategories.add(entertainmentCategory);
+
+        /**
+         * Create productivity category
+         */
+        Category productivityCategory = new Category();
+        productivityCategory.setName("Productivity");
+        productivityCategory.setDescription("Applications to make your day to day more efficient.");
+        productivityCategory.setStorageConfiguration(storageConfiguration);
+
+        icon = createIcon(productivityIcon, orgStorageConfigId, storageConfigId, productivityCategory.getUuid());
+        if (icon != null) {
+            icon.setStorable(productivityCategory);
+            productivityCategory.setIcon(icon);
+        }
+        productivityCategory.setOrganization(organization);
+        organization.getCategories().add(productivityCategory);
+        add(productivityCategory);
+        defaultCategories.add(productivityCategory);
+
+        /**
+         * Create utilities category
+         */
+        Category utilitiesCategory = new Category();
+        utilitiesCategory.setName("Utilities");
+        utilitiesCategory.setDescription("Applications with a specific skill set.");
+        utilitiesCategory.setStorageConfiguration(storageConfiguration);
+
+        icon = createIcon(utilitiesIcon, orgStorageConfigId, storageConfigId, utilitiesCategory.getUuid());
+        if (icon != null) {
+            icon.setStorable(utilitiesCategory);
+            utilitiesCategory.setIcon(icon);
+        }
+        utilitiesCategory.setOrganization(organization);
+        organization.getCategories().add(utilitiesCategory);
+        add(utilitiesCategory);
+        defaultCategories.add(utilitiesCategory);
+
+        return defaultCategories;
+    }
+
     private StorageService getStorageService(Long storageConfigurationId) {
         return storageServiceFactory.getStorageService(getStorageConfiguration(storageConfigurationId).getStorageType());
     }
 
     private StorageConfiguration getStorageConfiguration(Long storageConfigurationId) {
         return storageConfigurationService.get(storageConfigurationId);
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        ctx = applicationContext;
+        initIcons();
+    }
+
+    private static void initIcons() {
+        try {
+            InputStream inputStream = ctx.getResource("resources/img/icon_entertainment.png").getInputStream();
+            entertainmentIcon = new MockMultipartFile("defaultCategory1", "icon_entertainment.png", "image/png", IOUtils.toByteArray(inputStream));
+        } catch (IOException e) {
+            log.error("Error loading entertainment icon for default categories", e);
+        }
+
+        try {
+            InputStream inputStream = ctx.getResource("resources/img/icon_productivity.png").getInputStream();
+            productivityIcon = new MockMultipartFile("defaultCategory2", "icon_productivity.png", "image/png", IOUtils.toByteArray(inputStream));
+        } catch (IOException e) {
+            log.error("Error loading productivity icon for default categories", e);
+        }
+
+        try {
+            InputStream inputStream = ctx.getResource("resources/img/icon_utilities.png").getInputStream();
+            utilitiesIcon = new MockMultipartFile("defaultCategory3", "icon_utilities.png", "image/png", IOUtils.toByteArray(inputStream));
+        } catch (IOException e) {
+            log.error("Error loading utilities icon for default categories", e);
+        }
     }
 }
