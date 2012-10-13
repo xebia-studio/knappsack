@@ -10,6 +10,7 @@ public class OrganizationModel {
     private String storagePrefix;
     private Long paymentPlanId;
     private Date createDate;
+    private CustomerModel customer;
 
     public Long getId() {
         return id;
@@ -43,19 +44,19 @@ public class OrganizationModel {
         this.storagePrefix = storagePrefix;
     }
 
-    public Long getPaymentPlanId() {
-        return paymentPlanId;
-    }
-
-    public void setPaymentPlanId(Long paymentPlanId) {
-        this.paymentPlanId = paymentPlanId;
-    }
-
     public Date getCreateDate() {
         return createDate;
     }
 
     public void setCreateDate(Date createDate) {
         this.createDate = createDate;
+    }
+
+    public CustomerModel getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(CustomerModel customerModel) {
+        this.customer = customerModel;
     }
 }

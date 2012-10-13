@@ -11,23 +11,24 @@ import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.OrganizationForm;
 import com.sparc.knappsack.forms.Result;
-import com.sparc.knappsack.models.DomainStatisticsModel;
-import com.sparc.knappsack.models.OrganizationModel;
-import com.sparc.knappsack.models.UserDomainModel;
+import com.sparc.knappsack.models.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -259,9 +260,34 @@ public class OrganizationController extends AbstractController {
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/organizationList", method = RequestMethod.GET)
-    public @ResponseBody List<OrganizationModel> getOrganizationsForRange(@RequestParam Date minDate, @RequestParam Date maxDate) {
-        return organizationService.getAllOrganizationsForCreateDateRange(minDate, maxDate);
+    @RequestMapping(value = "/manager/organizationList", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody
+    List<OrganizationModel> getOrganizationsForRange(@RequestParam(required = false) String minDate, @RequestParam(required = false) String maxDate) {
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+        Date tmpMinDate = null;
+        Date tmpMaxDate = null;
+        if (StringUtils.hasText(minDate)) {
+            try {
+                tmpMinDate = sdf.parse(minDate);
+            } catch (ParseException e) {
+                log.error(String.format("Error parsing to date: %s", minDate), e);
+            }
+        }
+        if (StringUtils.hasText(maxDate)) {
+            try {
+                tmpMaxDate = sdf.parse(maxDate);
+            } catch (ParseException e) {
+                log.error(String.format("Error parsing to date: %s", maxDate), e);
+            }
+        }
+
+        return organizationService.getAllOrganizationsForCreateDateRange(tmpMinDate, tmpMaxDate);
+    }
+
+    @PreAuthorize("isOrganizationAdmin(#orgId) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/getOrganizationAdmins", method = RequestMethod.GET)
+    public @ResponseBody List<UserDomainModel> getOrganizationAdmins(@RequestParam(required = true) Long orgId) {
+        return organizationService.getAllOrganizationAdmins(orgId);
     }
 
     private DomainStatisticsModel getDomainStatisticsModel(Organization organization) {

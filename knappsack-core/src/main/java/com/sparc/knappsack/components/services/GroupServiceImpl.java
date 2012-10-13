@@ -230,16 +230,18 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public GroupModel createGroupModel(Long groupId) {
+    public GroupModel createGroupModel(Long groupId, boolean includeOrganizationModel, boolean includeExternalData) {
         GroupModel model = null;
         Group group = get(groupId);
         if (group != null) {
             model = new GroupModel();
             model.setId(group.getId());
             model.setName(group.getName());
-            Organization organization = group.getOrganization();
-            if (organization != null) {
-                model.setOrganization(organizationService.createOrganizationModel(organization.getId()));
+            if (includeOrganizationModel) {
+                Organization organization = group.getOrganization();
+                if (organization != null) {
+                    model.setOrganization(organizationService.createOrganizationModel(organization.getId(), includeExternalData));
+                }
             }
         }
         return model;

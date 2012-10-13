@@ -53,5 +53,5 @@ public interface GroupService extends EntityService<Group> {
      */
     boolean isUserLimit(Group group);
 
-    GroupModel createGroupModel(Long groupId);
+    GroupModel createGroupModel(Long groupId, boolean includeOrganizationModel, boolean includeExternalData);
 }

@@ -72,13 +72,13 @@ public class ManagerController extends AbstractController {
     private void populateAdminDomains(User user, List<GroupModel> adminGroups, List<OrganizationModel> adminOrganizations) {
         if (user.isSystemAdmin()) {
             for (Organization organization : organizationService.getAll()) {
-                OrganizationModel model = organizationService.createOrganizationModel(organization.getId());
+                OrganizationModel model = organizationService.createOrganizationModel(organization.getId(), false);
                 if (model != null) {
                     adminOrganizations.add(model);
                 }
             }
             for (Group group : groupService.getAll()) {
-                GroupModel model = groupService.createGroupModel(group.getId());
+                GroupModel model = groupService.createGroupModel(group.getId(), false, false);
                 if (model != null) {
                     adminGroups.add(model);
                 }
@@ -86,12 +86,12 @@ public class ManagerController extends AbstractController {
         } else {
             for (UserDomain userDomain : user.getUserDomains()) {
                 if (DomainType.GROUP.equals(userDomain.getDomainType()) && userDomain.getRole().getAuthority().equals(UserRole.ROLE_GROUP_ADMIN.name())) {
-                    GroupModel model = groupService.createGroupModel(userDomain.getDomainId());
+                    GroupModel model = groupService.createGroupModel(userDomain.getDomainId(), false, false);
                     if (model != null) {
                         adminGroups.add(model);
                     }
                 } else if (DomainType.ORGANIZATION.equals(userDomain.getDomainType()) && userDomain.getRole().getAuthority().equals(UserRole.ROLE_ORG_ADMIN.name())) {
-                    OrganizationModel model = organizationService.createOrganizationModel(userDomain.getDomainId());
+                    OrganizationModel model = organizationService.createOrganizationModel(userDomain.getDomainId(), false);
                     if (model != null) {
                         adminOrganizations.add(model);
                     }
@@ -120,7 +120,7 @@ public class ManagerController extends AbstractController {
 
                     Group group = request.getGroup();
                     if (group != null) {
-                        requestModel.setGroup(groupService.createGroupModel(group.getId()));
+                        requestModel.setGroup(groupService.createGroupModel(group.getId(), true, false));
                     }
 
                     pendingRequests.add(requestModel);
@@ -145,7 +145,7 @@ public class ManagerController extends AbstractController {
             model.setApplicationVersion(applicationVersionService.createApplicationVersionModel(applicationVersion.getId()));
             Organization organization = getOrganizationForApplicationVersion(applicationVersion);
             if (organization != null) {
-                model.setOrganization(organizationService.createOrganizationModel(organization.getId()));
+                model.setOrganization(organizationService.createOrganizationModel(organization.getId(), false));
             }
         }
         return model;

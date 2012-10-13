@@ -579,3 +579,7 @@ table td div.overflow-inner {
     padding-top: 5px;
     display: inline-block;
 }
+
+td.delinquent {
+    background-color: #da4f49 !important;
+}

@@ -10,109 +10,334 @@
 
 <div class="container-fluid">
 
-    <script type="text/javascript" th:inline="javascript">
-        /*<![CDATA[*/
-        $(document).ready(function () {
-            var orgDateRangeUrl = /*[[@{/manager/organizationList}]]*/ '/manager/organizationList';
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    $(document).ready(function () {
+        var orgDateRangeUrl = /*[[@{/manager/organizationList}]]*/ '/manager/organizationList';
+        var orgAdminsUrl = /*[[@{/manager/getOrganizationAdmins}]]*/ '/manager/getOrganizationAdmins';
+        var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
+        var orgDetails = [];
+        var adminTable;
 
-            $('#datepicker_min').inputmask({
-                mask: '99/99/9999'
-            });
+        $.removeCookie('fileDownloadTime');
 
-            $('#datepicker_max').inputmask({
-                mask: '99/99/9999'
-            });
-
-            $('table').dataTable( {
-                "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
-                "sPaginationType": "bootstrap",
-                "oLanguage": {
-                    "sLengthMenu": "_MENU_ " + 'Num of records'
-                },
-                "aoColumns": [
-                    null,
-                    null
-                ],
-                "sAjaxSource": buildOrganizationUrl()
-            });
-
-            function buildOrganizationUrl() {
-                return orgDateRangeUrl + "?" + $.param({'minDate':minDate, 'maxDate':maxDate});
-            }
-
-            $.fn.dataTableExt.afnFiltering.push(
-              function( oSettings, aData, iDataIndex ) {
-                if ( typeof aData._date == 'undefined' ) {
-                  aData._date = new Date(aData[1]).getTime();
-                }
-
-                if ( minDateFilter && !isNaN(minDateFilter) ) {
-                  if ( aData._date < minDate ) {
-                    return false;
-                  }
-                }
-
-                if ( maxDateFilter && !isNaN(maxDateFilter) ) {
-                  if ( aData._date > maxDate ) {
-                    return false;
-                  }
-                }
-
-                return true;
-              }
-            );
+        var minDate = formatDate(Date.now());
+        $('#datepicker_min').val(minDate);
+        var maxDate = '';
+        $('#datepicker_min').on('change', function() {
+            minDate = $(this).val();
+            $orgsTable.fnReloadAjax(buildOrganizationUrl());
         });
-        /*]]>*/
-    </script>
 
-    <div class="row-fluid">
+        $('#datepicker_max').on('change', function() {
+            maxDate = $(this).val();
+            orgDetails = [];
+            $orgsTable.fnReloadAjax(buildOrganizationUrl());
+        });
 
-        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+        $('#datepicker_min').inputmask({
+            mask: '99/99/9999'
+        });
 
-        <div class="span10">
+        $('#datepicker_max').inputmask({
+            mask: '99/99/9999'
+        });
 
+        $('#orgsTable tbody').on('click', 'a.org-modal', function(e) {
+            e.preventDefault();
+            showModal('#organizationModal', "org title", orgDetails[$(this).attr('data-details-id')]);
+        });
 
-            <header class="jumbotron subhead" id="overview">
-                <h1 style="text-align: left" th:text="#{desktop.manager.system.header.overview}">Manage Knappsack</h1>
-            </header>
+        var $orgsTable = $('#orgsTable').dataTable( {
+            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+            "sPaginationType": "bootstrap",
+            "oLanguage": {
+                "sLengthMenu": "_MENU_ " + 'Num of records'
+            },
+            "bSort": true,
+            "sAjaxSource": buildOrganizationUrl(),
+            "sAjaxDataProp":"",
+            "bProcessing": true,
+            "aaSorting": [[1, "asc"]],
+            "aoColumnDefs" : [
+                {
+                    "aTargets" : [0],
+                    "mData" : "name",
+                    "mRender" : function(data, type, full) {
+                        var length = orgDetails.length;
+                        orgDetails.push(full);
+                        var $elem = $('<a>').attr('href', '#').attr('data-details-id', length).addClass('org-modal').text(data);
+                        return $elem.get(0).outerHTML;
+                    }
+                },
+                {
+                    "aTargets" : [1],
+                    "mData" : "createDate",
+                    "mRender" : function(data, type, full) {
+                        var date = new Date(data);
+                        return ("0" + (date.getMonth()+1)).slice(-2) + "/" + ("0" + date.getDate()).slice(-2) + "/" + date.getFullYear();
+                    }
+                },
+                {
+                    "aTargets" : [2],
+                    "mData" : "customer.subscription.paymentPlanModel.name",
+                    "sDefaultContent" : "N/A"
+                },
+                {
+                    "aTargets" : [3],
+                    "mData" : "customer.subscription.status",
+                    "sDefaultContent" : "N/A"
+                }
+            ],
+            "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+                if (aData.customer.delinquent || aData.customer.subscription.status == 'PAST_DUE' || aData.customer.subscription.status == 'UNPAID') {
+                    $(nRow).children('td').addClass('delinquent');
+                }
+            },
+            "fnDrawCallback": function( oSettings ) {
+                if (oSettings.fnRecordsTotal() > 0) {
+                    $('#exportExcelBtn').removeAttr('disabled');
+                } else {
+                    $('#exportExcelBtn').attr('disabled', 'disabled');
+                }
+            }
+        });
 
-            <div class="tabbable">
+        function buildOrganizationUrl() {
+            return orgDateRangeUrl + "?" + $.param({'minDate':minDate, 'maxDate':maxDate});
+        }
 
-                <ul id="tab" class="nav nav-tabs">
-                    <li class="active dropdown">
-                        <a href="#metrics" th:text="#{desktop.manager.system.tab.metrics}">Metrics</a>
-                    </li>
-                </ul>
+        function formatDate(milliseconds) {
+            if (milliseconds != undefined && milliseconds >= 0) {
+                var date = new Date(milliseconds);
+                return ("0" + (date.getMonth()+1)).slice(-2) + "/" + ("0" + date.getDate()).slice(-2) + "/" + date.getFullYear();
+            }
+        }
 
-                <div class="tab-content">
-                    <div id="metrics" class="tab-pane active">
-                        <div class="row-fluid">
-                            <h3 th:text="#{desktop.manager.system.metrics}"></h3>
-                            <span style="display:block"><span th:text="#{desktop.manager.system.metrics.organizationCount}">Organizations:</span> <b th:text="${organizationCount}"/></span>
-                            <span style="display:block"><span th:text="#{desktop.manager.system.metrics.applicationCount}">Applications:</span> <b th:text="${applicationCount}"/></span>
-                            <span style="display:block"><span th:text="#{desktop.manager.system.metrics.userCount}">Users:</span> <b th:text="${userCount}"/></span>
-                            <hr />
-                            <p>Min date: <input type="text" id="datepicker_min" class="date-filter"></p>
-                            <p>Max date: <input type="text" id="datepicker_max" class="date-filter"></p>
-                            <table id="orgsTable" class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <td>Name</td>
-                                        <td>Create Date</td>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+        function showModal(id, title, data) {
+            if (id.substr(0, 1) !== '#') {
+                id = '#' + id;
+            }
+            $(id + ' .modal-header h3').text(data.name);
+            $('#modalCreateDate').text(formatDate(data.createDate));
+            $('#modalCustomerId').text(data.customer.externalId);
+            $('#modalPaymentPlan').text(data.customer.subscription.paymentPlanModel.name);
+            $('#modalCustomerStatus').text(data.customer.subscription.status);
+
+            $(id).on('show', function() {
+                var url = orgAdminsUrl + '?orgId=' + data.id;
+                adminTable = $('#adminTable').dataTable( {
+                    "sDom": "<<''l><'floatright'f>r>t<<''i><'floatright'p>>",
+                    "sPaginationType": "bootstrap",
+                    "oLanguage": {
+                        "sLengthMenu": '<select>'+
+                                '<option value="5">5</option>'+
+                                '<option value="10">10</option>'+
+                                '<option value="25">25</option>'+
+                                '<option value="50">50</option>'+
+                                '<option value="-1">All</option>'+
+                                '</select> ' + recordsPerPageText
+                    },
+                    "iDisplayLength": 5,
+                    "bSort": true,
+                    "sAjaxDataProp": "",
+                    "sAjaxSource": orgAdminsUrl,
+                    "fnServerParams": function ( aoData ) {
+                        aoData.push( { "name": "orgId", "value": data.id } );
+                    },
+                    "fnServerData": function( sSource, aoData, fnCallback ) {
+                        $.get(sSource, aoData, fnCallback);
+                    },
+                    "bProcessing": true,
+                    "aoColumnDefs" : [
+                        {
+                            "aTargets" : [0],
+                            "mData" : "user.fullName"
+                        },
+                        {
+                            "aTargets" : [1],
+                            "mData" : "user.email",
+                            "mRender" : function(data, type, full) {
+                                var $elem = $('<a>').attr('href', 'mailto:' + data).text(data);
+                                return $elem.get(0).outerHTML
+                            }
+                        }
+                    ],
+                    "bRetrieve": true,
+                    "bDestroy": true
+                });
+            });
+
+            $(id).on('hidden', function() {
+                adminTable.fnFilterClear();
+            });
+
+            $(id).modal();
+        }
+
+        function destroyDataTable(dataTable) {
+            if (dataTable != undefined) {
+                dataTable.fnDestroy();
+            }
+        }
+
+        var $idown;  // Keep it outside of the function, so it's initialized once.
+        var downloadURL = function(url) {
+            if ($idown) {
+                $idown.attr('src',url);
+            } else {
+                $idown = $('<iframe>', { id:'idown', src:url }).hide().appendTo('body');
+            }
+        };
+//
+        var fileDownloadCheckTimer;
+        function blockUIForDownload() {
+            var token = new Date().getTime(); //use the current timestamp as the token value
+            $('#download_token_value_id').val(token);
+            $('#progressModal').modal({
+                "keyboard" : false,
+                "backdrop" : "static",
+                "show" : true
+            });
+            fileDownloadCheckTimer = window.setInterval(function () {
+                var cookieValue = $.cookie('fileDownloadTime');
+                if (cookieValue > token)
+                    finishDownload();
+            }, 1000);
+        }
+
+        function finishDownload() {
+            window.clearInterval(fileDownloadCheckTimer);
+            $.removeCookie('fileDownloadTime');
+            $('#progressModal').modal('hide');
+        }
+
+        $('#exportExcelBtn').on('click', function(e) {
+            e.preventDefault();
+            var url = /*[[@{/manager/exportOrganizationsForDateRange}]]*/ '/manager/exportOrganizationsForDateRange';
+            url = url + '?' + $.param({'minDate':minDate, 'maxDate':maxDate});
+
+            blockUIForDownload();
+
+            downloadURL(url);
+        });
+    });
+    /*]]>*/
+</script>
+
+<div class="row-fluid">
+
+    <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+    <div class="span10">
+
+        <header class="jumbotron subhead" id="overview">
+            <h1 style="text-align: left" th:text="#{desktop.manager.system.header.overview}">Manage Knappsack</h1>
+        </header>
+
+        <div class="tabbable">
+
+            <ul id="tab" class="nav nav-tabs">
+                <li class="active dropdown">
+                    <a href="#metrics" th:text="#{desktop.manager.system.tab.metrics}">Metrics</a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div id="metrics" class="tab-pane active">
+                    <div class="row-fluid">
+                        <h3 th:text="#{desktop.manager.system.metrics}"></h3>
+                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.organizationCount}">Organizations:</span> <b th:text="${organizationCount}"/></span>
+                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.applicationCount}">Applications:</span> <b th:text="${applicationCount}"/></span>
+                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.userCount}">Users:</span> <b th:text="${userCount}"/></span>
+                        <hr />
+
+                        <form class="form-inline">
+                            <label class="inline">
+                                <b th:text="#{desktop.manager.system.minDate.label}">Min Date:</b> <input type="text" id="datepicker_min" class="date-filter" th:placeholder="#{desktop.manager.system.minDate.placeholder}" placeholder="mm/dd/yyyy" th:title="#{desktop.manager.system.minDate.title}" title="Min Date" style="width: auto;"/>
+                            </label>
+                            <label class="inline">
+                                <b th:text="#{desktop.manager.system.maxDate.label}">Max Date:</b> <input type="text" id="datepicker_max" class="date-filter" th:placeholder="#{desktop.manager.system.maxDate.placeholder}" placeholder="mm/dd/yyyy" th:title="#{desktop.manager.system.maxDate.title}" title="Max Date" style="width: auto;"/>
+                            </label>
+
+                            <button id="exportExcelBtn" class="btn btn-success" disabled="disabled" th:title="#{desktop.manager.system.excelExport.button.title}" title="Export to Excel"><i class="icon-download icon-white"/>&nbsp;<span th:text="#{desktop.manager.system.excelExport.button}">Export to Excel</span></button>
+
+                        </form>
+
+                        <table id="orgsTable" class="table table-striped table-bordered">
+                            <thead>
+                            <tr>
+                                <th th:text="#{desktop.manager.system.orgTable.header.name}">Name</th>
+                                <th class="date" th:text="#{desktop.manager.system.orgTable.header.createDate}">Date Created</th>
+                                <th th:text="#{desktop.manager.system.orgTable.header.paymentPlan}">Payment Plan</th>
+                                <th th:text="#{desktop.manager.system.orgTable.header.status}">Status</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
-
             </div>
 
         </div>
 
     </div>
 
+</div>
+
+</div>
+
+<div id="progressModal" class="modal fade hide" style="display: none;">
+    <div class="modal-body">
+        <div class="alert alert-info">
+            <b th:text="#{desktop.alert.info.prefix}">Heads up!</b>
+            <span th:text="#{desktop.manager.system.progressModal.info}">This may take several moments to complete depending on the size of the data.</span>
+        </div>
+
+        <div class="progress progress-striped active">
+          <div class="bar" style="width: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="organizationModal" class="modal hide fade" style="display: none;">
+    <div class="modal-header">
+        <a class="close" data-dismiss="modal" th:text="#{desktop.alert.close}">x</a>
+        <h3 th:text="#{desktop.includes.confirmation.modal.title}">Title</h3>
+    </div>
+    <div class="modal-body">
+
+        <div>
+            <b th:text="#{desktop.manager.system.organizationModal.dateCreated}">Date Created:</b> <span id="modalCreateDate"/>
+        </div>
+        <div>
+            <b th:text="#{desktop.manager.system.organizationModal.customerId}">Customer ID:</b> <span id="modalCustomerId"/>
+        </div>
+        <div>
+            <b th:text="#{desktop.manager.system.organizationModal.paymentPlan}">Payment Plan:</b> <span id="modalPaymentPlan"/>
+        </div>
+        <div>
+            <b th:text="#{desktop.manager.system.organizationModal.status}">Status:</b> <span id="modalCustomerStatus"/>
+        </div>
+
+        <hr/>
+
+        <header>
+            <h4 th:text="#{desktop.manager.system.organizationModal.header.admins}">Admins</h4>
+        </header>
+        <table id="adminTable" class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th th:text="#{desktop.manager.system.organizationModal.adminTable.header.name}">Name</th>
+                <th th:text="#{desktop.manager.system.organizationModal.adminTable.header.email}">Email</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="modal-footer">
+        <a id="modalCancel" href="#" class="btn" data-dismiss="modal">Close</a>
+    </div>
 </div>
 
 <div th:substituteBy="/includesTH :: confirmation_modal"></div>
@@ -122,6 +347,9 @@
 <section id="scripts">
     <section th:include="/includesTH :: required_scripts"/>
     <script th:substituteby="/includesTH :: inputmask_script"></script>
+    <script th:substituteby="/includesTH :: blockui_script"></script>
+    <script th:substituteby="/includesTH :: cookie_script"></script>
+    <section th:include="/includesTH :: table_scripts"/>
 </section>
 
 </body>

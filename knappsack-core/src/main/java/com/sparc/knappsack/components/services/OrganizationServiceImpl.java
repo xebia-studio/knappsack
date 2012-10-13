@@ -4,6 +4,8 @@ import com.googlecode.flyway.core.util.StringUtils;
 import com.sparc.knappsack.components.dao.OrganizationDao;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.DomainType;
+import com.sparc.knappsack.enums.StorageType;
+import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.models.OrganizationModel;
 import com.sparc.knappsack.models.UserDomainModel;
 import com.sparc.knappsack.models.UserModel;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 @Transactional( propagation = Propagation.REQUIRED )
 @Service("organizationService")
@@ -339,15 +342,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         OrganizationModel model = null;
         Organization organization = get(organizationId);
         if (organization != null) {
-            model = new OrganizationModel();
-            model.setId(organization.getId());
-            model.setName(organization.getName());
-            model.setCreateDate(organization.getCreateDate());
-            OrgStorageConfig orgStorageConfig = organization.getOrgStorageConfig();
-            if (orgStorageConfig != null && orgStorageConfig.getStorageConfigurations() != null) {
-                model.setStorageConfigurationId(orgStorageConfig.getStorageConfigurations().get(0).getId());
-                model.setStoragePrefix(orgStorageConfig.getPrefix());
-            }
+            model = createOrganizationModel(organization);
         }
         return model;
     }
@@ -392,22 +387,49 @@ public class OrganizationServiceImpl implements OrganizationService {
         return organizationDao.countAll();
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN'")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Override
     public List<OrganizationModel> getAllOrganizationsForCreateDateRange(Date minDate, Date maxDate) {
-        List<OrganizationModel> models = new ArrayList<OrganizationModel>();
+        final List<OrganizationModel> models = new ArrayList<OrganizationModel>();
+        List<Organization> organizations = new ArrayList<Organization>();
         if (minDate == null && maxDate == null) {
-            return models;
+            organizations.addAll(organizationDao.getAll());
+        } else {
+            organizations.addAll(organizationDao.getAllForCreateDateRange(minDate, maxDate));
         }
-        List<Organization> organizations = organizationDao.getAllForCreateDateRange(minDate, maxDate);
 
         if (organizations != null) {
-            for (Organization organization : organizations) {
-                OrganizationModel model = createOrganizationModel(organization);
-                if (model != null) {
-                    models.add(model);
-                }
+
+            ExecutorService ex = Executors.newCachedThreadPool();
+
+            Collection<Callable<OrganizationModel>> tasks = new LinkedList<Callable<OrganizationModel>>();
+            for (final Organization organization : organizations) {
+                Callable<OrganizationModel> callable = new Callable<OrganizationModel>() {
+                    @Override
+                    public OrganizationModel call() throws Exception {
+                        return createOrganizationModel(organization, true);
+                    }
+                };
+
+                tasks.add(callable);
             }
+            try {
+                for (Future<OrganizationModel> future : ex.invokeAll(tasks)) {
+                    models.add(future.get());
+                }
+            } catch (Exception e) {
+                log.error("Error processing getAllOrganizationsForCreateDateRange:", e);
+            }
+        }
+
+        return models;
+    }
+
+    @Override
+    public List<UserDomainModel> getAllOrganizationAdmins(Long organizationId) {
+        List<UserDomainModel> models = new ArrayList<UserDomainModel>();
+        for(UserDomain userDomain : userDomainService.getAll(organizationId, DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN)) {
+            models.add(createUserDomainModel(userDomain));
         }
 
         return models;

@@ -46,10 +46,19 @@ public interface OrganizationService extends EntityService<Organization> {
     boolean isUserLimit(Organization organization);
     
     /**
-    * @param organizationId
-    * @return
-    */
-    OrganizationModel createOrganizationModel(Long organizationId);
+     * @param organization Organization - check to see if this organization has reached the maximum bandwidth allowed for a given time period
+     * @param storageType StorageType - used to get the correct StorageService to check the bandwidth
+     * @param startDate Date - calculate the bandwidth used from this begin date
+     * @param endDate Date - calculate the bandwidth between the start date and this end date
+     * @return boolean true if the bandwidth limit for this organization has been reached.
+     */
+    boolean isBandwidthLimit(Organization organization, StorageType storageType, Date startDate, Date endDate);
+
+    /**
+     * @param organizationId
+     * @return
+     */
+    OrganizationModel createOrganizationModel(Long organizationId, boolean includeExternalData);
 
     List<Application> getAllOrganizationApplications(Long organizationId);
 
@@ -59,4 +68,6 @@ public interface OrganizationService extends EntityService<Organization> {
     long countAll();
 
     List<OrganizationModel> getAllOrganizationsForCreateDateRange(Date minDate, Date maxDate);
+
+    List<UserDomainModel> getAllOrganizationAdmins(Long organizationId);
 }

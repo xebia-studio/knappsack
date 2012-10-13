@@ -63,6 +63,7 @@
             <beans:entry key="eclipselink.weaving" value="False"/>
             <beans:entry key="eclipselink.logging.level" value="FINEST"/>
             <beans:entry key="eclipselink.cache.shared.default" value="False"/>
+            <beans:entry key="eclipselink.inheritance.outer-join" value="True"/>
         </util:map>
 
         <!-- Declare a datasource that has pooling capabilities-->
