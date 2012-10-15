@@ -148,7 +148,7 @@
                     <div class="control-group" id="installationFileDiv" th:if="${#bools.isFalse(isEdit)}">
                         <label class="control-label" for="appFile" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.installationFile}]]</label>
                         <div class="controls">
-                            <input class="button" type="file" id="appFile" name="appFile" required="required" accept="application/vnd.android.package-archive"/>
+                            <input class="button" type="file" id="appFile" name="appFile" required="required"/>
                         </div>
                     </div>
 
