@@ -46,6 +46,11 @@
             showModal('#organizationModal', "org title", orgDetails[$(this).attr('data-details-id')]);
         });
 
+        $('#orgsTable tbody').on('click', 'a.org-modal', function(e) {
+            e.preventDefault();
+            showModal('#organizationModal', "org title", $(this).closest('tr').data('org-details'));
+        });
+
         var $orgsTable = $('#orgsTable').dataTable( {
             "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
             "sPaginationType": "bootstrap",
@@ -62,9 +67,9 @@
                     "aTargets" : [0],
                     "mData" : "name",
                     "mRender" : function(data, type, full) {
-                        var length = orgDetails.length;
-                        orgDetails.push(full);
-                        var $elem = $('<a>').attr('href', '#').attr('data-details-id', length).addClass('org-modal').text(data);
+//                    var length = orgDetails.length;
+//                    orgDetails.push(full);
+                        var $elem = $('<a>').attr('href', '#').addClass('org-modal').text(data);
                         return $elem.get(0).outerHTML;
                     }
                 },
@@ -72,8 +77,7 @@
                     "aTargets" : [1],
                     "mData" : "createDate",
                     "mRender" : function(data, type, full) {
-                        var date = new Date(data);
-                        return ("0" + (date.getMonth()+1)).slice(-2) + "/" + ("0" + date.getDate()).slice(-2) + "/" + date.getFullYear();
+                        return formatDate(data);
                     }
                 },
                 {
@@ -92,11 +96,29 @@
                     "sDefaultContent" : "N/A",
                     "bVisible" : false
                 }
-            ]
+            ],
+            "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+                if (aData.customer.delinquent || aData.customer.subscription.status == 'PAST_DUE' || aData.customer.subscription.status == 'UNPAID') {
+                    $(nRow).children('td').addClass('delinquent');
+                }
+
+                $(nRow).data('org-details', aData);
+            },
+            "fnDrawCallback": function( oSettings ) {
+                if (oSettings.fnRecordsTotal() > 0) {
+                    $('#exportExcelBtn').removeAttr('disabled');
+                } else {
+                    $('#exportExcelBtn').attr('disabled', 'disabled');
+                }
+            }
         });
 
         function buildOrganizationUrl() {
             return orgDateRangeUrl + "?" + $.param({'minDate':minDate, 'maxDate':maxDate});
+        }
+
+        function buildOrgAdminsUrl(orgId) {
+            return orgAdminsUrl + "?" + $.param({'orgId' : orgId});
         }
 
         function formatDate(milliseconds) {
@@ -116,50 +138,53 @@
             $('#modalPaymentPlan').text(data.customer.subscription.paymentPlanModel.name);
             $('#modalCustomerStatus').text(data.customer.subscription.status);
 
+            $(id).off('show');
             $(id).on('show', function() {
-                var url = orgAdminsUrl + '?orgId=' + data.id;
-                adminTable = $('#adminTable').dataTable( {
-                    "sDom": "<<''l><'floatright'f>r>t<<''i><'floatright'p>>",
-                    "sPaginationType": "bootstrap",
-                    "oLanguage": {
-                        "sLengthMenu": '<select>'+
-                                '<option value="5">5</option>'+
-                                '<option value="10">10</option>'+
-                                '<option value="25">25</option>'+
-                                '<option value="50">50</option>'+
-                                '<option value="-1">All</option>'+
-                                '</select> ' + recordsPerPageText
-                    },
-                    "iDisplayLength": 5,
-                    "bSort": true,
-                    "sAjaxDataProp": "",
-                    "sAjaxSource": orgAdminsUrl,
-                    "fnServerParams": function ( aoData ) {
-                        aoData.push( { "name": "orgId", "value": data.id } );
-                    },
-                    "fnServerData": function( sSource, aoData, fnCallback ) {
-                        $.get(sSource, aoData, fnCallback);
-                    },
-                    "bProcessing": true,
-                    "aoColumnDefs" : [
-                        {
-                            "aTargets" : [0],
-                            "mData" : "user.fullName"
+                if (adminTable !== undefined) {
+                    adminTable.fnClearTable(false);
+                    adminTable.fnReloadAjax(buildOrgAdminsUrl(data.id));
+                } else {
+                    adminTable = $('#adminTable').dataTable( {
+                        "sDom": "<<''l><'floatright'f>r>t<<''i><'floatright'p>>",
+                        "sPaginationType": "bootstrap",
+                        "oLanguage": {
+                            "sLengthMenu": '<select>'+
+                                    '<option value="5">5</option>'+
+                                    '<option value="10">10</option>'+
+                                    '<option value="25">25</option>'+
+                                    '<option value="50">50</option>'+
+                                    '<option value="-1">All</option>'+
+                                    '</select> ' + recordsPerPageText
                         },
-                        {
-                            "aTargets" : [1],
-                            "mData" : "user.email",
-                            "mRender" : function(data, type, full) {
-                                var $elem = $('<a>').attr('href', 'mailto:' + data).text(data);
-                                return $elem.get(0).outerHTML
+                        "iDisplayLength": 5,
+                        "bSort": true,
+                        "sAjaxDataProp": "",
+                        "sAjaxSource": buildOrgAdminsUrl(data.id),
+                        "fnServerData": function( sSource, aoData, fnCallback ) {
+                            $.get(sSource, aoData, fnCallback);
+                        },
+                        "bProcessing": true,
+                        "aoColumnDefs" : [
+                            {
+                                "aTargets" : [0],
+                                "mData" : "user.fullName"
+                            },
+                            {
+                                "aTargets" : [1],
+                                "mData" : "user.email",
+                                "mRender" : function(data, type, full) {
+                                    var $elem = $('<a>').attr('href', 'mailto:' + data).text(data);
+                                    return $elem.get(0).outerHTML
+                                }
                             }
-                        }
-                    ],
-                    "bRetrieve": true,
-                    "bDestroy": true
-                });
+                        ]
+                        //                    "bRetrieve": true
+                        //                "bDestroy": true
+                    });
+                }
             });
 
+            $(id).off('hidden');
             $(id).on('hidden', function() {
                 adminTable.fnFilterClear();
             });
