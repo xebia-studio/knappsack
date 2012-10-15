@@ -5,6 +5,7 @@ import com.sparc.knappsack.components.entities.Organization;
 import com.sparc.knappsack.models.OrganizationModel;
 import com.sparc.knappsack.models.UserDomainModel;
 
+import java.util.Date;
 import java.util.List;
 
 public interface OrganizationService extends EntityService<Organization> {
@@ -46,19 +47,10 @@ public interface OrganizationService extends EntityService<Organization> {
     boolean isUserLimit(Organization organization);
     
     /**
-     * @param organization Organization - check to see if this organization has reached the maximum bandwidth allowed for a given time period
-     * @param storageType StorageType - used to get the correct StorageService to check the bandwidth
-     * @param startDate Date - calculate the bandwidth used from this begin date
-     * @param endDate Date - calculate the bandwidth between the start date and this end date
-     * @return boolean true if the bandwidth limit for this organization has been reached.
-     */
-    boolean isBandwidthLimit(Organization organization, StorageType storageType, Date startDate, Date endDate);
-
-    /**
-     * @param organizationId
-     * @return
-     */
-    OrganizationModel createOrganizationModel(Long organizationId, boolean includeExternalData);
+    * @param organizationId
+    * @return
+    */
+    OrganizationModel createOrganizationModel(Long organizationId);
 
     List<Application> getAllOrganizationApplications(Long organizationId);
 

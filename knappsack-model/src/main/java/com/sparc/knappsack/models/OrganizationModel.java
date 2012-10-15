@@ -10,7 +10,6 @@ public class OrganizationModel {
     private String storagePrefix;
     private Long paymentPlanId;
     private Date createDate;
-    private CustomerModel customer;
 
     public Long getId() {
         return id;
@@ -52,11 +51,4 @@ public class OrganizationModel {
         this.createDate = createDate;
     }
 
-    public CustomerModel getCustomer() {
-        return customer;
-    }
-
-    public void setCustomer(CustomerModel customerModel) {
-        this.customer = customerModel;
-    }
 }

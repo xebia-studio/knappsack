@@ -19,8 +19,6 @@
         var orgDetails = [];
         var adminTable;
 
-        $.removeCookie('fileDownloadTime');
-
         var minDate = formatDate(Date.now());
         $('#datepicker_min').val(minDate);
         var maxDate = '';
@@ -88,19 +86,7 @@
                     "mData" : "customer.subscription.status",
                     "sDefaultContent" : "N/A"
                 }
-            ],
-            "fnCreatedRow": function( nRow, aData, iDataIndex ) {
-                if (aData.customer.delinquent || aData.customer.subscription.status == 'PAST_DUE' || aData.customer.subscription.status == 'UNPAID') {
-                    $(nRow).children('td').addClass('delinquent');
-                }
-            },
-            "fnDrawCallback": function( oSettings ) {
-                if (oSettings.fnRecordsTotal() > 0) {
-                    $('#exportExcelBtn').removeAttr('disabled');
-                } else {
-                    $('#exportExcelBtn').attr('disabled', 'disabled');
-                }
-            }
+            ]
         });
 
         function buildOrganizationUrl() {
@@ -181,46 +167,6 @@
             }
         }
 
-        var $idown;  // Keep it outside of the function, so it's initialized once.
-        var downloadURL = function(url) {
-            if ($idown) {
-                $idown.attr('src',url);
-            } else {
-                $idown = $('<iframe>', { id:'idown', src:url }).hide().appendTo('body');
-            }
-        };
-//
-        var fileDownloadCheckTimer;
-        function blockUIForDownload() {
-            var token = new Date().getTime(); //use the current timestamp as the token value
-            $('#download_token_value_id').val(token);
-            $('#progressModal').modal({
-                "keyboard" : false,
-                "backdrop" : "static",
-                "show" : true
-            });
-            fileDownloadCheckTimer = window.setInterval(function () {
-                var cookieValue = $.cookie('fileDownloadTime');
-                if (cookieValue > token)
-                    finishDownload();
-            }, 1000);
-        }
-
-        function finishDownload() {
-            window.clearInterval(fileDownloadCheckTimer);
-            $.removeCookie('fileDownloadTime');
-            $('#progressModal').modal('hide');
-        }
-
-        $('#exportExcelBtn').on('click', function(e) {
-            e.preventDefault();
-            var url = /*[[@{/manager/exportOrganizationsForDateRange}]]*/ '/manager/exportOrganizationsForDateRange';
-            url = url + '?' + $.param({'minDate':minDate, 'maxDate':maxDate});
-
-            blockUIForDownload();
-
-            downloadURL(url);
-        });
     });
     /*]]>*/
 </script>
@@ -259,9 +205,6 @@
                             <label class="inline">
                                 <b th:text="#{desktop.manager.system.maxDate.label}">Max Date:</b> <input type="text" id="datepicker_max" class="date-filter" th:placeholder="#{desktop.manager.system.maxDate.placeholder}" placeholder="mm/dd/yyyy" th:title="#{desktop.manager.system.maxDate.title}" title="Max Date" style="width: auto;"/>
                             </label>
-
-                            <button id="exportExcelBtn" class="btn btn-success" disabled="disabled" th:title="#{desktop.manager.system.excelExport.button.title}" title="Export to Excel"><i class="icon-download icon-white"/>&nbsp;<span th:text="#{desktop.manager.system.excelExport.button}">Export to Excel</span></button>
-
                         </form>
 
                         <table id="orgsTable" class="table table-striped table-bordered">
@@ -347,8 +290,6 @@
 <section id="scripts">
     <section th:include="/includesTH :: required_scripts"/>
     <script th:substituteby="/includesTH :: inputmask_script"></script>
-    <script th:substituteby="/includesTH :: blockui_script"></script>
-    <script th:substituteby="/includesTH :: cookie_script"></script>
     <section th:include="/includesTH :: table_scripts"/>
 </section>
 

@@ -230,7 +230,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public GroupModel createGroupModel(Long groupId, boolean includeOrganizationModel, boolean includeExternalData) {
+    public GroupModel createGroupModel(Long groupId, boolean includeOrganizationModel) {
         GroupModel model = null;
         Group group = get(groupId);
         if (group != null) {
@@ -240,7 +240,7 @@ public class GroupServiceImpl implements GroupService {
             if (includeOrganizationModel) {
                 Organization organization = group.getOrganization();
                 if (organization != null) {
-                    model.setOrganization(organizationService.createOrganizationModel(organization.getId(), includeExternalData));
+                    model.setOrganization(organizationService.createOrganizationModel(organization.getId()));
                 }
             }
         }

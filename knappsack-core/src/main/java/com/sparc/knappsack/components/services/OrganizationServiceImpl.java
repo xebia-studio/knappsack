@@ -4,7 +4,6 @@ import com.googlecode.flyway.core.util.StringUtils;
 import com.sparc.knappsack.components.dao.OrganizationDao;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.DomainType;
-import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.models.OrganizationModel;
 import com.sparc.knappsack.models.UserDomainModel;
@@ -19,7 +18,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Transactional( propagation = Propagation.REQUIRED )
 @Service("organizationService")
@@ -407,7 +409,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 Callable<OrganizationModel> callable = new Callable<OrganizationModel>() {
                     @Override
                     public OrganizationModel call() throws Exception {
-                        return createOrganizationModel(organization, true);
+                        return createOrganizationModel(organization);
                     }
                 };
 
