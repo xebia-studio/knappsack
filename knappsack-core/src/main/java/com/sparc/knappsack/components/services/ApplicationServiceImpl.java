@@ -201,7 +201,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setDescription(uploadApplication.getDescription());
         application.setCategory(categoryService.get(uploadApplication.getCategoryId()));
 
-        if (uploadApplication.getApplicationType() != null) {
+        if (application != null && (application.getId() == null || application.getId() <= 0)) {
             application.setApplicationType(uploadApplication.getApplicationType());
         }
 
