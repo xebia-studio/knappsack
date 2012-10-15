@@ -84,8 +84,8 @@ public class OrganizationController extends AbstractController {
     @RequestMapping(value = "/manager/addOrg", method = RequestMethod.GET)
     public String addOrganization(Model model) {
 
-        if(!model.containsAttribute("org")) {
-            model.addAttribute("org", new OrganizationForm());
+        if(!model.containsAttribute("organization")) {
+            model.addAttribute("organization", new OrganizationForm());
         }
         model.addAttribute("storageConfigurations", storageConfigurationService.getAll());
 
@@ -100,7 +100,7 @@ public class OrganizationController extends AbstractController {
         Organization existingOrg = organizationService.get(id);
 
         if (existingOrg != null) {
-            if (!model.containsAttribute("org")) {
+            if (!model.containsAttribute("organization")) {
                 OrganizationForm orgForm = new OrganizationForm();
                 orgForm.setEditing(true);
                 orgForm.setName(existingOrg.getName());
@@ -108,9 +108,9 @@ public class OrganizationController extends AbstractController {
                 orgForm.setStorageConfigurationId(existingOrg.getOrgStorageConfig().getStorageConfigurations().get(0).getId());
                 orgForm.setStoragePrefix(existingOrg.getOrgStorageConfig().getPrefix());
 
-                model.addAttribute("org", orgForm);
+                model.addAttribute("organization", orgForm);
             } else {
-                ((OrganizationForm) model.asMap().get("org")).setStorageConfigurationId(existingOrg.getOrgStorageConfig().getStorageConfigurations().get(0).getId());
+                ((OrganizationForm) model.asMap().get("organization")).setStorageConfigurationId(existingOrg.getOrgStorageConfig().getStorageConfigurations().get(0).getId());
             }
             model.addAttribute("originalName", existingOrg.getName());
             model.addAttribute("categories", existingOrg.getCategories());
@@ -159,14 +159,14 @@ public class OrganizationController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin(#organizationForm.id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadOrg", method = RequestMethod.POST)
-    public String uploadOrganization(Model model, @ModelAttribute("org") @Valid OrganizationForm organizationForm, BindingResult bindingResult) {
+    public String uploadOrganization(Model model, @ModelAttribute("organization") @Valid OrganizationForm organizationForm, BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
-            if(!model.containsAttribute("org")) {
-                model.addAttribute("org", new OrganizationForm());
+            if(!model.containsAttribute("organization")) {
+                model.addAttribute("organization", new OrganizationForm());
             }
             model.addAttribute("storageConfigurations", storageConfigurationService.getAll());
-            model.addAttribute("org", organizationForm);
+            model.addAttribute("organization", organizationForm);
             if (organizationForm.isEditing()) {
                 return editOrganization(model, organizationForm.getId());
             } else {

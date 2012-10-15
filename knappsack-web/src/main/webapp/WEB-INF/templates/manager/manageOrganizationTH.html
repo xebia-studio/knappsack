@@ -17,7 +17,7 @@ $(document).ready(function () {
     var tmpOptions = {};
     var successFunction;
     var tmpSelectedRows = [];
-    var organizationId = /*[[${org.id}]]*/ '';
+    var organizationId = /*[[${organization.id}]]*/ '';
 
     $('.striphtml').striphtml();
 
@@ -296,7 +296,7 @@ $(document).ready(function () {
         <ul class="dropdown-menu" th:if="${#bools.isTrue(isEdit)}">
             <li><a href="#organization" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
             <li class="divider" th:if="${user.systemAdmin}"></li>
-            <li th:if="${user.systemAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${org.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.preferences}">Preferences</a></li>
+            <li th:if="${user.systemAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${organization.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.preferences}">Preferences</a></li>
         </ul>
     </li>
 
@@ -308,7 +308,7 @@ $(document).ready(function () {
         <ul class="dropdown-menu">
             <li><a href="#categories" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
             <li class="divider"></li>
-            <li><a href="manageCategoryTH.html" th:href="@{/manager/addCategory/}  + ${org.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.addCategory}">Add
+            <li><a href="manageCategoryTH.html" th:href="@{/manager/addCategory/}  + ${organization.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.addCategory}">Add
                 Category</a></li>
         </ul>
 
@@ -321,9 +321,9 @@ $(document).ready(function () {
         <ul class="dropdown-menu">
             <li><a href="#members" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
             <li class="divider"></li>
-            <li><a href="inviteUserTH.html" th:href="@{/manager/inviteUser/}  + ${org.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.inviteMember}">Invite
+            <li><a href="inviteUserTH.html" th:href="@{/manager/inviteUser/}  + ${organization.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.inviteMember}">Invite
                 Member</a></li>
-            <li><a href="inviteesTH.html" th:href="@{/manager/invitesPending/}  + ${org.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.invitesPending}">Invites Pending</a></li>
+            <li><a href="inviteesTH.html" th:href="@{/manager/invitesPending/}  + ${organization.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.invitesPending}">Invites Pending</a></li>
         </ul>
 
     </li>
@@ -338,7 +338,7 @@ $(document).ready(function () {
     <div class="row-fluid">
         <div class="span7">
             <div class="row well">
-                <form id="orgForm" th:object="${org}" th:action="@{'/manager/uploadOrg'}" method="POST"
+                <form id="orgForm" th:object="${organization}" th:action="@{'/manager/uploadOrg'}" method="POST"
                       enctype="multipart/form-data" class="form-horizontal">
                     <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
                         <h1 th:text="#{errors.header}"/>
@@ -433,8 +433,8 @@ $(document).ready(function () {
         <tr th:each="category : ${categories}">
             <td th:text="${category.name}">1</td>
             <td th:text="${category.description}" class="stripthml">My Name</td>
-            <td><a href="" th:href="@{'/manager/editCategory/' + ${category.id} + '/' + ${org.id}}">Edit</a></td>
-            <td><a href="" th:href="@{'/manager/deleteCategory/' + ${category.id} + '/' + ${org.id}}">Delete</a></td>
+            <td><a href="" th:href="@{'/manager/editCategory/' + ${category.id} + '/' + ${organization.id}}">Edit</a></td>
+            <td><a href="" th:href="@{'/manager/deleteCategory/' + ${category.id} + '/' + ${organization.id}}">Delete</a></td>
         </tr>
         </tbody>
     </table>

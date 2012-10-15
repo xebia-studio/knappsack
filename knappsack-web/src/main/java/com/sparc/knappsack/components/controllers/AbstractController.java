@@ -4,6 +4,8 @@ import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.EntityService;
 import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,12 +18,15 @@ import javax.servlet.http.HttpSession;
 
 public class AbstractController {
 
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     @Qualifier("userService")
     @Autowired(required = true)
     private UserService userService;
 
     @ExceptionHandler(Exception.class)
     public ModelAndView handleGenericException(Exception ex, HttpServletRequest request) {
+        log.error("Generic Exception", ex);
         return createModelAndView(request, ex, "errorTH");
     }
 
