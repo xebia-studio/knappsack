@@ -30,6 +30,12 @@ public interface OrganizationService extends EntityService<Organization> {
 
     double getTotalMegabyteStorageAmount(Organization organization);
 
+    /**
+     * @param organizationId Long - retrieve all administrators for the organization with this ID
+     * @return List<UserDomainModel> - a list of all administrators for the organization with this ID
+     */
+    List<UserDomainModel> getAllOrganizationAdmins(Long organizationId);
+
     List<UserDomainModel> getAllOrganizationMembers(Long organizationId, boolean includeGuests);
 
     List<UserDomainModel> getAllOrganizationGuests(Long organizationId);
@@ -60,6 +66,4 @@ public interface OrganizationService extends EntityService<Organization> {
     long countAll();
 
     List<OrganizationModel> getAllOrganizationsForCreateDateRange(Date minDate, Date maxDate);
-
-    List<UserDomainModel> getAllOrganizationAdmins(Long organizationId);
 }
