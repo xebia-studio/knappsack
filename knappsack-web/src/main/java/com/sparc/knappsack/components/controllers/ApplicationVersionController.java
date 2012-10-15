@@ -21,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,8 +53,9 @@ public class ApplicationVersionController extends AbstractController {
     @Autowired
     private GroupService groupService;
 
-    @InitBinder()
+    @InitBinder("version")
     protected void initBinder(WebDataBinder binder) {
+        binder.setValidator(applicationVersionValidator);
         binder.setBindEmptyMultipartFiles(false);
     }
 
@@ -207,8 +209,7 @@ public class ApplicationVersionController extends AbstractController {
 
     @PreAuthorize("canEditApplication(#uploadApplicationVersion.parentId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadVersion", method = RequestMethod.POST)
-    public String create(@ModelAttribute("version") UploadApplicationVersion uploadApplicationVersion, Model model, BindingResult bindingResult) {
-        applicationVersionValidator.validate(uploadApplicationVersion, bindingResult);
+    public String create(Model model, @ModelAttribute("version") @Validated UploadApplicationVersion uploadApplicationVersion, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             if (uploadApplicationVersion.isEditing()) {
                 return editApplicationVersion(model, uploadApplicationVersion.getParentId(), uploadApplicationVersion.getId());

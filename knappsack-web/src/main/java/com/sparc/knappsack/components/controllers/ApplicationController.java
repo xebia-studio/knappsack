@@ -26,6 +26,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,34 +43,34 @@ public class ApplicationController extends AbstractController {
     private static final Logger log = LoggerFactory.getLogger(ApplicationController.class);
 
     @Qualifier("applicationService")
-    @Autowired
+    @Autowired(required = true)
     private ApplicationService applicationService;
 
     @Qualifier("applicationVersionService")
-    @Autowired
+    @Autowired(required = true)
     private ApplicationVersionService applicationVersionService;
 
     @Qualifier("applicationValidator")
-    @Autowired
+    @Autowired(required = true)
     private ApplicationValidator applicationValidator;
 
     @Qualifier("storageServiceFactory")
-    @Autowired
+    @Autowired(required = true)
     private StorageServiceFactory storageServiceFactory;
 
     @Qualifier("groupService")
-    @Autowired
+    @Autowired(required = true)
     private GroupService groupService;
 
     @Qualifier("iosService")
     @Autowired(required = true)
     private IOSService iosService;
 
+    @Qualifier("singleUseTokenRepository")
     @Autowired(required = true)
     private SingleUseTokenRepository singleUseTokenRepository;
 
-
-    @InitBinder
+    @InitBinder("uploadApplication")
     protected void initBinder(WebDataBinder binder) {
         binder.setValidator(applicationValidator);
         binder.setBindEmptyMultipartFiles(false);
@@ -78,8 +79,7 @@ public class ApplicationController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdminForGroup(#uploadApplication.groupId) or isGroupAdmin(#uploadApplication.groupId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadFile", method = RequestMethod.POST)
-    public String saveApplication(HttpServletRequest request, @ModelAttribute("uploadApplication") UploadApplication uploadApplication, Model model, BindingResult bindingResult) {
-        applicationValidator.validate(uploadApplication, bindingResult);
+    public String saveApplication(Model model, @ModelAttribute("uploadApplication") @Validated UploadApplication uploadApplication, BindingResult bindingResult, HttpServletRequest request) {
         if(bindingResult.hasErrors()) {
             return addApplication(model, uploadApplication.getGroupId());
         }

@@ -25,10 +25,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -208,7 +208,7 @@ public class GroupController extends AbstractController{
 
     @PreAuthorize("isOrganizationAdmin(#groupForm.organizationId) or isGroupAdmin(#groupForm.id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadGroup", method = RequestMethod.POST)
-    public String uploadGroup(Model model, @ModelAttribute("group") @Valid GroupForm groupForm, BindingResult bindingResult) {
+    public String uploadGroup(Model model, @ModelAttribute("group") @Validated GroupForm groupForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return addGroup(model);
         }

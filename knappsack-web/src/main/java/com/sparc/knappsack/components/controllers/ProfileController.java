@@ -18,10 +18,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
-
-import javax.validation.Valid;
 
 @Controller
 @RequestMapping("/profile")
@@ -72,7 +71,7 @@ public class ProfileController extends AbstractController {
     }
 
     @RequestMapping(value = "/changePassword", method = RequestMethod.POST)
-    public String changePassword(Model model, @ModelAttribute("passwordForm") @Valid PasswordForm passwordForm, BindingResult bindingResult) {
+    public String changePassword(Model model, @ModelAttribute("passwordForm") @Validated PasswordForm passwordForm, BindingResult bindingResult) {
         if(bindingResult.hasErrors()) {
             return showChangePasswordPage(model, null);
         }

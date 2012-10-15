@@ -24,10 +24,10 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -159,7 +159,7 @@ public class OrganizationController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin(#organizationForm.id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadOrg", method = RequestMethod.POST)
-    public String uploadOrganization(Model model, @ModelAttribute("organization") @Valid OrganizationForm organizationForm, BindingResult bindingResult) {
+    public String uploadOrganization(Model model, @ModelAttribute("organization") @Validated OrganizationForm organizationForm, BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             if(!model.containsAttribute("organization")) {

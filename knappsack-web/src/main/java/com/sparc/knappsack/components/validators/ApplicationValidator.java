@@ -8,6 +8,7 @@ import com.sparc.knappsack.components.services.OrganizationService;
 import com.sparc.knappsack.forms.UploadApplication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,11 +48,11 @@ public class ApplicationValidator implements Validator {
             errors.rejectValue(APPLICATION_TYPE_FIELD, "applicationValidator.emptyApplicationType");
         }
 
-        if (uploadApplication.getName() == null || "".equals(uploadApplication.getName())) {
+        if (uploadApplication.getName() == null || !StringUtils.hasText(uploadApplication.getName())) {
             errors.rejectValue(NAME_FIELD, "applicationValidator.emptyName");
         }
 
-        if (uploadApplication.getDescription() == null || "".equals(uploadApplication.getDescription())) {
+        if (uploadApplication.getDescription() == null || !StringUtils.hasText(uploadApplication.getDescription())) {
             errors.rejectValue(DESCRIPTION_FIELD, "applicationValidator.emptyDescription");
         }
 

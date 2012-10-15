@@ -11,10 +11,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
-
-import javax.validation.Valid;
 
 @Controller
 public class StorageController extends AbstractController {
@@ -49,7 +48,7 @@ public class StorageController extends AbstractController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/saveStorageConfiguration", method = RequestMethod.POST)
-    public String saveStorageConfiguration(Model model, @ModelAttribute @Valid StorageForm storageForm, BindingResult bindingResult) {
+    public String saveStorageConfiguration(Model model, @ModelAttribute("storageForm") @Validated StorageForm storageForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             if (storageForm.isEditing()) {
                 return editStorageConfiguration(model, storageForm.getId());

@@ -24,12 +24,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -158,7 +158,7 @@ public class CategoryController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin(#category.organizationId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/saveCategory", method = RequestMethod.POST)
-    public String saveCategory(Model model, @ModelAttribute("category") @Valid CategoryForm category, BindingResult bindingResult, @RequestParam boolean editing) {
+    public String saveCategory(Model model, @ModelAttribute("category") @Validated CategoryForm category, BindingResult bindingResult, @RequestParam boolean editing) {
         if(bindingResult.hasErrors()) {
             model.addAttribute("category", category);
             if (editing) {

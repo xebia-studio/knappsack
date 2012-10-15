@@ -21,10 +21,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -185,7 +185,7 @@ public class InvitationController extends AbstractController {
 
     @PreAuthorize("isDomainAdmin(#invitationForm.domainId, #invitationForm.domainType) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/sendInvitation", method = RequestMethod.POST)
-    public String sendInvitation(Model model, @ModelAttribute("invitationForm") @Valid InvitationForm invitationForm, BindingResult bindingResult, WebRequest webRequest) {
+    public String sendInvitation(Model model, @ModelAttribute("invitationForm") @Validated InvitationForm invitationForm, BindingResult bindingResult, WebRequest webRequest) {
         if (bindingResult.hasErrors()) {
             initModel(model, invitationForm.getDomainId(), invitationForm.getDomainType());
             return "manager/inviteUserTH";
@@ -199,7 +199,7 @@ public class InvitationController extends AbstractController {
 
     @PreAuthorize("isDomainAdmin(#invitationForm.domainId, #invitationForm.domainType) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/batchInvitations", method = RequestMethod.POST)
-    public String batchInvitations(Model model, @ModelAttribute("invitationForm") InvitationForm invitationForm, BindingResult bindingResult) {
+    public String batchInvitations(Model model, @ModelAttribute("invitationForm") @Validated InvitationForm invitationForm, BindingResult bindingResult) {
         initModel(model, invitationForm.getDomainId(), invitationForm.getDomainType());
         invitationForm.getInviteeForms().clear();
         invitationForm.setDomainId(invitationForm.getDomainId());
@@ -229,7 +229,7 @@ public class InvitationController extends AbstractController {
 
     @PreAuthorize("isDomainAdmin(#invitationForm.domainId, #invitationForm.domainType) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/sendBatchInvitations", method = RequestMethod.POST)
-    public String sendBatchInvitations(Model model, @ModelAttribute("invitationForm") InvitationForm invitationForm, WebRequest request, BindingResult bindingResult) {
+    public String sendBatchInvitations(Model model, @ModelAttribute("invitationForm") @Validated InvitationForm invitationForm, WebRequest request, BindingResult bindingResult) {
         List<InviteeForm> errors = new ArrayList<InviteeForm>();
         for (InviteeForm inviteeForm : invitationForm.getInviteeForms()) {
             boolean invitationSent = invitationControllerService.inviteUser(inviteeForm, invitationForm.getDomainId(), invitationForm.getDomainType(), true);

@@ -22,7 +22,7 @@
         $("#provisioningFileDiv").hide();
         $("#propertiesListDiv").hide();
 
-        $('textarea').wysihtml5({
+        $('#description').wysihtml5({
             "image": false,
             "html": true
         });
@@ -236,7 +236,7 @@
 
                                             <div class="controls">
                                                 <textarea id="description" name="description" th:text="*{description}"
-                                                          required="required" placeholder="Enter your description here." style="width: 98%; height:200px;"></textarea>
+                                                          placeholder="Enter your description here." style="width: 98%; height:200px;"></textarea>
                                             </div>
                                         </div>
 

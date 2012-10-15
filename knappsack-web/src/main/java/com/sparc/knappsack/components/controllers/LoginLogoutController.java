@@ -31,6 +31,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +39,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
 
 @Controller
 @RequestMapping("/auth")
@@ -133,7 +133,7 @@ public class LoginLogoutController extends AbstractController {
     }
 
     @RequestMapping(value = "/register", method = RequestMethod.POST)
-    public String register(Model model, HttpServletRequest request, HttpServletResponse response, @ModelAttribute("registrationForm") @Valid RegistrationForm registrationForm, BindingResult bindingResult) {
+    public String register(Model model, HttpServletRequest request, HttpServletResponse response, @ModelAttribute("registrationForm") @Validated RegistrationForm registrationForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return showRegistrationPage(request, response, model, null);
         }

@@ -13,6 +13,7 @@ import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.forms.UploadApplicationVersion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -53,11 +54,11 @@ public class ApplicationVersionValidator implements Validator {
             validateOrganizationStorageLimit(group.getOrganization(), version.getAppFile().getSize(), errors);
         }
 
-        if (version.getVersionName() == null || version.getVersionName().isEmpty()) {
+        if (version.getVersionName() == null || !StringUtils.hasText(version.getVersionName())) {
             errors.rejectValue(VERSION_NAME_FIELD, "applicationVersionValidator.emptyVersion");
         }
 
-        if (version.getRecentChanges() == null || version.getRecentChanges().isEmpty()) {
+        if (version.getRecentChanges() == null || !StringUtils.hasText(version.getRecentChanges())) {
             errors.rejectValue(RECENT_CHANGES_FIELD, "applicationVersionValidator.emptyRecentChanges");
         }
 
