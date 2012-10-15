@@ -87,10 +87,10 @@
 
                 <div th:if="${registrationSuccess != null}">
                     <div class="alert alert-success" th:if="${#bools.isTrue(registrationSuccess)}">
-                        <p th:inline="text">[[#{registration.success}]]</p>
+                        <p th:inline="text">[[#{mobile.login.alert.registration.success}]]</p>
                     </div>
                     <div class="alert alert-error" th:if="${#bools.isFalse(registrationSuccess)}">
-                        <p th:inline="text">[[#{registration.failure}]]</p>
+                        <p th:inline="text">[[#{mobile.login.alert.registration.error}]]</p>
                     </div>
                 </div>
             </div>

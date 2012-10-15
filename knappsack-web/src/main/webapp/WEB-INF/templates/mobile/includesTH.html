@@ -38,7 +38,7 @@
     </script>
 
     <link type="text/css" rel="stylesheet" href='../../../resources/css/login-mobile.css' ks:href="@{/resources/css/login-mobile.css}"/>
-    <link type="text/css" rel="stylesheet" href="../../../resources/css/add2home.css" ks:href="@{/resources/css/add2home.css}"/>
+    <link type="text/css" rel="stylesheet" href="../../../resources/css/add2home-2.0.4.css" ks:href="@{/resources/css/add2home-2.0.4.css}"/>
 
     <script src="../../../resources/jquery.mobile/jquery.mobile-1.2.0.min.js" ks:src="@{/resources/jquery.mobile/jquery.mobile-1.2.0.min.js}"></script>
 
@@ -55,10 +55,13 @@
     <script type="text/javascript" th:if="${include_home}">
         var addToHomeConfig = {
             startDelay:500,
-            touchIcon:true
+            touchIcon:true,
+            animationIn:'bubble',
+            animationOut:'fade',
+            lifespan:10000
         };
     </script>
-    <script type="text/javascript" src="../../../resources/js/add2home.js" ks:src="@{/resources/js/add2home.js}" th:if="${include_home}"></script>
+    <script type="text/javascript" src="../../../resources/js/add2home-2.0.4.js" ks:src="@{/resources/js/add2home-2.0.4.js}" th:if="${include_home}"></script>
     <script type="text/javascript" src="../../../resources/flexslider/jquery.flexslider.js" ks:src="@{/resources/flexslider/jquery.flexslider.js}" th:if="${include_detail}"></script>
     <script type="text/javascript" src="../../../resources/js/jquery.validate.js" ks:src="@{/resources/js/jquery.validate.js}"></script>
 
