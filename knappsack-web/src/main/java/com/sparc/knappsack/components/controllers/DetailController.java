@@ -9,6 +9,7 @@ import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.forms.EnumEditor;
 import com.sparc.knappsack.models.ApplicationModel;
+import com.sparc.knappsack.models.ApplicationVersionModel;
 import com.sparc.knappsack.util.UserAgentInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -31,17 +33,13 @@ public class DetailController extends AbstractController {
     @Autowired(required = true)
     private ApplicationService applicationService;
 
+    @Qualifier("applicationVersionService")
+    @Autowired(required = true)
+    private ApplicationVersionService applicationVersionService;
+
     @Qualifier("userService")
     @Autowired(required = true)
     private UserService userService;
-
-    @Qualifier("storageServiceFactory")
-    @Autowired
-    private StorageServiceFactory storageServiceFactory;
-
-    @Qualifier("appFileService")
-    @Autowired(required = true)
-    private AppFileService appFileService;
 
     @Qualifier("eventWatchService")
     @Autowired(required = true)
@@ -75,7 +73,11 @@ public class DetailController extends AbstractController {
         model.addAttribute("iosDetected", iosDetected);
         model.addAttribute("showInstallBtn", applicationService.determineApplicationVisibility(application, userAgentInfo.getApplicationType()));
         List<ApplicationVersion> versions = userService.getApplicationVersions(user, id, SortOrder.DESCENDING, AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, AppState.ORG_PUBLISH_REQUEST);
-        model.addAttribute("versions", versions);
+        List<ApplicationVersionModel> applicationVersionModels = new ArrayList<ApplicationVersionModel>();
+        for (ApplicationVersion version : versions) {
+            applicationVersionModels.add(applicationVersionService.createApplicationVersionModel(version.getId()));
+        }
+        model.addAttribute("versions", applicationVersionModels);
         model.addAttribute("initialVersionId", (versions != null && versions.size() > 0 ? versions.get(0).getId() : null));
 
         model.addAttribute("isSubscribed", eventWatchService.doesEventWatchExist(user, applicationService.get(id)));

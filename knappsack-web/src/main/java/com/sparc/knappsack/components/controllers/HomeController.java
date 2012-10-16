@@ -37,7 +37,7 @@ public class HomeController extends AbstractController {
 
         User user = userService.getUserFromSecurityContext();
 
-        List<Application> applications = userService.getApplicationsForUser(user, userAgentInfo.getApplicationType(), AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, (user.isSystemOrOrganizationAdmin() ? AppState.ORG_PUBLISH_REQUEST : null));
+        List<Application> applications = userService.getApplicationsForUser(user, userAgentInfo.getApplicationType(), AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, (user.isOrganizationAdmin() ? AppState.ORG_PUBLISH_REQUEST : null));
         model.addAttribute("applications", applicationService.createApplicationModels(applications));
 
         List<Group> userGroups =  userService.getGroups(user);

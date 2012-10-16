@@ -108,9 +108,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<Group> getGroups(User user) {
 
-        if(user.isSystemAdmin()) {
-            return groupService.getAll();
-        }
+//        if(user.isSystemAdmin()) {
+//            return groupService.getAll();
+//        }
 
         Set<Group> groups = new HashSet<Group>();
         if (user.isOrganizationAdmin()) {

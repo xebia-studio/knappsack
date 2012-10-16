@@ -22,7 +22,11 @@
         var description = /*[[${selectedApplication.description}]]*/ '';
         $('#description').addHtml(description);
 
-        var recentChanges = /*[[${versions.get(0).recentChanges}]]*/ '';
+        var recentChanges = '';
+        var versions = /*[[${versions}]]*/ [];
+        if (versions.length > 0) {
+            recentChanges = versions[0].recentChanges;
+        }
         $('#recentChanges').addHtml(recentChanges);
 
         var isSubscribed = $('#subscriptionBtn').attr('data-subscribed');
