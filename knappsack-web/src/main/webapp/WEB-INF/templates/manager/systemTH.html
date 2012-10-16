@@ -20,19 +20,19 @@
         var adminTable;
 
         var minDate = formatDate(new Date().getTime());
-            $('#datepicker_min').val(minDate);
-            var maxDate = '';
-            $('#datepicker_min').on('change', function() {
-                minDate = $(this).val();
-                $orgsTable.fnReloadAjax(buildOrganizationUrl());
-            });
-        
-            $('#datepicker_max').on('change', function() {
-                maxDate = $(this).val();
-                orgDetails = [];
-                $orgsTable.fnReloadAjax(buildOrganizationUrl());
-            });
-        
+        $('#datepicker_min').val(minDate);
+        var maxDate = '';
+        $('#datepicker_min').on('change', function() {
+            minDate = $(this).val();
+            $orgsTable.fnReloadAjax(buildOrganizationUrl());
+        });
+
+        $('#datepicker_max').on('change', function() {
+            maxDate = $(this).val();
+            orgDetails = [];
+            $orgsTable.fnReloadAjax(buildOrganizationUrl());
+        });
+
         $('#datepicker_min').inputmask({
             mask: '99/99/9999'
         });
@@ -95,16 +95,16 @@
             ]
         });
 
-    function buildOrganizationUrl() {
-        return orgDateRangeUrl + "?" + $.param({'minDate':minDate, 'maxDate':maxDate});
-    }
-
-    function formatDate(milliseconds) {
-        if (milliseconds != undefined && milliseconds >= 0) {
-            var date = new Date(milliseconds);
-            return ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" + ("0" + date.getUTCDate()).slice(-2) + "/" + date.getFullYear();
+        function buildOrganizationUrl() {
+            return orgDateRangeUrl + "?" + $.param({'minDate':minDate, 'maxDate':maxDate});
         }
-    }
+
+        function formatDate(milliseconds) {
+            if (milliseconds != undefined && milliseconds >= 0) {
+                var date = new Date(milliseconds);
+                return ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" + ("0" + date.getUTCDate()).slice(-2) + "/" + date.getFullYear();
+            }
+        }
 
         function showModal(id, title, data) {
             if (id.substr(0, 1) !== '#') {
