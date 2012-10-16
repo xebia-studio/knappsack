@@ -20,39 +20,37 @@
 
                 $('.striphtml').striphtml();
 
-                var $applicationsTable = $('table').dataTable( {
-                    "sDom": "<'table-inline'<'row'<'span6'l><'floatright'f>r>t<'row'<'span6'i><'floatright'p>>>",
-                    "sPaginationType": "bootstrap",
-                    "iDisplayLength": 5,
-                    "oLanguage": {
-                        "sLengthMenu": '<select>'+
-                                '<option value="5">5</option>'+
-                                '<option value="10">10</option>'+
-                                '<option value="25">25</option>'+
-                                '<option value="50">50</option>'+
-                                '<option value="-1">All</option>'+
-                                '</select> ' + recordsPerPageText
-                    },
-                    "aoColumns": [
-                        { "bSortable": false, "bSearchable": false, "sWidth": "100%"},
-                        { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%" },
-                        { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%" }
-                    ],
-                    "bAutoWidth": false
-                });
+                var $applicationsTable;
+                if ($('#applicationsTable').length > 0) {
+                    $applicationsTable = $('#applicationsTable').dataTable( {
+                        "sDom": "<'table-inline'<'row'<'span6'l><'floatright'f>r>t<'row'<'span6'i><'floatright'p>>>",
+                        "sPaginationType": "bootstrap",
+                        "iDisplayLength": 5,
+                        "oLanguage": {
+                            "sLengthMenu": '<select>'+
+                                    '<option value="5">5</option>'+
+                                    '<option value="10">10</option>'+
+                                    '<option value="25">25</option>'+
+                                    '<option value="50">50</option>'+
+                                    '<option value="-1">All</option>'+
+                                    '</select> ' + recordsPerPageText
+                        },
+                        "aoColumns": [
+                            { "bSortable": false, "bSearchable": false, "sWidth": "100%", "sDefaultContent": "" },
+                            { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%", "sDefaultContent": "" },
+                            { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%", "sDefaultContent": "" }
+                        ],
+                        "bAutoWidth": false
+                    });
 
-                $('table').show();
+                    $applicationsTable.$('tr').on('click', function() {
+                        var url = /*[[@{/detail/}]]*/ '/detail/';
+                        url += $(this).attr('data-id');
+                        window.location = url;
+                    });
 
-                $(window).resize(function() {
-                    var width = $applicationsTable.$('td').width;
-//                    $('.tdfield').width(width);
-                });
-
-                $applicationsTable.$('tr').on('click', function() {
-                    var url = /*[[@{/detail/}]]*/ '/detail/';
-                    url += $(this).attr('data-id');
-                    window.location = url;
-                });
+                    $('table').show();
+                }
 
                 var tablePlaceholderText = /*[[#{desktop.home.table.search.placeholder}]]*/ 'Application Name or Type'
 
