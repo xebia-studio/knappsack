@@ -279,49 +279,6 @@ CREATE TABLE `CATEGORY` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `logging_event_exception`
---
-
-DROP TABLE IF EXISTS `logging_event_exception`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `logging_event_exception` (
-  `event_id` bigint(20) NOT NULL,
-  `i` smallint(6) NOT NULL,
-  `trace_line` varchar(254) NOT NULL,
-  PRIMARY KEY (`event_id`,`i`),
-  CONSTRAINT `logging_event_exception_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `logging_event` (`event_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `logging_event`
---
-
-DROP TABLE IF EXISTS `logging_event`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `logging_event` (
-  `timestmp` bigint(20) NOT NULL,
-  `formatted_message` text NOT NULL,
-  `logger_name` varchar(254) NOT NULL,
-  `level_string` varchar(254) NOT NULL,
-  `thread_name` varchar(254) DEFAULT NULL,
-  `reference_flag` smallint(6) DEFAULT NULL,
-  `arg0` varchar(254) DEFAULT NULL,
-  `arg1` varchar(254) DEFAULT NULL,
-  `arg2` varchar(254) DEFAULT NULL,
-  `arg3` varchar(254) DEFAULT NULL,
-  `caller_filename` varchar(254) NOT NULL,
-  `caller_class` varchar(254) NOT NULL,
-  `caller_method` varchar(254) NOT NULL,
-  `caller_line` char(4) NOT NULL,
-  `event_id` bigint(20) NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`event_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=135 DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `ORG_GROUP_APPLICATION`
 --
 
@@ -335,22 +292,6 @@ CREATE TABLE `ORG_GROUP_APPLICATION` (
   KEY `FK_ORG_GROUP_APPLICATION_APPLICATION_ID` (`APPLICATION_ID`),
   CONSTRAINT `FK_ORG_GROUP_APPLICATION_ORG_GROUP_ID` FOREIGN KEY (`ORG_GROUP_ID`) REFERENCES `ORG_GROUP` (`ID`) ON DELETE CASCADE,
   CONSTRAINT `FK_ORG_GROUP_APPLICATION_APPLICATION_ID` FOREIGN KEY (`APPLICATION_ID`) REFERENCES `STORABLE` (`ID`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `logging_event_property`
---
-
-DROP TABLE IF EXISTS `logging_event_property`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `logging_event_property` (
-  `event_id` bigint(20) NOT NULL,
-  `mapped_key` varchar(254) NOT NULL,
-  `mapped_value` text,
-  PRIMARY KEY (`event_id`,`mapped_key`),
-  CONSTRAINT `logging_event_property_ibfk_1` FOREIGN KEY (`event_id`) REFERENCES `logging_event` (`event_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

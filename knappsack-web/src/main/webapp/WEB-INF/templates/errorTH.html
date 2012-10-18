@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="include_login=${true},title=#{desktop.error.generic.title}">
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_login=${true},title=#{desktop.error.generic.title},exclude_systemNotifications=${true}">
 <head th:substituteby="/includesTH :: head"></head>
 
 <body class="lightNav">

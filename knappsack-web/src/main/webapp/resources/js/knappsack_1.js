@@ -42,13 +42,14 @@
 })(jQuery);
 
 (function($){
-    $.fn.tabState = function() {
+    $.fn.tabState = function(defaultId) {
         $('a[data-toggle="tab"]').on('shown', function(e){
             //save the latest tab using a cookie:
             $.cookie('last_tab', $(e.target).attr('href'));
         });
 
         var lastTab = $.cookie('last_tab');
+        lastTab = (lastTab ? lastTab : defaultId);
         if (lastTab) {
             var $tab = $('a[href='+ lastTab +']').parents('li.tab');
             if ($tab != undefined) {

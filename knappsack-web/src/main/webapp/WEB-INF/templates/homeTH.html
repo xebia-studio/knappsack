@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com" th:with="title=#{desktop.home.title}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com" th:with="title=#{desktop.home.title}, systemNotificationTypes=${{'MAINTENANCE'}}">
 
 <head th:substituteby="/includesTH :: head"></head>
 
@@ -59,6 +59,7 @@
             });
             /*]]>*/
         </script>
+        <div id="systemNotificationsDiv"></div>
 
         <header class="jumbotron subhead" id="overview">
             <h1 th:text="#{desktop.home.overview.header}">Welcome to Knappsack!</h1>

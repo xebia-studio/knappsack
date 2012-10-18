@@ -23,8 +23,8 @@
           ks:href="@{/resources/bootstrap/css/bootstrap-responsive.css}" rel="stylesheet"/>
     <link href="../../resources/bootstrap/css/docs.css" ks:href="@{/resources/bootstrap/css/docs.css}"
           rel="stylesheet"/>
-    <link href="../../resources/bootstrap/css/custom_2.css"
-          ks:href="@{/resources/bootstrap/css/custom_2.css}" rel="stylesheet"/>
+    <link href="../../resources/bootstrap/css/custom_3.css"
+          ks:href="@{/resources/bootstrap/css/custom_3.css}" rel="stylesheet"/>
 
     <link href="../../resources/css/login.css" ks:href="@{/resources/css/login.css}"
           rel="stylesheet" th:if="${include_login}"/>
@@ -45,7 +45,50 @@
     <script src="../../resources/js/openid.js" ks:src="@{/resources/js/openid.js}"
             type="text/javascript" th:if="${include_login}"></script>
 
-    <script type="text/javascript">
+    <script type="text/javascript" th:inline="javascript" th:if="${#bools.isFalse(exclude_systemNotifications)}">
+        /*<![CDATA[*/
+        var systemNotifications = [];
+
+        function displaySystemNotifications() {
+            var getSystemNotificationsUrl = /*[[@{/getSystemNotifications}]]*/ '/getSystemNotifications';
+            var systemNotificationTypes = /*[[${systemNotificationTypes}]]*/ [];
+            $(systemNotifications).each(function(index, value) {
+                value.close();
+            });
+            $.ajax( {
+                url: getSystemNotificationsUrl,
+                data: {"types": systemNotificationTypes}
+            }).done(function(result) {
+                        if (result) {
+                            $('body > .container, body > .container-fluid > .row-fluid > .span10').prepend($('<div>').addClass('system-notifications'));
+                            $.each(result, function(index, value) {
+                                var type = 'alert';
+                                switch (value.notificationSeverity) {
+                                    case 'INFO':
+                                        type = 'information';
+                                        break;
+                                    case 'WARNING':
+                                        type = 'warning';
+                                        break;
+                                    case 'ERROR':
+                                        type = 'error';
+                                        break;
+                                }
+                                systemNotifications.push($('.system-notifications').noty({
+                                    text: value.message,
+                                    type: type,
+                                    layout: 'topCenter',
+                                    closeWith: ['click']
+                                }));
+                            });
+                        }
+                    });
+        }
+        /*]]>*/
+    </script>
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
 
         $(document).ready(function() {
 
@@ -54,56 +97,68 @@
                 return false;
             });
 
-        });
+            var excludeSystemNotifications = /*[[${#bools.isTrue(exclude_systemNotifications)}]]*/ false;
 
+            if (!excludeSystemNotifications) {
+                displaySystemNotifications();
+            }
+
+        });
+        /*]]>*/
     </script>
 
 </head>
 
 <body>
 
-<div class="navbar navbar-fixed-top" th:fragment="header">
-    <div class="navbar-inner">
-        <div class="container-fluid">
-            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </a>
-            <a class="brand" th:href="@{/}" href="/"><img src="../../resources/img/logo-header.png.png"
-                                                          ks:src="@{/resources/img/logo-header.png}"
-                                                          th:alt="#{desktop.includes.logo.alt}" alt="Knappsack"/></a>
+<div th:fragment="header">
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container-fluid">
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+                <a class="brand" th:href="@{/}" href="/"><img src="../../resources/img/logo-header.png.png"
+                                                              ks:src="@{/resources/img/logo-header.png}"
+                                                              th:alt="#{desktop.includes.logo.alt}" alt="Knappsack"/></a>
 
-            <div class="nav-collapse" th:if="${user}">
-                <ul class="nav nav-pills">
-                    <li><a href="#" th:href="@{/home}" th:unless="${include_activate}" th:title="#{desktop.includes.header.home.title}" title="Home" th:text="#{desktop.includes.header.home}">Home</a></li>
-                    <li><a href="categoriesTH.html" th:href="@{/categories}" th:unless="${include_activate}" th:title="#{desktop.includes.header.categories.title}" title="Categories" th:text="#{desktop.includes.header.categories}">Categories</a></li>
-                    <!--<li><a href="searchTH.html" th:href="@{/search}" th:unless="${include_activate}" th:title="#{desktop.includes.header.search.title}" title="Search" th:text="#{desktop.includes.header.search}">Search</a></li>-->
-                    <li><a href="group_accessTH.html" th:href="@{/group/requestAccess}" th:unless="${include_activate}" th:title="#{desktop.includes.header.request.group.access.title}" title="Request Group Access" th:text="#{desktop.includes.header.request.group.access}">Request Group Access</a></li>
-                    <li><a href="manager/managerHomeTH.html" th:href="@{/manager/}" th:if="${user.anyAdmin}" th:unless="${include_activate}" th:title="#{desktop.includes.header.manage.title}" title="Manage Application" th:text="#{desktop.includes.header.manage}">Manage Application</a></li>
-                </ul>
-                <!--<div class="logoutNav">-->
-                <ul class="nav nav-pills pull-right">
-                    <li class="dropdown" id="account">
-                        <a class="dropdown-toggle" data-toggle="dropdown" href="#"><span th:text="${user.fullName + ' (' + user.email + ')'}">User</span> <b class="caret"/> </a>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a id="changePassword" href="/profile/changePassword" th:href="@{/profile/changePassword}" th:text="#{desktop.includes.header.account.menu.change.password}">Change Password</a>
-                            </li>
-                            <li>
-                                <a id="logout" href="/auth/logout" th:href="@{/auth/logout}" th:text="#{desktop.includes.header.account.menu.logout}">Logout</a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-            <div class="nav-collapse" th:unless="${user}">
-                <div class="loginNav" th:inline="text">
-                    <a class="btn btn-primary" href="auth/login" th:href="@{/auth/login}" th:title="#{desktop.includes.header.login.title}" title="Login" th:text="#{desktop.includes.header.login}">Login</a>
+                <div class="nav-collapse" th:if="${user}">
+                    <ul class="nav nav-pills">
+                        <li><a href="#" th:href="@{/home}" th:unless="${include_activate}" th:title="#{desktop.includes.header.home.title}" title="Home" th:text="#{desktop.includes.header.home}">Home</a></li>
+                        <li><a href="categoriesTH.html" th:href="@{/categories}" th:unless="${include_activate}" th:title="#{desktop.includes.header.categories.title}" title="Categories" th:text="#{desktop.includes.header.categories}">Categories</a></li>
+                        <!--<li><a href="searchTH.html" th:href="@{/search}" th:unless="${include_activate}" th:title="#{desktop.includes.header.search.title}" title="Search" th:text="#{desktop.includes.header.search}">Search</a></li>-->
+                        <li><a href="group_accessTH.html" th:href="@{/group/requestAccess}" th:unless="${include_activate}" th:title="#{desktop.includes.header.request.group.access.title}" title="Request Group Access" th:text="#{desktop.includes.header.request.group.access}">Request Group Access</a></li>
+                        <li><a href="manager/managerHomeTH.html" th:href="@{/manager/}" th:if="${user.anyAdmin}" th:unless="${include_activate}" th:title="#{desktop.includes.header.manage.title}" title="Manage Application" th:text="#{desktop.includes.header.manage}">Manage Application</a></li>
+                    </ul>
+                    <!--<div class="logoutNav">-->
+                    <ul class="nav nav-pills pull-right">
+                        <li class="dropdown" id="account">
+                            <a class="dropdown-toggle" data-toggle="dropdown" href="#"><span th:text="${user.fullName + ' (' + user.email + ')'}">User</span> <b class="caret"/> </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a id="changePassword" href="/profile/changePassword" th:href="@{/profile/changePassword}" th:text="#{desktop.includes.header.account.menu.change.password}">Change Password</a>
+                                </li>
+                                <li>
+                                    <a id="logout" href="/auth/logout" th:href="@{/auth/logout}" th:text="#{desktop.includes.header.account.menu.logout}">Logout</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <!--[[${user.fullName}]]-->
+                    <!--([[(${user.email})]])-->
+                    <!--<a class="btn btn-primary" href="auth/logout" th:href="@{/auth/logout}" th:title="#{desktop.includes.header.logout.title}" title="Logout" th:text="#{desktop.includes.header.logout}">Logout</a>-->
+                    <!--</div>-->
                 </div>
-            </div>
+                <div class="nav-collapse" th:unless="${user}">
+                    <div class="loginNav" th:inline="text">
+                        <a class="btn btn-primary" href="auth/login" th:href="@{/auth/login}" th:title="#{desktop.includes.header.login.title}" title="Login" th:text="#{desktop.includes.header.login}">Login</a>
+                    </div>
+                </div>
 
-            <!--/.nav-collapse -->
+                <!--/.nav-collapse -->
+            </div>
         </div>
     </div>
 </div>
@@ -136,13 +191,23 @@
                 ks:src="@{/resources/js/prettify.js}" type="text/javascript"></script>
         <script src="../../resources/bootstrap/js/bootstrap.min.js"
                 ks:src="@{/resources/bootstrap/js/bootstrap.min.js}"></script>
+        <section th:if="${#bools.isFalse(exclude_systemNotifications)}">
+            <script src="../../resources/noty/jquery.noty.js"
+                    ks:src="@{/resources/noty/jquery.noty.js}"></script>
+            <script src="../../resources/noty/layouts/top.js"
+                    ks:src="@{/resources/noty/layouts/top.js}"></script>
+            <script src="../../resources/noty/layouts/inline.js"
+                    ks:src="@{/resources/noty/layouts/inline.js}"></script>
+            <script src="../../resources/noty/themes/default.js"
+                    ks:src="@{/resources/noty/themes/default.js}"></script>
+        </section>
     </section>
 
     <section th:fragment="table_scripts">
         <script src="../../resources/DataTables/js/jquery.dataTables-1.9.4.min.js"
                 ks:src="@{/resources/DataTables/js/jquery.dataTables-1.9.4.min.js}"></script>
-        <script src="../../resources/DataTables/js/DT_bootstrap_1.js"
-                ks:src="@{/resources/DataTables/js/DT_bootstrap_1.js}"></script>
+        <script src="../../resources/DataTables/js/DT_bootstrap_2.js"
+                ks:src="@{/resources/DataTables/js/DT_bootstrap_2.js}"></script>
     </section>
 
     <section th:fragment="wysiwyg_scripts">
@@ -160,6 +225,19 @@
                 ks:src="@{/resources/bootstrap/js/bootstrap-inputmask.js}" th:fragment="inputmask_script"></script>
         <script src="../../resources/js/jquery.cookie-1.3.js"
                 ks:src="@{/resources/js/jquery.cookie-1.3.js}" th:fragment="cookie_script"></script>
+    </section>
+
+    <section th:fragment="inputmask_scripts">
+        <script src="../../resources/jquery.inputmask/jquery.inputmask.js"
+                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.js}"></script>
+        <script src="../../resources/jquery.inputmask/jquery.inputmask.extensions.js"
+                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.extensions.js}"></script>
+        <script src="../../resources/jquery.inputmask/jquery.inputmask.date.extensions.js"
+                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.date.extensions.js}"></script>
+        <script src="../../resources/jquery.inputmask/jquery.inputmask.numeric.extensions.js"
+                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.numeric.extensions.js}"></script>
+        <script src="../../resources/jquery.inputmask/jquery.inputmask.date.custom.extensions.js"
+                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.date.custom.extensions.js}"></script>
     </section>
 </section>
 

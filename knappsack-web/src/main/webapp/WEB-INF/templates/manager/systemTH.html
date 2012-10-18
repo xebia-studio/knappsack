@@ -11,195 +11,456 @@
 <div class="container-fluid">
 
 <script type="text/javascript" th:inline="javascript">
-    /*<![CDATA[*/
-    $(document).ready(function () {
-        var orgDateRangeUrl = /*[[@{/manager/organizationList}]]*/ '/manager/organizationList';
-        var orgAdminsUrl = /*[[@{/manager/getOrganizationAdmins}]]*/ '/manager/getOrganizationAdmins';
-        var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
-        var orgDetails = [];
-        var adminTable;
+/*<![CDATA[*/
+$(document).ready(function () {
+    $(this).tabState('#metrics');
 
-        var minDate = formatDate(new Date().getTime());
-        $('#datepicker_min').val(minDate);
-        var maxDate = '';
-        $('#datepicker_min').on('change', function() {
-            minDate = $(this).val();
-            $orgsTable.fnReloadAjax(buildOrganizationUrl());
-        });
+    var orgDateRangeUrl = /*[[@{/manager/organizationList}]]*/ '/manager/organizationList';
+    var orgAdminsUrl = /*[[@{/manager/getOrganizationAdmins}]]*/ '/manager/getOrganizationAdmins';
+    var systemNotificationsUrl = /*[[@{/manager/getAllSystemNotifications}]]*/ '/manager/getAllSystemNotifications';
+    var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
+    var orgDetails = [];
+    var adminTable;
+    var escDisabled = false;
 
-        $('#datepicker_max').on('change', function() {
-            maxDate = $(this).val();
-            orgDetails = [];
-            $orgsTable.fnReloadAjax(buildOrganizationUrl());
-        });
+    $.removeCookie('fileDownloadTime');
 
-        $('#datepicker_min').inputmask({
-            mask: '99/99/9999'
-        });
+    var $systemNotificationForm = /*[[${systemNotificationForm}]]*/ {};
+    if ($systemNotificationForm != undefined) {
+        if ($systemNotificationForm.startDate != undefined) {
+            $('#systemNotificationStartDate').val(formatDateTime($systemNotificationForm.startDate.time));
+        }
+        if ($systemNotificationForm.endDate != undefined) {
+            $('#systemNotificationEndDate').val(formatDateTime($systemNotificationForm.endDate.time));
+        }
+    }
 
-        $('#datepicker_max').inputmask({
-            mask: '99/99/9999'
-        });
+    var $systemNotificationMessage = $('#systemNotificationMessage').wysihtml5({
+        "lists": false,
+        "font-styles": false,
+        "image": true,
+        "html": true
+    });
 
-        $('#orgsTable tbody').on('click', 'a.org-modal', function(e) {
-            e.preventDefault();
-            showModal('#organizationModal', "org title", orgDetails[$(this).attr('data-details-id')]);
-        });
+    var minDate = formatDate(new Date().getTime());
+    $('#datepicker_min').val(minDate);
+    var maxDate = '';
+    $('#datepicker_min').on('change', function() {
+        minDate = $(this).val();
+        $orgsTable.fnReloadAjax(buildOrganizationUrl());
+    });
 
-        $('#orgsTable tbody').on('click', 'a.org-modal', function(e) {
-            e.preventDefault();
-            showModal('#organizationModal', "org title", $(this).closest('tr').data('org-details'));
-        });
+    $('#datepicker_max').on('change', function() {
+        maxDate = $(this).val();
+        orgDetails = [];
+        $orgsTable.fnReloadAjax(buildOrganizationUrl());
+    });
 
-        var $orgsTable = $('#orgsTable').dataTable( {
-            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
-            "sPaginationType": "bootstrap",
-            "oLanguage": {
-                "sLengthMenu": "_MENU_ " + 'Num of records'
-            },
-            "bSort": true,
-            "sAjaxSource": buildOrganizationUrl(),
-            "sAjaxDataProp":"",
-            "bProcessing": true,
-            "aaSorting": [[1, "asc"]],
-            "aoColumnDefs" : [
-                {
-                    "aTargets" : [0],
-                    "mData" : "name",
-                    "mRender" : function(data, type, full) {
+    $('#datepicker_min').inputmask("mm/dd/yyyy", { "clearIncomplete": true });
+
+    $('#datepicker_max').inputmask("mm/dd/yyyy", { "clearIncomplete": true });
+
+    $('.datetime_picker').inputmask("mm/dd/yyyy hh:mm", { "clearIncomplete": true });
+    $('#orgsTable tbody').on('click', 'a.org-modal', function(e) {
+        e.preventDefault();
+        showModal('#organizationModal', $(this).closest('tr').data('org-details'), fnOnOrgModalShow, fnOnOrgModalHide);
+    });
+
+    var fnOnOrgModalShow = function(data) {
+        $('.modal-header h3', "#organizationModal").text(data.name);
+        $('#modalCreateDate').text(formatDate(data.createDate));
+        $('#modalCustomerId').text(data.customer.externalId);
+        $('#modalPaymentPlan').text(data.customer.subscription.paymentPlanModel.name);
+        $('#modalCustomerStatus').text(data.customer.subscription.status);
+        if (adminTable !== undefined) {
+            adminTable.fnClearTable(false);
+            adminTable.fnReloadAjax(buildOrgAdminsUrl(data.id));
+        } else {
+            adminTable = $('#adminTable').dataTable( {
+                "sDom": "<<''l><'floatright'f>r>t<<''i><'floatright'p>>",
+                "sPaginationType": "bootstrap",
+                "oLanguage": {
+                    "sLengthMenu": '<select>'+
+                            '<option value="5">5</option>'+
+                            '<option value="10">10</option>'+
+                            '<option value="25">25</option>'+
+                            '<option value="50">50</option>'+
+                            '<option value="-1">All</option>'+
+                            '</select> ' + recordsPerPageText
+                },
+                "iDisplayLength": 5,
+                "bSort": true,
+                "bAutoWidth": false,
+                "sAjaxDataProp": "",
+                "sAjaxSource": buildOrgAdminsUrl(data.id),
+                "fnServerData": function( sSource, aoData, fnCallback ) {
+                    $.get(sSource, aoData, fnCallback);
+                },
+                "bProcessing": true,
+                "aoColumnDefs" : [
+                    {
+                        "aTargets" : [0],
+                        "mData" : "user.fullName"
+                    },
+                    {
+                        "aTargets" : [1],
+                        "mData" : "user.email",
+                        "mRender" : function(data, type, full) {
+                            var $elem = $('<a>').attr('href', 'mailto:' + data).text(data);
+                            return $elem.get(0).outerHTML
+                        }
+                    }
+                ],
+                "fnInitComplete": function() {
+                    this.fnAdjustColumnSizing(true);
+                }
+            });
+        }
+    };
+    var fnOnOrgModalHide = function() {
+        adminTable.fnFilterClear();
+    };
+
+    var $orgsTable = $('#orgsTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPageText
+        },
+        "bSort": true,
+        "sAjaxSource": buildOrganizationUrl(),
+        "sAjaxDataProp":"",
+        "bProcessing": true,
+        "aaSorting": [[1, "asc"]],
+        "bAutoWidth": false,
+        "aoColumnDefs" : [
+            {
+                "aTargets" : [0],
+                "mData" : "name",
+                "mRender" : function(data, type, full) {
 //                    var length = orgDetails.length;
 //                    orgDetails.push(full);
-                        var $elem = $('<a>').attr('href', '#').addClass('org-modal').text(data);
-                        return $elem.get(0).outerHTML;
-                    }
-                },
-                {
-                    "aTargets" : [1],
-                    "mData" : "createDate",
-                    "mRender" : function(data, type, full) {
-                        return formatDate(data);
-                    }
-                },
-                {
-                    "aTargets" : [2],
-                    "mData" : "customer.subscription.paymentPlanModel.name",
-                    "sDefaultContent" : "N/A"
-                },
-                {
-                    "aTargets" : [3],
-                    "mData" : "customer.subscription.status",
-                    "sDefaultContent" : "N/A"
-                },
-                {
-                    "aTargets" : [4],
-                    "mData" : "customer.externalId",
-                    "sDefaultContent" : "N/A",
-                    "bVisible" : false
+                    var $elem = $('<a>').attr('href', '#').addClass('org-modal').text(data);
+                    return $elem.get(0).outerHTML;
                 }
-            ],
-            "fnCreatedRow": function( nRow, aData, iDataIndex ) {
-                if (aData.customer.delinquent || aData.customer.subscription.status == 'PAST_DUE' || aData.customer.subscription.status == 'UNPAID') {
-                    $(nRow).children('td').addClass('delinquent');
-                }
-
-                $(nRow).data('org-details', aData);
             },
-            "fnDrawCallback": function( oSettings ) {
-                if (oSettings.fnRecordsTotal() > 0) {
-                    $('#exportExcelBtn').removeAttr('disabled');
-                } else {
-                    $('#exportExcelBtn').attr('disabled', 'disabled');
+            {
+                "aTargets" : [1],
+                "mData" : "createDate",
+                "mRender" : function(data, type, full) {
+                    return formatDate(data);
                 }
+            },
+            {
+                "aTargets" : [2],
+                "mData" : "customer.subscription.paymentPlanModel.name",
+                "sDefaultContent" : "N/A"
+            },
+            {
+                "aTargets" : [3],
+                "mData" : "customer.subscription.status",
+                "sDefaultContent" : "N/A"
+            },
+            {
+                "aTargets" : [4],
+                "mData" : "customer.externalId",
+                "sDefaultContent" : "N/A",
+                "bVisible" : false
             }
+        ],
+        "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+            if (aData.customer.delinquent || aData.customer.subscription.status == 'PAST_DUE' || aData.customer.subscription.status == 'UNPAID') {
+                $(nRow).children('td').addClass('delinquent');
+            }
+
+            $(nRow).data('org-details', aData);
+        },
+        "fnDrawCallback": function( oSettings ) {
+            if (oSettings.fnRecordsTotal() > 0) {
+                $('#exportExcelBtn').removeAttr('disabled');
+            } else {
+                $('#exportExcelBtn').attr('disabled', 'disabled');
+            }
+        },
+        "fnInitComplete": function() {
+            this.fnAdjustColumnSizing(true);
+        }
+    });
+
+    var $systemNotificationsTable = $('#systemNotificationsTable').dataTable( {
+        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": "_MENU_ " + recordsPerPageText
+        },
+        "iDisplayLength": 1,
+        "bSort": true,
+        "sAjaxSource": systemNotificationsUrl,
+        "sAjaxDataProp":"",
+        "bProcessing": true,
+        "aaSorting": [[0, "asc"]],
+        "bAutoWidth": false,
+        "aoColumnDefs" : [
+            {
+                "aTargets" : [0],
+                "mData" : "startDate",
+                "mRender" : function(data, type, full) {
+                    return formatDateTime(data);
+                },
+                "sDefaultContent" : "N/A"
+            },
+            {
+                "aTargets" : [1],
+                "mData" : "endDate",
+                "mRender" : function(data, type, full) {
+                    return formatDateTime(data);
+                },
+                "sDefaultContent" : "N/A"
+            },
+            {
+                "aTargets" : [2],
+                "mData" : "notificationType",
+                "sDefaultContent" : "N/A"
+            },
+            {
+                "aTargets" : [3],
+                "mData" : "notificationSeverity",
+                "sDefaultContent" : "N/A"
+            },
+            {
+                "aTargets" : [4],
+                "mData" : "allPages"
+            }
+        ],
+        "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+            $(nRow).data('notification-details', aData);
+            $(nRow).css('cursor', 'pointer');
+            $(nRow).on('click', function(event) {
+                $($systemNotificationsTable.fnSettings().aoData).each(function (){
+                    $(this.nTr).removeClass('row_selected');
+                });
+                $(event.target.parentNode).addClass('row_selected');
+
+                $('#systemNotificationId').val(aData.id);
+                toggleSystemNotificationDeleteBtn();
+                $('#systemNotificationStartDate').val(formatDateTime(aData.startDate));
+                $('#systemNotificationEndDate').val(formatDateTime(aData.endDate));
+                $('#systemNotificationType').val(aData.notificationType);
+                $('#systemNotificationSeverity').val(aData.notificationSeverity);
+                $('#systemNotificationAllPages').prop('checked', aData.allPages);
+                var editorInstance = $systemNotificationMessage.data('wysihtml5').editor;
+                editorInstance.setValue(aData.message, true);
+                $('#notificationFormErrors').hide();
+                $('#notificationUpdateSuccess').alert('close');
+            });
+            if ($('#systemNotificationId').val() == aData.id) {
+                $(nRow).addClass('row_selected');
+            }
+        },
+        "fnInitComplete": function() {
+            this.fnAdjustColumnSizing(true);
+            $systemNotificationsTable.fnDisplayRow($systemNotificationsTable.$('tr.row_selected').get(0));
+        }
+    });
+
+    toggleSystemNotificationDeleteBtn();
+    function toggleSystemNotificationDeleteBtn() {
+        var id = $('#systemNotificationId').val();
+        if (id != undefined && id != "" && id > 0) {
+            $('#deleteSystemNotificationBtn').show();
+        } else {
+            $('#deleteSystemNotificationBtn').hide();
+        }
+    }
+
+    $('#cancelSystemNotificationBtn').on('click', function(e) {
+        e.preventDefault();
+        clearSystemNotificationForm();
+    });
+
+    $('#deleteSystemNotificationBtn').on('click', function(e) {
+        e.preventDefault();
+        showModal("#confirmationModal", 'Delete System Notification', fnOnDeleteSystemNotificationModalShow, fnOnDeleteSystemNotificationModalHide);
+    });
+
+    var fnOnDeleteSystemNotificationModalShow = function(data) {
+        var deleteUrl = /*[[@{/manager/deleteSystemNotification}]]*/ '/manager/deleteSystemNotification'
+
+        $('.modal-header h3', '#confirmationModal').text(data);
+        $('#confirmationModalSubmit').off('click');
+        $('#confirmationModalSubmit').on('click', function(e) {
+            $.post(deleteUrl, {"id":$('#systemNotificationId').val()}, function(result) {
+                if (result.result) {
+                    $('#confirmationModal .modal-body .alert-error').hide();
+                    $('#confirmationModal .modal-body .alert-success').show();
+                    clearSystemNotificationForm();
+                    $systemNotificationsTable.fnReloadAjax(systemNotificationsUrl, function() {
+                        $systemNotificationsTable.fnDisplayRow($systemNotificationsTable.$('tr.row_selected').get(0));
+                    });
+                    displaySystemNotifications();
+                    hideModal(500);
+                } else {
+                    $('#confirmationModal .modal-body .alert-error').show();
+                    $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                    $('#confirmationModal .close').removeAttr('disabled');
+                }
+            });
+        });
+    };
+
+    var fnOnDeleteSystemNotificationModalHide = function() {
+//        $('#confirmationModalSubmit').off('click');
+        $('#confirmationModal .modal-body .alert').hide();
+        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+        $('#confirmationModal .close').removeAttr('disabled');
+    };
+
+    function hideModal(delay) {
+        setTimeout(function () {
+                    $('.modal').modal('hide');
+                }, delay
+        );
+    }
+
+    function clearSystemNotificationForm() {
+        $($systemNotificationsTable.fnSettings().aoData).each(function (){
+            $(this.nTr).removeClass('row_selected');
         });
 
-        function buildOrganizationUrl() {
-            return orgDateRangeUrl + "?" + $.param({'minDate':minDate, 'maxDate':maxDate});
+        $('#systemNotificationId').val("");
+        toggleSystemNotificationDeleteBtn();
+        $('#systemNotificationStartDate').val("");
+        $('#systemNotificationEndDate').val("");
+        $('#systemNotificationType').val("");
+        $('#systemNotificationSeverity').val("");
+        $('#systemNotificationAllPages').prop('checked', false);
+        var editorInstance = $systemNotificationMessage.data('wysihtml5').editor;
+        editorInstance.setValue("", true);
+        $('#notificationFormErrors').hide();
+    }
+
+    function buildOrganizationUrl() {
+        return orgDateRangeUrl + "?" + $.param({'minDate':minDate, 'maxDate':maxDate});
+    }
+
+    function buildOrgAdminsUrl(orgId) {
+        return orgAdminsUrl + "?" + $.param({'orgId' : orgId});
+    }
+
+    function formatDate(milliseconds) {
+        if (milliseconds != undefined && milliseconds >= 0) {
+            var date = new Date(milliseconds);
+            return ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" + ("0" + date.getUTCDate()).slice(-2) + "/" + date.getFullYear();
+        }
+    }
+
+    function formatDateTimeToUTC(milliseconds) {
+        if (milliseconds != undefined && milliseconds >= 0) {
+            var date = new Date(milliseconds);
+            return ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" + ("0" + date.getUTCDate()).slice(-2) + "/" + date.getFullYear() + " " + ("0" + date.getUTCHours()).slice(-2) + ":" + ("0" + date.getUTCMinutes()).slice(-2);
+        }
+    }
+
+    function formatDateTime(milliseconds) {
+        if (milliseconds != undefined && milliseconds >= 0) {
+            var date = new Date(milliseconds);
+            return ("0" + (date.getMonth()+1)).slice(-2) + "/" + ("0" + date.getDate()).slice(-2) + "/" + date.getFullYear() + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2);
+        }
+    }
+
+    function showModal(id, data, fnOnShow, fnOnHide) {
+        if (id.substr(0, 1) !== '#') {
+            id = '#' + id;
         }
 
-        function buildOrgAdminsUrl(orgId) {
-            return orgAdminsUrl + "?" + $.param({'orgId' : orgId});
+        $(id).off('show');
+        $(id).on('show', fnOnShow(data));
+
+        $(id).off('hidden');
+        $(id).on('hidden', fnOnHide());
+
+        $(id).modal();
+    }
+
+    function destroyDataTable(dataTable) {
+        if (dataTable != undefined) {
+            dataTable.fnDestroy();
         }
+    }
 
-        function formatDate(milliseconds) {
-            if (milliseconds != undefined && milliseconds >= 0) {
-                var date = new Date(milliseconds);
-                return ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" + ("0" + date.getUTCDate()).slice(-2) + "/" + date.getFullYear();
-            }
-        }
+    $('#notificationsForm').submit(function(e) {
+        var startDateStr = $('#systemNotificationStartDate').val();
+        var endDateStr = $('#systemNotificationEndDate').val();
 
-        function showModal(id, title, data) {
-            if (id.substr(0, 1) !== '#') {
-                id = '#' + id;
-            }
-            $(id + ' .modal-header h3').text(data.name);
-            $('#modalCreateDate').text(formatDate(data.createDate));
-            $('#modalCustomerId').text(data.customer.externalId);
-            $('#modalPaymentPlan').text(data.customer.subscription.paymentPlanModel.name);
-            $('#modalCustomerStatus').text(data.customer.subscription.status);
+        var startDate = new Date(startDateStr);
+        var endDate = new Date(endDateStr);
 
-            $(id).off('show');
-            $(id).on('show', function() {
-                if (adminTable !== undefined) {
-                    adminTable.fnClearTable(false);
-                    adminTable.fnReloadAjax(buildOrgAdminsUrl(data.id));
-                } else {
-                    adminTable = $('#adminTable').dataTable( {
-                        "sDom": "<<''l><'floatright'f>r>t<<''i><'floatright'p>>",
-                        "sPaginationType": "bootstrap",
-                        "oLanguage": {
-                            "sLengthMenu": '<select>'+
-                                    '<option value="5">5</option>'+
-                                    '<option value="10">10</option>'+
-                                    '<option value="25">25</option>'+
-                                    '<option value="50">50</option>'+
-                                    '<option value="-1">All</option>'+
-                                    '</select> ' + recordsPerPageText
-                        },
-                        "iDisplayLength": 5,
-                        "bSort": true,
-                        "sAjaxDataProp": "",
-                        "sAjaxSource": buildOrgAdminsUrl(data.id),
-                        "fnServerData": function( sSource, aoData, fnCallback ) {
-                            $.get(sSource, aoData, fnCallback);
-                        },
-                        "bProcessing": true,
-                        "aoColumnDefs" : [
-                            {
-                                "aTargets" : [0],
-                                "mData" : "user.fullName"
-                            },
-                            {
-                                "aTargets" : [1],
-                                "mData" : "user.email",
-                                "mRender" : function(data, type, full) {
-                                    var $elem = $('<a>').attr('href', 'mailto:' + data).text(data);
-                                    return $elem.get(0).outerHTML
-                                }
-                            }
-                        ]
-                        //                    "bRetrieve": true
-                        //                "bDestroy": true
-                    });
-                }
-            });
+        $('#systemNotificationStartDate').val(formatDateTimeToUTC(startDate.getTime()));
+        $('#systemNotificationEndDate').val(formatDateTimeToUTC(endDate.getTime()));
 
-            $(id).off('hidden');
-            $(id).on('hidden', function() {
-                adminTable.fnFilterClear();
-            });
-
-            $(id).modal();
-        }
-
-        function destroyDataTable(dataTable) {
-            if (dataTable != undefined) {
-                dataTable.fnDestroy();
-            }
-        }
-
+        return true;
     });
-    /*]]>*/
+
+    var $idown;  // Keep it outside of the function, so it's initialized once.
+    var downloadURL = function(url) {
+        if ($idown) {
+            $idown.attr('src',url);
+        } else {
+            $idown = $('<iframe>', { id:'idown', src:url }).hide().appendTo('body');
+        }
+    };
+//
+    var fileDownloadCheckTimer;
+    function blockUIForDownload() {
+        var token = new Date().getTime(); //use the current timestamp as the token value
+        $('#download_token_value_id').val(token);
+        disableESC();
+        $('#progressModal').modal({
+            "keyboard" : false,
+            "backdrop" : "static",
+            "show" : true
+        });
+        fileDownloadCheckTimer = window.setInterval(function () {
+            var cookieValue = $.cookie('fileDownloadTime');
+            if (cookieValue > token)
+                finishDownload();
+        }, 1000);
+    }
+
+    function finishDownload() {
+        window.clearInterval(fileDownloadCheckTimer);
+        $.removeCookie('fileDownloadTime');
+        $('#progressModal').modal('hide');
+        enableESC();
+    }
+
+    $('#exportExcelBtn').on('click', function(e) {
+        e.preventDefault();
+        var url = /*[[@{/manager/exportOrganizationsForDateRange}]]*/ '/manager/exportOrganizationsForDateRange';
+        url = url + '?' + $.param({'minDate':minDate, 'maxDate':maxDate});
+
+        blockUIForDownload();
+
+        downloadURL(url);
+    });
+
+    function disableESC() {
+        escDisabled = true;
+    }
+
+    function enableESC() {
+        escDisabled = false;
+    }
+
+    $(document).keydown(function(e) {
+        if (e.keyCode == 27) {
+            if (escDisabled) {
+                e.preventDefault();
+            }
+        }
+    });
+});
+/*]]>*/
 </script>
 
 <div class="row-fluid">
@@ -215,8 +476,11 @@
         <div class="tabbable">
 
             <ul id="tab" class="nav nav-tabs">
-                <li class="active dropdown">
-                    <a href="#metrics" th:text="#{desktop.manager.system.tab.metrics}">Metrics</a>
+                <li class="active tab">
+                    <a href="#metrics" th:text="#{desktop.manager.system.tab.metrics}" data-toggle="tab">Metrics</a>
+                </li>
+                <li class="tab">
+                    <a href="#notifications" th:text="#{desktop.manager.system.tab.notifications}" data-toggle="tab">Notifications</a>
                 </li>
             </ul>
 
@@ -236,6 +500,9 @@
                             <label class="inline">
                                 <b th:text="#{desktop.manager.system.maxDate.label}">Max Date:</b> <input type="text" id="datepicker_max" class="date-filter" th:placeholder="#{desktop.manager.system.maxDate.placeholder}" placeholder="mm/dd/yyyy" th:title="#{desktop.manager.system.maxDate.title}" title="Max Date" style="width: auto;"/>
                             </label>
+
+                            <button id="exportExcelBtn" class="btn btn-success" disabled="disabled" th:title="#{desktop.manager.system.excelExport.button.title}" title="Export to Excel"><i class="icon-download icon-white"/>&nbsp;<span th:text="#{desktop.manager.system.excelExport.button}">Export to Excel</span></button>
+
                         </form>
 
                         <table id="orgsTable" class="table table-striped table-bordered">
@@ -249,6 +516,93 @@
                             </thead>
                             <tbody></tbody>
                         </table>
+                    </div>
+                </div>
+                <div id="notifications" class="tab-pane">
+                    <div class="row-fluid">
+                        <div id="notificationUpdateSuccess" class="alert alert-success" th:if="${#bools.isTrue(notificationUpdateSuccess)}">
+                            <a class="close" data-dismiss="alert" href="#">x</a>
+                            <strong th:text="#{desktop.alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.manager.system.systemNotificationUpdate.success}">System Notification updated successfully.</span>
+                        </div>
+                        <span class="label label-info" th:text="#{desktop.manager.system.systemNotification.labelInfo}">Note: Click on a row to edit or delete the System Notification.</span>
+                        <table id="systemNotificationsTable" class="table table-striped table-bordered" style="width: 100%;">
+                            <thead>
+                            <tr>
+                                <th class="datetime" th:text="#{desktop.manager.system.systemNotificationTable.header.startDate}">Start Date</th>
+                                <th class="datetime" th:text="#{desktop.manager.system.systemNotificationTable.header.endDate}">End Date</th>
+                                <th th:text="#{desktop.manager.system.systemNotificationTable.header.type}">Type</th>
+                                <th th:text="#{desktop.manager.system.systemNotificationTable.header.severity}">Severity</th>
+                                <th th:text="#{desktop.manager.system.systemNotificationTable.header.allPages}">All Pages?</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <hr />
+                    <div class="row-fluid">
+                        <div class="span7">
+                            <form id="notificationsForm" th:object="${systemNotificationForm}" th:action="@{/manager/saveSystemNotification}" action="/manager/saveSystemNotification" method="POST" style="width: 100%">
+                                <div id="notificationFormErrors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                                    <h1 th:text="#{errors.header}"></h1>
+                                    <ul>
+                                        <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                                    </ul>
+                                </div>
+                                <input type="hidden" id="systemNotificationId" th:field="*{id}"/>
+                                <div>
+                                    <div style="display: inline-block;">
+                                        <label class="control-label" for="systemNotificationStartDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.startDate.label}">Start Date</span></label>
+                                        <input id="systemNotificationStartDate" class="datetime_picker required" type="datetime" th:field="*{startDate}" required="required" placeholder="mm/dd/yyyy hh:mm" style="width: auto;"/>
+                                    </div>
+                                    <div style="display: inline-block;">
+                                        <label class="control-label" for="systemNotificationEndDate"><span th:text="#{desktop.manager.system.systemNotification.endDate.label}">End Date</span></label>
+                                        <input id="systemNotificationEndDate" class="datetime_picker" type="datetime" th:field="*{endDate}" placeholder="mm/dd/yyyy hh:mm" style="width: auto;"/>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="display: inline-block;">
+                                        <label class="control-label" for="systemNotificationEndDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.notificationType.label}">Type</span></label>
+                                        <select id="systemNotificationType" th:field="*{notificationType}" required="required" style="width: auto;">
+                                            <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                            <option th:each="systemNotificationType : ${systemNotificationTypes}"
+                                                    th:value="${systemNotificationType}"
+                                                    th:text="${systemNotificationType}"></option>
+                                        </select>
+                                    </div>
+                                    <div style="display: inline-block;">
+                                        <label class="control-label" for="systemNotificationEndDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.notificationSeverity.label}">Severity</span></label>
+                                        <select id="systemNotificationSeverity" th:field="*{notificationSeverity}" required="required" style="width: auto;">
+                                            <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                            <option th:each="systemNotificationSeverity : ${systemNotificationSeverityTypes}"
+                                                    th:value="${systemNotificationSeverity}"
+                                                    th:text="${systemNotificationSeverity}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <textarea id="systemNotificationMessage" th:field="*{message}" style="width: 100%;"/>
+                                <div>
+                                    <label class="checkbox" for="systemNotificationAllPages"><input type="checkbox" id="systemNotificationAllPages" th:field="*{allPages}"/> <b><span th:text="#{desktop.manager.system.systemNotification.allPages.label}">Show this notification on all pages?</span></b></label>
+                                </div>
+                                <hr/>
+                                <button type="submit" class="btn btn-primary" th:text="#{desktop.manager.system.systemNotification.save}">Save</button>
+                                <button id="cancelSystemNotificationBtn" class="btn btn-warning"><i class="icon-white icon-remove"/>&nbsp;Cancel</button>
+                                <button id="deleteSystemNotificationBtn" class="btn btn-danger" style="display: none;"><i class="icon-white icon-trash"/>&nbsp;Delete</button>
+                            </form>
+                        </div>
+                        <div class="span5 well">
+                            <dl>
+                                <dt th:text="#{desktop.manager.system.systemNotification.startDate.label}">Start Date</dt>
+                                <dd th:text="#{desktop.manager.system.systemNotification.startDate.help}">The date and time for which you want the notification to start being shown.  Format: mm/dd/yyyy hh:mm. The date entered should be in your local timezone.</dd>
+                                <dt th:text="#{desktop.manager.system.systemNotification.endDate.label}">End Date</dt>
+                                <dd th:text="#{desktop.manager.system.systemNotification.endDate.help}">The date and time for which you want the notification to stop being shown.  An empty value means the notification will never automatically stop being shown.  Format: mm/dd/yyyy hh:mm. The date entered should be in your local timezone.</dd>
+                                <dt th:text="#{desktop.manager.system.systemNotification.notificationType.label}">Type</dt>
+                                <dd th:text="#{desktop.manager.system.systemNotification.notificationType.help}">The type of notification.  If the notification is not set to show on all pages then this will be used to determine which pages the notification should be shown on.</dd>
+                                <dt th:text="#{desktop.manager.system.systemNotification.notificationSeverity.label}">Severity</dt>
+                                <dd th:text="#{desktop.manager.system.systemNotification.notificationSeverity.help}">The severity of the notification.  This will determine color of the alert box.</dd>
+                                <dt th:text="#{desktop.manager.system.systemNotification.allPages.label}">All Pages?</dt>
+                                <dd th:text="#{desktop.manager.system.systemNotification.allPages.help}">Should this notification be displayed on all pages?  Unchecked means it would only be displayed on the home page or pages based on the Notification Type.</dd>
+                            </dl>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -320,8 +674,11 @@
 
 <section id="scripts">
     <section th:include="/includesTH :: required_scripts"/>
-    <script th:substituteby="/includesTH :: inputmask_script"></script>
+    <section th:include="/includesTH :: inputmask_scripts"/>
+    <script th:substituteby="/includesTH :: blockui_script"></script>
+    <script th:substituteby="/includesTH :: cookie_script"></script>
     <section th:include="/includesTH :: table_scripts"/>
+    <section th:include="/includesTH :: wysiwyg_scripts"/>
 </section>
 
 </body>

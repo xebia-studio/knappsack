@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com" th:with="include_login=${true},title=#{desktop.login.title}">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com" th:with="include_login=${true},title=#{desktop.login.title},exclude_systemNotifications=${true}">
 <head th:substituteby="/includesTH :: head"></head>
 
 <body class="login" style="padding-top: 0px;">

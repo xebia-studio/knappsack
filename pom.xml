@@ -6,10 +6,10 @@
     <artifactId>knappsack-parent</artifactId>
     <name>Knappsack</name>
     <packaging>pom</packaging>
-    <version>2.0.7-SNAPSHOT</version>
+    <version>2.0.8-SNAPSHOT</version>
 
     <properties>
-        <knappsack-version>2.0.7-SNAPSHOT</knappsack-version>
+        <knappsack-version>2.0.8-SNAPSHOT</knappsack-version>
         <java-version>1.6</java-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -32,6 +32,7 @@
         <org.mockito-version>1.9.0</org.mockito-version>
         <commons.lang-version>2.6</commons.lang-version>
         <commons.collections-version>3.2.1</commons.collections-version>
+        <commons.beanutils-version>1.8.3</commons.beanutils-version>
         <net.coobird.thumbnailator-version>0.4.2</net.coobird.thumbnailator-version>
         <org.powermock-version>1.4.12</org.powermock-version>
         <org.jaspyt-version>1.9.0</org.jaspyt-version>
@@ -39,6 +40,7 @@
         <com.googlecode.plist-version>1.0</com.googlecode.plist-version>
         <spymemcached-version>2.8.4</spymemcached-version>
         <org.apache.poi-version>3.8</org.apache.poi-version>
+        <joda.time-version>2.1</joda.time-version>
     </properties>
 
     <repositories>
@@ -546,6 +548,18 @@
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
                 <version>${org.apache.poi-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>${joda.time-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons.beanutils-version}</version>
             </dependency>
 
         </dependencies>

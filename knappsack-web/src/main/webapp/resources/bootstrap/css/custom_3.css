@@ -571,6 +571,10 @@ table td div.overflow-inner {
     text-overflow: ellipsis;
 }
 
+table tr.row_selected td {
+    background-color: #D9EDF7 !important;
+}
+
 .app-description {
     margin-left: 2px;
 }
@@ -582,4 +586,8 @@ table td div.overflow-inner {
 
 td.delinquent {
     background-color: #da4f49 !important;
+}
+
+div.system-notifications > ul {
+    margin-bottom: 20px !important;
 }
