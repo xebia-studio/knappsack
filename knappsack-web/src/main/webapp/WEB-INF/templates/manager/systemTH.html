@@ -13,6 +13,7 @@
 <script type="text/javascript" th:inline="javascript">
 /*<![CDATA[*/
 $(document).ready(function () {
+    $('.container-fluid').append($('<p>').text('blah blah blah'));
     $(this).tabState('#metrics');
 
     var orgDateRangeUrl = /*[[@{/manager/organizationList}]]*/ '/manager/organizationList';
@@ -107,7 +108,7 @@ $(document).ready(function () {
                         "mData" : "user.email",
                         "mRender" : function(data, type, full) {
                             var $elem = $('<a>').attr('href', 'mailto:' + data).text(data);
-                            return $elem.get(0).outerHTML
+                            return $('<div>').append($elem).html();
                         }
                     }
                 ],
@@ -135,13 +136,15 @@ $(document).ready(function () {
         "bAutoWidth": false,
         "aoColumnDefs" : [
             {
+                "sType" : "html",
                 "aTargets" : [0],
                 "mData" : "name",
                 "mRender" : function(data, type, full) {
 //                    var length = orgDetails.length;
 //                    orgDetails.push(full);
+//                    alert(data);
                     var $elem = $('<a>').attr('href', '#').addClass('org-modal').text(data);
-                    return $elem.get(0).outerHTML;
+                    return $('<div>').append($elem).html();
                 }
             },
             {
@@ -193,7 +196,6 @@ $(document).ready(function () {
         "oLanguage": {
             "sLengthMenu": "_MENU_ " + recordsPerPageText
         },
-        "iDisplayLength": 1,
         "bSort": true,
         "sAjaxSource": systemNotificationsUrl,
         "sAjaxDataProp":"",
