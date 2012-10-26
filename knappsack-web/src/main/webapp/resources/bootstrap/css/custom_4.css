@@ -519,7 +519,9 @@ a.thumbnail:hover {
 }
 
 .breadcrumb {
-    padding: 7px 14px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    pading-left: 14px;
     margin: 0 0 18px;
     background-color: #fbfbfb;
     background-image: -moz-linear-gradient(top, #ffffff, #f5f5f5);
@@ -590,4 +592,20 @@ td.delinquent {
 
 div.system-notifications > ul {
     margin-bottom: 20px !important;
+}
+
+#zenbox_tab {
+	border-radius: 12px !important;
+	-moz-border-radius: 12px;
+ 	-webkit-border-radius: 12px;
+ 	border-color: #F1F2E8;
+}
+
+#feedback_tab_text {
+	font-size: 1.7em;
+	color: #213B71;
+}
+
+body > .container-fluid > .row-fluid > .span10 {
+    padding-right: 35px;
 }

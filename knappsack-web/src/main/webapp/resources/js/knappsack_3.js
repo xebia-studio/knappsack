@@ -34,12 +34,17 @@
         escapeHtml : function() {
             return this.each(function() {
                 var html = $(this).html() || "";
-                html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+                html = escapeHtml(html);
                 $(this).html(html);
             });
         }
     });
 })(jQuery);
+
+function escapeHtml(html) {
+    if (html == undefined) return;
+    return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+}
 
 (function($){
     $.fn.tabState = function(defaultId) {
