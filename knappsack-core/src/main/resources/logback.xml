@@ -7,6 +7,7 @@
     <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
 
     <appender name="DB" class="ch.qos.logback.classic.db.DBAppender">
+        <dbNameResolver class="com.sparc.knappsack.log.CustomDBNameResolver"/>        
         <connectionSource class="ch.qos.logback.core.db.DataSourceConnectionSource">
             <dataSource class="com.mchange.v2.c3p0.ComboPooledDataSource">
                 <driverClass>${dev.jdbc.driverClassName}</driverClass>

@@ -39,7 +39,7 @@
     <script src="../../resources/js/jquery-1.7.1.min.js" ks:src="@{/resources/js/jquery-1.7.1.min.js}"
             type="text/javascript"></script>
 
-    <script src="../../resources/js/knappsack_1.js" ks:src="@{/resources/js/knappsack_1.js}"
+    <script src="../../resources/js/knappsack_2.js" ks:src="@{/resources/js/knappsack_2.js}"
             type="text/javascript"></script>
 
     <script src="../../resources/js/openid.js" ks:src="@{/resources/js/openid.js}"
@@ -125,7 +125,7 @@
                                                               th:alt="#{desktop.includes.logo.alt}" alt="Knappsack"/></a>
 
                 <div class="nav-collapse" th:if="${user}">
-                    <ul class="nav nav-pills">
+                    <ul class="nav nav-pills" th:if="${#bools.isTrue(user.activated)} and ${#bools.isFalse(user.passwordExpired)}">
                         <li><a href="#" th:href="@{/home}" th:unless="${include_activate}" th:title="#{desktop.includes.header.home.title}" title="Home" th:text="#{desktop.includes.header.home}">Home</a></li>
                         <li><a href="categoriesTH.html" th:href="@{/categories}" th:unless="${include_activate}" th:title="#{desktop.includes.header.categories.title}" title="Categories" th:text="#{desktop.includes.header.categories}">Categories</a></li>
                         <!--<li><a href="searchTH.html" th:href="@{/search}" th:unless="${include_activate}" th:title="#{desktop.includes.header.search.title}" title="Search" th:text="#{desktop.includes.header.search}">Search</a></li>-->
@@ -137,7 +137,7 @@
                         <li class="dropdown" id="account">
                             <a class="dropdown-toggle" data-toggle="dropdown" href="#"><span th:text="${user.fullName + ' (' + user.email + ')'}">User</span> <b class="caret"/> </a>
                             <ul class="dropdown-menu">
-                                <li>
+                                <li th:if="${user.activated}">
                                     <a id="changePassword" href="/profile/changePassword" th:href="@{/profile/changePassword}" th:text="#{desktop.includes.header.account.menu.change.password}">Change Password</a>
                                 </li>
                                 <li>

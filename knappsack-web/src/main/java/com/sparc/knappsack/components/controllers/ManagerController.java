@@ -78,7 +78,7 @@ public class ManagerController extends AbstractController {
                 }
             }
             for (Group group : groupService.getAll()) {
-                GroupModel model = groupService.createGroupModel(group.getId(), false);
+                GroupModel model = groupService.createGroupModel(group.getId(), true);
                 if (model != null) {
                     adminGroups.add(model);
                 }
@@ -86,7 +86,7 @@ public class ManagerController extends AbstractController {
         } else {
             for (UserDomain userDomain : user.getUserDomains()) {
                 if (DomainType.GROUP.equals(userDomain.getDomainType()) && userDomain.getRole().getAuthority().equals(UserRole.ROLE_GROUP_ADMIN.name())) {
-                    GroupModel model = groupService.createGroupModel(userDomain.getDomainId(), false);
+                    GroupModel model = groupService.createGroupModel(userDomain.getDomainId(), true);
                     if (model != null) {
                         adminGroups.add(model);
                     }

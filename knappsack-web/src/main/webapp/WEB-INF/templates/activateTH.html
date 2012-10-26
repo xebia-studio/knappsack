@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="include_activate=${#bools.isFalse(activated)},title=#{desktop.activate.title}">
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_activate=${#bools.isFalse(activated)},title=#{desktop.activate.title},exclude_systemNotifications=${true}">
 
 <head th:substituteby="/includesTH :: head"></head>
 

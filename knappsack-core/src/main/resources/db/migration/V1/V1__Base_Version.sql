@@ -15,6 +15,65 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `LOGGING_EVENT`
+--
+
+DROP TABLE IF EXISTS `LOGGING_EVENT`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `LOGGING_EVENT` (
+  `TIMESTMP` bigint(20) NOT NULL,
+  `FORMATTED_MESSAGE` text NOT NULL,
+  `LOGGER_NAME` varchar(254) NOT NULL,
+  `LEVEL_STRING` varchar(254) NOT NULL,
+  `THREAD_NAME` varchar(254) DEFAULT NULL,
+  `REFERENCE_FLAG` smallint(6) DEFAULT NULL,
+  `ARG0` varchar(254) DEFAULT NULL,
+  `ARG1` varchar(254) DEFAULT NULL,
+  `ARG2` varchar(254) DEFAULT NULL,
+  `ARG3` varchar(254) DEFAULT NULL,
+  `CALLER_FILENAME` varchar(254) NOT NULL,
+  `CALLER_CLASS` varchar(254) NOT NULL,
+  `CALLER_METHOD` varchar(254) NOT NULL,
+  `CALLER_LINE` char(4) NOT NULL,
+  `EVENT_ID` bigint(20) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`EVENT_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `LOGGING_EVENT_EXCEPTION`
+--
+
+DROP TABLE IF EXISTS `LOGGING_EVENT_EXCEPTION`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `LOGGING_EVENT_EXCEPTION` (
+  `EVENT_ID` bigint(20) NOT NULL,
+  `I` smallint(6) NOT NULL,
+  `TRACE_LINE` varchar(254) NOT NULL,
+  PRIMARY KEY (`EVENT_ID`,`I`),
+  CONSTRAINT `LOGGING_EVENT_EXCEPTION_IBFK_1` FOREIGN KEY (`EVENT_ID`) REFERENCES `LOGGING_EVENT` (`EVENT_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `LOGGING_EVENT_PROPERTY`
+--
+
+DROP TABLE IF EXISTS `LOGGING_EVENT_PROPERTY`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `LOGGING_EVENT_PROPERTY` (
+  `EVENT_ID` bigint(20) NOT NULL,
+  `MAPPED_KEY` varchar(254) NOT NULL,
+  `MAPPED_VALUE` text,
+  PRIMARY KEY (`EVENT_ID`,`MAPPED_KEY`),
+  CONSTRAINT `LOGGING_EVENT_PROPERTY_IBFK_1` FOREIGN KEY (`EVENT_ID`) REFERENCES `LOGGING_EVENT` (`EVENT_ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `ORG_STORAGE_CONFIG_STORAGE_CONFIGURATION`
 --
 

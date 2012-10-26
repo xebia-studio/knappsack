@@ -18,7 +18,6 @@ import java.io.IOException;
 
 public class ImplicitObjectsInterceptor extends HandlerInterceptorAdapter {
 
-
     @Qualifier("userService")
     @Autowired
     private UserService userService;
@@ -38,17 +37,19 @@ public class ImplicitObjectsInterceptor extends HandlerInterceptorAdapter {
                     String servletPath = request.getServletPath();
 
                     if (!servletPath.startsWith("/auth") && !servletPath.startsWith("/resources") && user != null) {
-                        if (!user.isActivated() && !servletPath.startsWith("/activate")) {
-                            String requestURL = request.getContextPath() + "/activate";
+                        boolean skipValidation = false;
 
-                            response.sendRedirect(requestURL);
-                        } else if (user.isPasswordExpired() && !servletPath.startsWith("/profile/changePassword") && !servletPath.startsWith("/auth/forgotPassword")) {
-                            String requestURL = request.getContextPath() + "/profile/changePassword";
+                        if (user.isPasswordExpired() && !servletPath.startsWith("/profile/changePassword") && !servletPath.startsWith("/auth/forgotPassword")) {
+                            response.sendRedirect(request.getContextPath() + "/profile/changePassword");
+                            skipValidation = true;
+                        } else if (user.isPasswordExpired() && (servletPath.startsWith("/profile/changePassword") || servletPath.startsWith("/auth/forgotPassword"))) {
+                            skipValidation = true;
+                        }
 
-                            response.sendRedirect(requestURL);
+                        if (!user.isActivated() && !servletPath.startsWith("/activate") && !skipValidation) {
+                            response.sendRedirect(request.getContextPath() + "/activate");
                         }
                     }
-//                }
                 }
             }
         }
