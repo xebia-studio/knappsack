@@ -22,7 +22,6 @@ public class RegistrationValidator implements Validator {
     private static final String LAST_NAME_FIELD = "lastName";
     private static final String EMAIL_FIELD = "email";
     private static final String FIRST_PASSWORD_FIELD = "firstPassword";
-    private static final String TERMS_OF_SERVICE_FIELD = "termsOfService";
 
     @Value("${password.pattern}")
     private String passwordPattern;
@@ -80,9 +79,6 @@ public class RegistrationValidator implements Validator {
             errors.rejectValue(FIRST_PASSWORD_FIELD, "registrationValidator.passwordMismatch");
         }
 
-        if (!registrationForm.isTermsOfService()) {
-            errors.rejectValue(TERMS_OF_SERVICE_FIELD, "registrationValidator.terms.of.service.false");
-        }
     }
 
     private void checkForInvitations(String email, Errors errors) {

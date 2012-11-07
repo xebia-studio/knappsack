@@ -68,7 +68,6 @@ public class RegistrationValidatorTest {
         registrationForm.setLastName("Test");
         registrationForm.setFirstPassword("password");
         registrationForm.setSecondPassword("password");
-        registrationForm.setTermsOfService(true);
 
         Invitation invitation = new Invitation();
         List<Invitation> invitations = new ArrayList<Invitation>();
@@ -85,7 +84,7 @@ public class RegistrationValidatorTest {
         validator.validate(registrationForm, errors);
 
         assertTrue(errors.hasErrors());
-        Assert.assertEquals(errors.getErrorCount(), 6);
+        Assert.assertEquals(errors.getErrorCount(), 5);
 
         setup();
 
@@ -98,7 +97,7 @@ public class RegistrationValidatorTest {
         validator.validate(registrationForm, errors);
 
         assertTrue(errors.hasErrors());
-        Assert.assertEquals(errors.getErrorCount(), 6);
+        Assert.assertEquals(errors.getErrorCount(), 5);
 
     }
 
@@ -119,7 +118,6 @@ public class RegistrationValidatorTest {
         registrationForm.setLastName("lastName");
         registrationForm.setFirstPassword("firstPassword");
         registrationForm.setSecondPassword("secondPassword");
-        registrationForm.setTermsOfService(true);
 
         Invitation invitation = new Invitation();
         List<Invitation> invitations = new ArrayList<Invitation>();
@@ -138,33 +136,12 @@ public class RegistrationValidatorTest {
         registrationForm.setLastName("lastName");
         registrationForm.setFirstPassword("firstPassword");
         registrationForm.setSecondPassword("");
-        registrationForm.setTermsOfService(true);
 
 
         validator.validate(registrationForm, errors);
         assertTrue(errors.hasErrors());
         Assert.assertEquals(errors.getErrorCount(), 1);
         assertNotNull(errors.getFieldError("firstPassword"));
-    }
-
-    @Test
-    public void testTermsOfServiceNotAccepted() {
-        registrationForm.setEmail("my@email.com");
-        registrationForm.setFirstName("firstName");
-        registrationForm.setLastName("lastName");
-        registrationForm.setFirstPassword("password");
-        registrationForm.setSecondPassword("password");
-        registrationForm.setTermsOfService(false);
-
-        Invitation invitation = new Invitation();
-        List<Invitation> invitations = new ArrayList<Invitation>();
-        invitations.add(invitation);
-        Mockito.when(invitationService.getByEmail(registrationForm.getEmail())).thenReturn(invitations);
-
-        validator.validate(registrationForm, errors);
-        assertTrue(errors.hasErrors());
-        Assert.assertEquals(errors.getErrorCount(), 1);
-        assertNotNull(errors.getFieldError("termsOfService"));
     }
 
     @Test

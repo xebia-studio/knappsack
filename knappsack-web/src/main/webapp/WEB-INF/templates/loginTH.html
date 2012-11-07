@@ -198,14 +198,7 @@
                                         <input type="password" id="password2" name="secondPassword" class="input-xlarge" required="required" th:title="#{desktop.login.registerForm.confirmPassword.title}" />
                                     </div>
                                 </div>
-                                <div class="control-group">
-                                    <div class="controls">
-                                        <label class="checkbox">
-                                            <input type="checkbox" id="termsOfService" name="termsOfService" required="required" th:title="#{desktop.login.registerForm.terms}" title="Accept the Terms of Service and Privacy Policy" />
-                                            <span th:text="#{desktop.login.registerForm.terms.part1}">I have read and accept the</span> <a th:href="@{'/legal/termsOfUse'}" href="/legal/termsOfUse" th:text="#{desktop.login.registerForm.termsOfService.anchor}" th:title="#{desktop.login.registerForm.termsOfService.anchor.title}" title="Terms of Service" rel="external">Terms of Service</a> <span th:text="#{desktop.login.registerForm.terms.part2}">and</span> <a th:href="@{'/legal/privacy'}" href="/legal/privacy" th:text="#{desktop.login.registerForm.privacyPolicy.anchor}" th:title="#{desktop.login.registerForm.privacyPolicy.anchor.title}" title="Privacy Policy" rel="external">Privacy Policy</a>
-                                        </label>
-                                    </div>
-                                </div>
+
                                 <div class="form-actions">
                                     <button class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.registerForm.register}" th:title="#{desktop.login.registerForm.register.title}" title="Register">Register</button>
                                 </div>

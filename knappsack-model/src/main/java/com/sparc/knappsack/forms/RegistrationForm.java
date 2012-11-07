@@ -7,7 +7,6 @@ public class RegistrationForm {
     private String email;
     private String firstPassword;
     private String secondPassword;
-    private boolean termsOfService;
 
     public String getFirstName() {
         return firstName;
@@ -49,11 +48,4 @@ public class RegistrationForm {
         this.secondPassword = secondPassword;
     }
 
-    public boolean isTermsOfService() {
-        return termsOfService;
-    }
-
-    public void setTermsOfService(boolean termsOfService) {
-        this.termsOfService = termsOfService;
-    }
 }

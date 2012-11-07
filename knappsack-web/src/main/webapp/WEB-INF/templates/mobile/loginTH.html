@@ -186,18 +186,6 @@
                 <div class="control-group">
                     <input type="password" id="password2" name="secondPassword" placeholder="Confirm Password:" class="required" required="required" />
                 </div>
-                <div class="form-actions">
-                    <a href="#tos" data-rel="page" data-transition="pop" th:text="#{mobile.login.toc}">Terms and Conditions</a>
-                </div>
-                <div class="form-actions">
-                    <a href="#privacy" data-rel="page" data-transition="pop" th:text="#{mobile.login.privacyPolicy}">Privacy Policy</a>
-                </div>
-                <div class="control-group" th:inline="text">
-                    <label class="checkbox" data-mini="true" style="width: 100%;">
-                        <input type="checkbox" id="termsOfService" name="termsOfService" class="required" required="required" />
-                        [[#{mobile.login.acceptTOC}]]
-                    </label>
-                </div>
 
                 <div class="form-actions">
                     <button data-role="submit" value="Submit" data-mini="true" data-theme="b"/>
@@ -291,34 +279,6 @@
     </div>
 </div>
 
-<div id="tos" data-role="page" data-dom-cache="false" data-url="#tos">
-    <div data-role="header" data-theme="b">
-        <h1 th:text="#{mobile.login.termsOfUse}">Terms of Use</h1>
-    </div>
-    <div data-role="content">
-        <div th:substituteby="/legal/termsOfUseTH :: termsOfUse"></div>
-        <div class="account-controls">
-            <p>
-                <a href="#" data-rel="back" data-icon="back" data-direction="reverse" th:text="#{mobile.login.back}">Back</a>
-            </p>
-        </div>
-    </div>
-
-</div>
-
-<div id="privacy" data-role="page" data-dom-cache="false" data-url="#privacy">
-    <div data-role="header" data-theme="b">
-        <h1 th:text="#{mobile.login.privacyPolicy}">Privacy Policy</h1>
-    </div>
-    <div data-role="content">
-        <div th:substituteby="/legal/privacyTH :: privacy"></div>
-        <div class="account-controls">
-            <p>
-                <a href="#" data-rel="back" data-icon="back" data-direction="reverse" th:text="#{mobile.login.back}">Back</a>
-            </p>
-        </div>
-    </div>
-</div>
 
 
 <div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>

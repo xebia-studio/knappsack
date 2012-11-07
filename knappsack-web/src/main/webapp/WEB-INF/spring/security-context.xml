@@ -36,7 +36,6 @@
 
             <intercept-url pattern="/ios/**" access="permitAll"/>
             <intercept-url pattern="/auth/**" access="permitAll"/>
-            <intercept-url pattern="/legal/**" access="permitAll"/>
             <intercept-url pattern="/resources/**" access="permitAll"/>
             <intercept-url pattern="/signup/**" access="permitAll"/>
             <intercept-url pattern="/favicon.ico" access="permitAll"/>            
