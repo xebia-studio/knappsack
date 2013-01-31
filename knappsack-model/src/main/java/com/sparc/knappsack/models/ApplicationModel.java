@@ -15,6 +15,8 @@ public class ApplicationModel {
     private ImageModel icon;
     private List<ImageModel> screenShots = new ArrayList<ImageModel>();
     private Long groupId;
+    private String groupName;
+    private boolean canUserEdit;
 
     public Long getId() {
         return id;
@@ -78,5 +80,21 @@ public class ApplicationModel {
 
     public void setGroupId(Long groupId) {
         this.groupId = groupId;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public boolean isCanUserEdit() {
+        return canUserEdit;
+    }
+
+    public void setCanUserEdit(boolean canUserEdit) {
+        this.canUserEdit = canUserEdit;
     }
 }

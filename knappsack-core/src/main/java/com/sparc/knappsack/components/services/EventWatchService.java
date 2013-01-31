@@ -21,6 +21,8 @@ public interface EventWatchService extends EntityService<EventWatch> {
 
     void sendNotifications(Notifiable notifiable, EventType... eventTypes);
 
+    List<EventWatch> getAll(Notifiable notifiable);
+
     List<EventWatch> getAll(Notifiable notifiable, EventType eventType);
 
 }

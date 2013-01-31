@@ -1,18 +1,17 @@
 package com.sparc.knappsack.forms;
 
-import com.sparc.knappsack.enums.DomainType;
-
 public class DomainConfigurationForm {
 
     private Long id;
     private Long domainId;
-    private DomainType domainType;
     private boolean disabled;
     private boolean disableLimitValidations;
     private long userLimit;
     private long applicationLimit;
     private long applicationVersionLimit;
     private long megabyteStorageLimit;
+    private boolean monitorBandwidth;
+    private long megabyteBandwidthLimit;
 
     public Long getId() {
         return id;
@@ -30,14 +29,6 @@ public class DomainConfigurationForm {
         this.domainId = domainId;
     }
 
-    public DomainType getDomainType() {
-        return domainType;
-    }
-
-    public void setDomainType(DomainType domainType) {
-        this.domainType = domainType;
-    }
-
     public boolean isDisabled() {
         return disabled;
     }
@@ -52,6 +43,14 @@ public class DomainConfigurationForm {
 
     public void setDisableLimitValidations(boolean disableLimitValidations) {
         this.disableLimitValidations = disableLimitValidations;
+    }
+
+    public boolean isMonitorBandwidth() {
+        return monitorBandwidth;
+    }
+
+    public void setMonitorBandwidth(boolean monitorBandwidth) {
+        this.monitorBandwidth = monitorBandwidth;
     }
 
     public long getUserLimit() {
@@ -85,4 +84,13 @@ public class DomainConfigurationForm {
     public void setMegabyteStorageLimit(long megabyteStorageLimit) {
         this.megabyteStorageLimit = megabyteStorageLimit;
     }
+
+    public long getMegabyteBandwidthLimit() {
+        return megabyteBandwidthLimit;
+    }
+
+    public void setMegabyteBandwidthLimit(long megabyteBandwidthLimit) {
+        this.megabyteBandwidthLimit = megabyteBandwidthLimit;
+    }
+
 }

@@ -5,6 +5,7 @@ import com.sparc.knappsack.components.entities.QUser;
 import com.sparc.knappsack.components.entities.User;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository("userDetailsDao")
@@ -21,6 +22,13 @@ public class UserDetailsDaoImpl extends BaseDao implements UserDetailsDao {
 
     public User get(Long id) {
         return getEntityManager().find(User.class, id);
+    }
+
+    public List<User> get(List<Long> ids) {
+        if(ids == null || ids.isEmpty()) {
+            return new ArrayList<User>();
+        }
+        return query().from(userDetails).where(userDetails.id.in(ids)).list(userDetails);
     }
 
     public void delete(User user) {

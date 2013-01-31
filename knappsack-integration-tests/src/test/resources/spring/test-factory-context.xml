@@ -16,6 +16,20 @@
         </beans:property>
     </beans:bean>
 
+    <beans:bean id="domainEntityServiceFactory" class="org.springframework.beans.factory.config.ServiceLocatorFactoryBean">
+        <beans:property name="serviceLocatorInterface" value="com.sparc.knappsack.components.services.DomainEntityServiceFactory"/>
+        <beans:property name="serviceMappings">
+            <beans:props>
+                <beans:prop key="ORGANIZATION">
+                    organizationService
+                </beans:prop>
+                <beans:prop key="GROUP">
+                    groupService
+                </beans:prop>
+            </beans:props>
+        </beans:property>
+    </beans:bean>
+
     <beans:bean id="eventDeliveryFactory" class="org.springframework.beans.factory.config.ServiceLocatorFactoryBean">
         <beans:property name="serviceLocatorInterface" value="com.sparc.knappsack.components.events.EventDeliveryFactory"/>
         <beans:property name="serviceMappings">
@@ -26,11 +40,11 @@
                 <beans:prop key="USER_ACCOUNT_ACTIVATION">
                     userActivationEvent
                 </beans:prop>
-                <beans:prop key="GROUP_ACCESS_REQUEST">
-                    groupAccessRequestEvent
+                <beans:prop key="DOMAIN_USER_ACCESS_REQUEST">
+                    domainUserAccessRequestEvent
                 </beans:prop>
-                <beans:prop key="GROUP_ACCESS_REQUEST_CONFIRMATION">
-                    groupAccessRequestConfirmationEvent
+                <beans:prop key="DOMAIN_USER_ACCESS_REQUEST_CONFIRMATION">
+                    domainUserAccessRequestConfirmationEvent
                 </beans:prop>
                 <beans:prop key="APPLICATION_VERSION_PUBLISH_REQUEST">
                     applicationVersionPublishRequestEvent
@@ -45,6 +59,9 @@
             <beans:props>
                 <beans:prop key="USER_PASSWORD_RESET">
                     userPasswordResetEvent
+                </beans:prop>
+                <beans:prop key="ORGANIZATION_REGISTRATION">
+                    organizationRegistrationEvent
                 </beans:prop>
             </beans:props>
         </beans:property>

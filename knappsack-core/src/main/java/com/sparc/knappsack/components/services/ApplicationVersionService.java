@@ -1,8 +1,6 @@
 package com.sparc.knappsack.components.services;
 
-import com.sparc.knappsack.components.entities.Application;
-import com.sparc.knappsack.components.entities.ApplicationVersion;
-import com.sparc.knappsack.components.entities.Group;
+import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.forms.UploadApplicationVersion;
 import com.sparc.knappsack.models.ApplicationVersionModel;
@@ -24,6 +22,14 @@ public interface ApplicationVersionService extends EntityService<ApplicationVers
     void updateAppState(Long appVersionId, AppState appState);
 
     /**
+     * @param applicationVersion ApplicationVersion - The ApplicationVersion to update.
+     * @param appState AppState - the new AppState (changes the visibility of the ApplicationVersion)
+     */
+    void updateAppState(ApplicationVersion applicationVersion, AppState appState);
+
+    List<ApplicationVersion> getAll();
+
+    /**
      * @param organizationId Id of the organization
      * @return List<ApplicationVersion> - get all ApplicationVersions for the given Organization
      */
@@ -35,6 +41,8 @@ public interface ApplicationVersionService extends EntityService<ApplicationVers
      * @return List<ApplicationVersion> - get all ApplicationVersions for a given Organization and specific AppStates
      */
     List<ApplicationVersion> getAll(Long organizationId, AppState... appStates);
+
+    List<ApplicationVersion> getAll(List<Organization> organizations, AppState... appStates);
 
     /**
      * @param group Group
@@ -51,8 +59,16 @@ public interface ApplicationVersionService extends EntityService<ApplicationVers
     List<ApplicationVersion> getAll(Application application, AppState... appStates);
 
     /**
-     * @param applicationVersionId
+     * @param applicationVersionId Long
      * @return ApplicationVersionModel
      */
     ApplicationVersionModel createApplicationVersionModel(Long applicationVersionId);
+
+    /**
+     * @param applicationVersion
+     * @return ApplicationVersionModel
+     */
+    ApplicationVersionModel createApplicationVersionModel(ApplicationVersion applicationVersion);
+
+    void deleteAllForApplication(Application application);
 }

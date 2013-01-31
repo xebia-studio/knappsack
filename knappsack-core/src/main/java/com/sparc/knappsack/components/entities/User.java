@@ -3,15 +3,13 @@ package com.sparc.knappsack.components.entities;
 import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.NotifiableType;
 import com.sparc.knappsack.enums.UserRole;
+import org.hibernate.annotations.BatchSize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * A User is a person in the Knappsack system. This entity contains relevant information pertaining to the person.
@@ -19,6 +17,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "USER")
+// @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class User extends BaseEntity implements UserDetails, Notifiable {
 
     private static final long serialVersionUID = 1690650481252062307L;
@@ -37,10 +36,12 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
     @Column(name = "EMAIL")
     private String email;
 
-    @ElementCollection
+    @ElementCollection(targetClass = java.lang.String.class, fetch = FetchType.EAGER)
+    @MapKeyClass(java.lang.String.class)
     @CollectionTable(name = "USER_OPENIDIDENTIFIER", joinColumns = @JoinColumn(name = "USER_ID"))
     @Column(name = "OPENIDIDENTIFIER")
-    private List<String> openIdIdentifiers = new ArrayList<String>();
+    @BatchSize(size = 10)
+    private Set<String> openIdIdentifiers = new HashSet<String>();
 
     @Column(name = "FIRST_NAME")
     private String firstName;
@@ -51,11 +52,12 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
     @Column(name = "FULL_NAME")
     private String fullName;
 
-    @ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.EAGER)
+    @ManyToMany(cascade = CascadeType.REFRESH)
     @JoinTable(name = "USER_ROLE", joinColumns = @JoinColumn(name = "USER_ID"), inverseJoinColumns = @JoinColumn(name = "ROLE_ID"))
     private List<Role> roles = new ArrayList<Role>();
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "user", orphanRemoval = true)
+    @BatchSize(size = 5)
     private List<UserDomain> userDomains = new ArrayList<UserDomain>();
 
     @Column(name = "ACTIVATED")
@@ -85,7 +87,7 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
         this.lastName = lastName;
         this.fullName = firstName + " " + lastName;
 
-        this.openIdIdentifiers = new ArrayList<String>();
+        this.openIdIdentifiers = new HashSet<String>();
 
         roles.addAll(authorities);
 
@@ -140,7 +142,7 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
         return fullName;
     }
 
-    public List<String> getOpenIdIdentifiers() {
+    public Set<String> getOpenIdIdentifiers() {
         return openIdIdentifiers;
     }
 
@@ -194,7 +196,7 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
     }
 
     @SuppressWarnings("unused")
-    public void setOpenIdIdentifiers(List<String> openIdIdentifiers) {
+    public void setOpenIdIdentifiers(Set<String> openIdIdentifiers) {
         this.openIdIdentifiers = openIdIdentifiers;
     }
 
@@ -213,7 +215,7 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
 
     public boolean isOrganizationAdmin() {
         for (UserDomain userDomain : userDomains) {
-            if (DomainType.ORGANIZATION.equals(userDomain.getDomainType()) && UserRole.ROLE_ORG_ADMIN.toString().equals(userDomain.getRole().getAuthority())) {
+            if (DomainType.ORGANIZATION.equals(userDomain.getDomain().getDomainType()) && UserRole.ROLE_ORG_ADMIN.toString().equals(userDomain.getRole().getAuthority())) {
                 return true;
             }
         }
@@ -223,7 +225,7 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
 
     public boolean isGroupAdmin() {
         for (UserDomain userDomain : userDomains) {
-            if (DomainType.GROUP.equals(userDomain.getDomainType()) && UserRole.ROLE_GROUP_ADMIN.toString().equals(userDomain.getRole().getAuthority())) {
+            if (DomainType.GROUP.equals(userDomain.getDomain().getDomainType()) && UserRole.ROLE_GROUP_ADMIN.toString().equals(userDomain.getRole().getAuthority())) {
                 return true;
             }
         }
@@ -240,6 +242,9 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
     }
 
     public List<UserDomain> getUserDomains() {
+        if (userDomains == null) {
+            userDomains = new ArrayList<UserDomain>();
+        }
         return userDomains;
     }
 

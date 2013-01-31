@@ -22,9 +22,9 @@ public interface ApplicationService extends EntityService<Application> {
     List<Application> getAll(ApplicationType applicationType);
 
     /**
-     * @param applicationId Long - the ID of the Application.  This will only delete the icons, screens hots, installation files and application versions.  It will not delete the Application itself.
+     * @param application Application - the Application.  This will only delete the icons, screens hots, installation files and application versions.  It will not delete the Application itself.
      */
-    void deleteApplicationFilesAndVersions(Long applicationId);
+    void deleteApplicationFilesAndVersions(Application application);
 
     /**
      * @param searchCriteria String - Name and description of the Application
@@ -56,6 +56,12 @@ public interface ApplicationService extends EntityService<Application> {
      * @return ApplicationModel - return an ApplicationModel populated with data from an Application
      */
     ApplicationModel createApplicationModel(Long applicationId);
+
+    /**
+     * @param application Application
+     * @return ApplicationModel - return an ApplicationModel populated with data from an Application
+     */
+    ApplicationModel createApplicationModel(Application application);
 
     /**
      * @param uploadApplication UploadApplication

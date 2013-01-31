@@ -12,7 +12,10 @@ public enum MimeType {
     BLACKBERRY_JAD("jad", "text/vnd.sun.j2me.app-descriptor", ContentType.TEXT),
     PNG("png", "image/png", ContentType.IMAGE),
     JPG("jpg", "image/jpeg", ContentType.IMAGE),
-    JPEG("jpeg", "image/jpeg", ContentType.IMAGE);
+    JPEG("jpeg", "image/jpeg", ContentType.IMAGE),
+    CERTIFICATE("cer", "application/x-x509-ca-cert", ContentType.APPLICATION),
+    KEY("p12", "application/x-pkcs12", ContentType.APPLICATION),
+    MOBILE_PROVISIONING_PROFILE("mobileprovision", "application/octet-stream", ContentType.APPLICATION);
 
     private final String extension;
     private final String mimeType;

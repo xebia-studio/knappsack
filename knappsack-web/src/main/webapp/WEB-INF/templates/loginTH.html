@@ -72,7 +72,7 @@
 
 <!--login -->
 
-<div class="loginForm center">
+<div class="loginForm">
     <div class="container">
 
         <div class="inner">
@@ -90,9 +90,9 @@
                                 <img src="../../resources/img/logo-header.png" ks:src="@{/resources/img/logo-header.png}"/>
                             </div>
 
-                            <p class="lead">
-                                <span th:text="#{desktop.login.overview.instructions.openid}">Please click your account provider</span> <b><span th:text="#{desktop.login.overview.instructions.separator}">OR</span></b> <span th:text="#{desktop.login.overview.instructions.form}">enter your credentials below</span>
-                            </p>
+                            <!--<p class="lead">-->
+                                <!--<span th:text="#{desktop.login.overview.instructions.form}">Log in with your credentials below:</span>-->
+                            <!--</p>-->
                         </header>
                         <div id="login-error" class="alert alert-error" th:if="${#bools.isTrue(error)}">
                             <h3 th:text="#{errors.header}"/>
@@ -112,23 +112,9 @@
                             </div>
                         </div>
 
-                        <form id="openidForm" action="/j_spring_openid_security_check" th:action="@{/j_spring_openid_security_check}" method="post" class="form-horizontal">
-
-                            <input type="hidden" name="action" value="verify"/>
-                            <input id="openIdRememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked"/>
-                            <fieldset>
-                                <div class="control-group">
-                                    <div id="openid_btns" class="controls">
-                                    </div>
-                                </div>
-
-                                <input id="openid_identifier" name="openid_identifier" type="hidden"/>
-                            </fieldset>
-                        </form>
-                        <br/>
                         <form id="loginForm" action="/j_spring_security_check" th:action="@{/j_spring_security_check}" method="post" class="form-horizontal">
                             <input type="hidden" name="action" value="verify"/>
-
+                            <legend th:text="#{desktop.login.overview.instructions.form}">Log in with your credentials below:</legend>
                             <fieldset>
                                 <div class="control-group">
                                     <label class="control-label" for="j_username" th:text="#{desktop.login.loginForm.email.label}">Email</label>
@@ -151,8 +137,22 @@
                                     </div>
                                 </div>
                                 <div class="form-actions">
-                                    <button class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.loginForm.login}" th:title="#{desktop.login.loginForm.login.title}">Log in</button>
+                                    <button id="loginBtn" class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.loginForm.login}" th:title="#{desktop.login.loginForm.login.title}">Log in</button>
                                 </div>
+                            </fieldset>
+                        </form>
+
+                        <form id="openidForm" action="/j_spring_openid_security_check" th:action="@{/j_spring_openid_security_check}" method="post" class="form-horizontal">
+                            <legend th:text="#{desktop.login.overview.instructions.openid}">Legend</legend>
+                            <input type="hidden" name="action" value="verify"/>
+                            <input id="openIdRememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked"/>
+                            <fieldset>
+                                <div class="control-group">
+                                    <div id="openid_btns" class="controls">
+                                    </div>
+                                </div>
+
+                                <input id="openid_identifier" name="openid_identifier" type="hidden"/>
                             </fieldset>
                         </form>
 
@@ -198,9 +198,8 @@
                                         <input type="password" id="password2" name="secondPassword" class="input-xlarge" required="required" th:title="#{desktop.login.registerForm.confirmPassword.title}" />
                                     </div>
                                 </div>
-
                                 <div class="form-actions">
-                                    <button class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.registerForm.register}" th:title="#{desktop.login.registerForm.register.title}" title="Register">Register</button>
+                                    <button id="signUpBtn" class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.registerForm.register}" th:title="#{desktop.login.registerForm.register.title}" title="Register">Register</button>
                                 </div>
                             </fieldset>
                         </form>
@@ -243,7 +242,6 @@
                     <div class="tab-pane" id="4">
                         <header class="jumbotron subhead" id="forgotPasswordSuccessOverview">
                             <h2 th:text="#{desktop.login.forgotPasswordSuccess.header}">Forgot your Password</h2>
-                            <!--<p class="lead"></p>-->
                         </header>
                         <p class="lead">
                             <span th:text="#{desktop.login.forgotPasswordSuccess.span}">Thank you. Your password has been reset. Please check your email for your new password and </span>

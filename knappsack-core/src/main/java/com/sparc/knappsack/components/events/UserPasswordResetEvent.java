@@ -20,7 +20,7 @@ public class UserPasswordResetEvent implements EventDeliveryWithComposite<User, 
         boolean success = false;
 
         if (user != null && composite != null) {
-            success = emailService.sendPasswordResetEmail(user, composite.getPassword());
+            success = emailService.sendPasswordResetEmail(user.getId(), composite.getPassword());
         }
 
         return success;

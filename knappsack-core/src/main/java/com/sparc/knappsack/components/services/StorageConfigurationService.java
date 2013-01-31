@@ -16,4 +16,6 @@ public interface StorageConfigurationService extends EntityService<StorageConfig
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     StorageConfiguration createStorageConfiguration(StorageForm storageForm);
+
+    StorageConfiguration getRegistrationDefault();
 }

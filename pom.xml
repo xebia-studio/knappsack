@@ -6,28 +6,27 @@
     <artifactId>knappsack-parent</artifactId>
     <name>Knappsack</name>
     <packaging>pom</packaging>
-    <version>2.0.8-SNAPSHOT</version>
+    <version>2.2.1-SNAPSHOT</version>
 
     <properties>
-        <knappsack-version>2.0.8-SNAPSHOT</knappsack-version>
+        <knappsack-version>2.2.1-SNAPSHOT</knappsack-version>
         <java-version>1.6</java-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <org.springframework-version>3.1.1.RELEASE</org.springframework-version>
         <org.springframework.security-version>3.1.0.RELEASE</org.springframework.security-version>
-        <org.hibernate-version>4.1.1.Final</org.hibernate-version>
+        <org.hibernate-version>4.1.9.Final</org.hibernate-version>
         <org.hsqldb-version>2.2.8</org.hsqldb-version>
-        <com.mysema.querydsl-version>2.7.3</com.mysema.querydsl-version>
+        <com.mysema.querydsl-version>2.9.0</com.mysema.querydsl-version>
         <c3p0-version>0.9.1.2</c3p0-version>
         <javax.servlet-version>2.5</javax.servlet-version>
         <cglib-version>2.2.2</cglib-version>
         <org.slf4j-version>1.6.4</org.slf4j-version>
-        <org.thymeleaf-version>2.0.13</org.thymeleaf-version>
+        <org.thymeleaf-version>2.0.14</org.thymeleaf-version>
         <org.logback-version>1.0.1</org.logback-version>
         <janino-version>2.5.10</janino-version>
         <junit-version>4.9</junit-version>
         <javax.mail-version>1.4.5</javax.mail-version>
-        <org.eclipse.persistence-version>2.4.0</org.eclipse.persistence-version>
         <javax.persistence-version>1.0.2</javax.persistence-version>
         <org.mockito-version>1.9.0</org.mockito-version>
         <commons.lang-version>2.6</commons.lang-version>
@@ -41,18 +40,8 @@
         <spymemcached-version>2.8.4</spymemcached-version>
         <org.apache.poi-version>3.8</org.apache.poi-version>
         <joda.time-version>2.1</joda.time-version>
+        <org.bouncycastle-version>1.47</org.bouncycastle-version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>EclipseLink Repo</id>
-            <url>http://www.eclipse.org/downloads/download.php?r=1&amp;nf=1&amp;file=/rt/eclipselink/maven.repo</url>
-            <!--
-           <snapshots>
-              <enabled>true</enabled>
-            </snapshots> -->
-        </repository>
-    </repositories>
 
     <dependencyManagement>
         <dependencies>
@@ -69,6 +58,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-all</artifactId>
+            <version>2.4</version>
+        </dependency>
 
             <dependency>
                 <groupId>org.springframework</groupId>
@@ -223,17 +218,22 @@
 
             <!--Persistence-->
             <dependency>
-                <groupId>org.eclipse.persistence</groupId>
-                <artifactId>eclipselink</artifactId>
-                <version>${org.eclipse.persistence-version}</version>
-                <scope>compile</scope>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-entitymanager</artifactId>
+                <version>${org.hibernate-version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.eclipse.persistence</groupId>
-                <artifactId>javax.persistence</artifactId>
-                <version>2.0.0</version>
-                <scope>compile</scope>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>${org.hibernate-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>cglib</groupId>
+                <artifactId>cglib</artifactId>
+                <version>${cglib-version}</version>
+                <scope>runtime</scope>
             </dependency>
 
             <dependency>
@@ -560,6 +560,12 @@
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
                 <version>${commons.beanutils-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${org.bouncycastle-version}</version>
             </dependency>
 
         </dependencies>

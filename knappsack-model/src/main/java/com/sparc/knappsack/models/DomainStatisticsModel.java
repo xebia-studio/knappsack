@@ -5,6 +5,7 @@ public class DomainStatisticsModel {
     int totalApplications;
     int totalApplicationVersions;
     double totalMegabyteStorageAmount;
+    double totalMegabyteBandwidthUsed;
 
     public int getTotalUsers() {
         return totalUsers;
@@ -36,5 +37,13 @@ public class DomainStatisticsModel {
 
     public void setTotalMegabyteStorageAmount(double totalMegabyteStorageAmount) {
         this.totalMegabyteStorageAmount = totalMegabyteStorageAmount;
+    }
+
+    public double getTotalMegabyteBandwidthUsed() {
+        return totalMegabyteBandwidthUsed;
+    }
+
+    public void setTotalMegabyteBandwidthUsed(double totalMegabyteBandwidthUsed) {
+        this.totalMegabyteBandwidthUsed = totalMegabyteBandwidthUsed;
     }
 }

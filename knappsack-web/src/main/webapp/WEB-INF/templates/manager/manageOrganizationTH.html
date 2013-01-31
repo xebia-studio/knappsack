@@ -80,6 +80,8 @@ $(document).ready(function () {
             null,
             null,
             null,
+            null,
+            null,
             { "sSortDataType": "dom-select" },
             { "bSortable": false }
         ]
@@ -171,7 +173,7 @@ $(document).ready(function () {
 
         var $dataTable = $(this).closest('table').data('table');
 
-        $dataTable.$('td :checkbox').each(function () {
+        $dataTable.$('td :checkbox:not(:disabled)').each(function () {
             if (checked) {
                 $(this).attr('checked', 'checked');
                 $(this).closest('tr').addClass('row_selected');
@@ -222,22 +224,35 @@ $(document).ready(function () {
             url:url,
             data:tmpOptions,
             type:"POST",
-            success:function (data) {
+            success:function(data) {
+                $(tmpSelectedRows).each(function() {
+                    var row = this;
+                    $(data.ids).each(function(index, value) {
+                        if (value == $(row).attr('data-user-id')) {
+                            dataTable.fnDeleteRow(row);
+                        }
+                    });
+                });
+
+                tmpOptions = {};
+                tmpSelectedRows = [];
+
                 if (data.result) {
                     $('#confirmationModal .modal-body .alert-error').hide();
                     $('#confirmationModal .modal-body .alert-success').show();
-                    $(tmpSelectedRows).each(function () {
-                        dataTable.fnDeleteRow(this);
-                    });
-
-                    checkButtonState(dataTable, $('#membersTableRemoveBtn'));
-
-                    tmpOptions = {};
                     hideModal(500);
-                } else {
+                }
+                else {
                     $('#confirmationModal .modal-body .alert-error').show();
                     $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
                     $('#confirmationModal .close').removeAttr('disabled');
+
+                    var userIdsToRemove = [];
+                    dataTable.$('tr.row_selected').each(function () {
+                        userIdsToRemove.push($(this).attr('data-user-id'));
+                        tmpSelectedRows.push(this);
+                    });
+                    tmpOptions = { organizationId:organizationId, userIds:userIdsToRemove };
                 }
             }
         });
@@ -299,38 +314,40 @@ $(document).ready(function () {
         <ul class="dropdown-menu" th:if="${#bools.isTrue(isEdit)}">
             <li><a href="#organization" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
             <li class="divider" th:if="${user.systemAdmin}"></li>
-            <li th:if="${user.systemAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${organization.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.preferences}">Preferences</a></li>
+            <li><a href="manageDomainRegionsTH.html" th:href="@{'/manager/regions/' + ${organization.id}}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.regions}">Manage Regions</a></li>
+            <li th:if="${user.systemAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${organization.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.preferences}">Preferences</a></li>
         </ul>
     </li>
 
     <li th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
+        <a id="categoriesTab" class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
             [[#{desktop.manageOrganization.categories}]]
             <b class="caret"/>
         </a>
-        <ul class="dropdown-menu">
-            <li><a href="#categories" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
+        <ul id="categoriesDropdown" class="dropdown-menu">
+            <li><a id="viewCategories" href="#categories" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
             <li class="divider"></li>
-            <li><a href="manageCategoryTH.html" th:href="@{/manager/addCategory/}  + ${organization.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.addCategory}">Add
+            <li><a id="addCategory" href="manageCategoryTH.html" th:href="@{/manager/addCategory/}  + ${organization.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.addCategory}">Add
                 Category</a></li>
         </ul>
 
     </li>
-    <li id="membersTab" th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
+    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
+        <a id="membersTab" class="dropdown-toggle" data-toggle="dropdown" href="#" th:inline="text">
             [[#{desktop.manageOrganization.members}]]
             <b class="caret"/>
         </a>
         <ul class="dropdown-menu">
-            <li><a href="#members" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
+            <li><a id="viewMembers" href="#members" data-toggle="tab" th:text="#{desktop.manageOrganization.view}">View</a></li>
             <li class="divider"></li>
-            <li><a href="inviteUserTH.html" th:href="@{/manager/inviteUser/}  + ${organization.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.inviteMember}">Invite
+            <li><a id="inviteMember" href="inviteUserTH.html" th:href="@{/manager/inviteUser/}  + ${organization.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.inviteMember}">Invite
                 Member</a></li>
-            <li><a href="inviteesTH.html" th:href="@{/manager/invitesPending/}  + ${organization.id} + '/ORGANIZATION'" th:if="${isEdit}" th:text="#{desktop.manageOrganization.invitesPending}">Invites Pending</a></li>
+            <li><a href="inviteesTH.html" th:href="@{/manager/invitesPending/}  + ${organization.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.invitesPending}">Invites Pending</a></li>
+            <li><a href="requestsTH.html" th:href="@{/manager/requestsPending/}  + ${organization.id}" th:if="${isEdit}" th:text="#{desktop.manageOrganization.requestsPending}">Requests Pending</a></li>
         </ul>
 
     </li>
-    <li id="applicationsTab" th:if="${#bools.isTrue(isEdit)}" class="tab"><a href="#applications" data-toggle="tab" th:inline="text">[[#{desktop.manageOrganization.applications}]]<i
+    <li th:if="${#bools.isTrue(isEdit)}" class="tab"><a id="applicationsTab" href="#applications" data-toggle="tab" th:inline="text">[[#{desktop.manageOrganization.applications}]]<i
             id="applicationsTabAlertIcon" th:if="${#bools.isTrue(hasApplicationRequests)}"
             class="icon-exclamation-sign icon-black"/></a></li>
 </ul>
@@ -385,7 +402,7 @@ $(document).ready(function () {
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" th:text="#{desktop.manageOrganization.submit}">Submit</button>
+                            <button id="submitBtn" type="submit" class="btn btn-primary" th:text="#{desktop.manageOrganization.submit}">Submit</button>
                         </div>
 
                     </fieldset>
@@ -401,6 +418,7 @@ $(document).ready(function () {
                 <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalApplications(${domainStatistics.totalApplications})}"></span>
                 <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalApplicationVersions(${domainStatistics.totalApplicationVersions})}"></span>
                 <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalMegabyteStorageUsed(${#numbers.formatDecimal(domainStatistics.totalMegabyteStorageAmount,1,3)})}"></span>
+                <span style="display:block" th:text="#{desktop.manager.domainStatistics.totalMegabyteBandwidthUsed(${#numbers.formatDecimal(domainStatistics.totalMegabyteBandwidthUsed,1,3)})}"></span>
             </div>
         </div>
         <div class="span5">
@@ -469,15 +487,15 @@ $(document).ready(function () {
                 </thead>
                 <tbody>
                 <tr th:each="organizationMember,iterStat : ${organizationMembers}" th:attr="data-user-id=${organizationMember.user.id}">
-                    <td><input class="check" type="checkbox"/></td>
+                    <td><input class="check" type="checkbox" th:disabled="${organizationMember.user.id == user.id}"/></td>
                     <td th:text="${organizationMember.user.fullName}">My Name</td>
                     <td th:text="${organizationMember.user.email}">Email</td>
                     <td class="select-td">
-                        <select>
+                        <select th:disabled="${organizationMember.user.id == user.id}">
                             <option th:each="userRole : ${userRoles}" th:value="${userRole}" th:selected="${userRole} == ${organizationMember.userRole}" th:text="#{${userRole.messageKey}}"></option>
                         </select>
                     </td>
-                    <td><button class="updateMember" th:value="*{iterStat.index}" th:text="#{desktop.manageOrganization.update}">Update</button></td>
+                    <td><button class="updateMember" th:value="*{iterStat.index}" th:text="#{desktop.manageOrganization.update}" th:disabled="${organizationMember.user.id == user.id}">Update</button></td>
                 </tr>
                 </tbody>
             </table>
@@ -523,20 +541,27 @@ $(document).ready(function () {
         <thead>
         <tr>
             <th th:text="#{desktop.manageOrganization.name}">Name</th>
+            <th th:text="#{desktop.manageOrganization.applicationType}">Type</th>
             <th th:text="#{desktop.manageOrganization.description}">Description</th>
             <th th:text="#{desktop.manageOrganization.version}">Version</th>
+            <th th:text="#{desktop.manageOrganization.group}">Group</th>
             <th th:text="#{desktop.manageOrganization.availability}">Availability</th>
             <th></th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="applicationVersion,iterStat : ${applicationVersions}" th:attr="data-app-ver-id=${applicationVersion.id}">
-            <td th:text="${applicationVersion.application.name}">Name</td>
+            <td><a th:href="@{'/manager/editApplication/' + ${applicationVersion.application.id}}" th:title="${applicationVersion.application.name}" th:text="${applicationVersion.application.name}"/></td>
+            <td th:text="#{${applicationVersion.application.applicationType.messageKey}}">Type</td>
             <td th:text="${applicationVersion.application.description}" class="striphtml">Description</td>
-            <td th:text="${applicationVersion.versionName}">Version</td>
+            <td><a th:href="@{'/manager/editVersion/' + ${applicationVersion.application.id} + '/' + ${applicationVersion.id}}" th:title="${applicationVersion.versionName}" th:text="${applicationVersion.versionName}"/></td>
+            <td><a th:href="@{'/manager/editGroup/' + ${applicationVersion.application.ownedGroup.id}}" th:title="${applicationVersion.application.ownedGroup.name}" th:text="${applicationVersion.application.ownedGroup.name}"/></td>
             <td class="select-td">
                 <select th:id="'appStateSelect' + ${iterStat.index}" required="required" style="width:20em">
-                    <option th:selected="${applicationVersion.appState == appState}" th:each="appState : ${appStates}" th:value="${appState}" th:text="#{${appState.messageKey}}"></option>
+                    <option th:each="appStateIter : ${appStates}"
+                                                                th:selected="${applicationVersion.appState == appStateIter}"
+                                                                th:disabled="${#bools.isFalse(appStateIter.availableToOrganization)}"
+                                                                th:value="${appStateIter}" th:text="#{${appStateIter.messageKey}}" th:if="(${#bools.isTrue(appStateIter.userSelectable)} and ${#bools.isTrue(appStateIter.availableToOrganization)}) or (${applicationVersion.appState == appStateIter})"></option>
                 </select>
             </td>
             <td>

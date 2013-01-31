@@ -70,6 +70,7 @@ public class OrganizationValidatorTest {
 
         Mockito.when(organizationService.getByName(organizationForm.getName())).thenReturn(organization);
         Mockito.when(orgStorageConfigService.getByPrefix(organizationForm.getStoragePrefix())).thenReturn(orgStorageConfig);
+
         validator.validate(organizationForm, errors);
 
         assertFalse(errors.hasErrors());
@@ -96,6 +97,7 @@ public class OrganizationValidatorTest {
 
         Mockito.when(organizationService.getByName(Matchers.anyString())).thenReturn(null);
         Mockito.when(orgStorageConfigService.getByPrefix(Matchers.anyString())).thenReturn(null);
+
         validator.validate(organizationForm, errors);
 
         assertTrue(errors.hasErrors());
@@ -103,6 +105,7 @@ public class OrganizationValidatorTest {
         assertNotNull(errors.getFieldError("name"));
         assertNotNull(errors.getFieldError("storagePrefix"));
         assertNotNull(errors.getFieldError("storageConfigurationId"));
+//        assertNotNull(errors.getFieldError("adminEmail"));
 
         setup();
 
@@ -113,9 +116,9 @@ public class OrganizationValidatorTest {
         validator.validate(organizationForm, errors);
 
         assertTrue(errors.hasErrors());
-        Assert.assertEquals(errors.getErrorCount(), 2);
+        Assert.assertEquals(errors.getErrorCount(), 1);
         assertNotNull(errors.getFieldError("name"));
-        assertNotNull(errors.getFieldError("storagePrefix"));
+//        assertNotNull(errors.getFieldError("storagePrefix"));
     }
 
     @Test
@@ -145,12 +148,14 @@ public class OrganizationValidatorTest {
         organizationForm.setStoragePrefix("prefix");
         organizationForm.setStorageConfigurationId(1L);
         organizationForm.setId(2L);
+//        organizationForm.setAdminEmail("valid@valid.com");
 
         organization = new Organization();
         organization.setId(1L);
 
         Mockito.when(organizationService.getByName(organizationForm.getName())).thenReturn(organization);
         Mockito.when(orgStorageConfigService.getByPrefix(Matchers.anyString())).thenReturn(null);
+
         validator.validate(organizationForm, errors);
 
         assertTrue(errors.hasErrors());
@@ -163,6 +168,7 @@ public class OrganizationValidatorTest {
         organizationForm.setName("name");
         organizationForm.setStorageConfigurationId(1L);
         organizationForm.setStoragePrefix("prefix");
+//        organizationForm.setAdminEmail("valid@valid.com");
 
         OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
         Organization organization = new Organization();
@@ -178,5 +184,4 @@ public class OrganizationValidatorTest {
         Assert.assertEquals(errors.getErrorCount(), 1);
         assertNotNull(errors.getFieldError("storagePrefix"));
     }
-
 }

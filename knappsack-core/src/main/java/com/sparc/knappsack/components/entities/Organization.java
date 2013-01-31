@@ -2,8 +2,12 @@ package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.NotifiableType;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,62 +17,25 @@ import java.util.List;
  */
 @Entity
 @Table(name = "ORGANIZATION")
-public class Organization extends BaseEntity implements Domain, Notifiable {
+public class Organization extends Domain implements Notifiable {
 
     private static final long serialVersionUID = 396567098678320561L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
-    private Long id;
-
-    @Column(name = "NAME", unique = true, nullable = false)
-    private String name;
-
-    @Column(name = "ACCESS_CODE")
-    private String accessCode;
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization", fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization", orphanRemoval = true)
     private List<Category> categories = new ArrayList<Category>();
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization", fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization", orphanRemoval = true)
+    @BatchSize(size = 2)
     private List<Group> groups = new ArrayList<Group>();
 
-    @Column(name = "DOMAIN_TYPE")
-    @Enumerated(EnumType.STRING)
-    private DomainType domainType = DomainType.ORGANIZATION;
-
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "organization", orphanRemoval = true)
-    private OrgStorageConfig orgStorageConfig;
-
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
-    private DomainConfiguration domainConfiguration;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getAccessCode() {
-        return accessCode;
-    }
-
-    public void setAccessCode(String accessCode) {
-        this.accessCode = accessCode;
-    }
+    //This is really OneToOne, @LazyToOne wasn't working, so using @OneToMany is a workaround.
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization", orphanRemoval = true)
+    private List<OrgStorageConfig> orgStorageConfigs = new ArrayList<OrgStorageConfig>();
 
     public List<Category> getCategories() {
+        if (categories == null) {
+            categories = new ArrayList<Category>();
+        }
         return categories;
     }
 
@@ -78,6 +45,9 @@ public class Organization extends BaseEntity implements Domain, Notifiable {
     }
 
     public List<Group> getGroups() {
+        if (groups == null) {
+            groups = new ArrayList<Group>();
+        }
         return groups;
     }
 
@@ -85,32 +55,30 @@ public class Organization extends BaseEntity implements Domain, Notifiable {
         this.groups = groups;
     }
 
+    @Override
     public DomainType getDomainType() {
-        return domainType;
+        return DomainType.ORGANIZATION;
     }
 
     public OrgStorageConfig getOrgStorageConfig() {
-        return orgStorageConfig;
+        return orgStorageConfigs.get(0);
     }
 
     public void setOrgStorageConfig(OrgStorageConfig orgStorageConfig) {
-        this.orgStorageConfig = orgStorageConfig;
-    }
-
-    public DomainConfiguration getDomainConfiguration() {
-        return domainConfiguration;
-    }
-
-    public void setDomainConfiguration(DomainConfiguration domainConfiguration) {
-        this.domainConfiguration = domainConfiguration;
-    }
-
-    @SuppressWarnings("all")
-    @PrePersist
-    private void prePersist() {
-        if(domainConfiguration == null) {
-            domainConfiguration = new DomainConfiguration();
+        if(!this.orgStorageConfigs.isEmpty()) {
+            this.orgStorageConfigs.remove(0);
         }
+        this.orgStorageConfigs.add(0, orgStorageConfig);
+    }
+
+    @Override
+    public List<StorageConfiguration> getStorageConfigurations() {
+        List<StorageConfiguration> storageConfigurations = new ArrayList<StorageConfiguration>();
+        if (getOrgStorageConfig() != null && getOrgStorageConfig().getStorageConfigurations() != null) {
+            storageConfigurations.addAll(getOrgStorageConfig().getStorageConfigurations());
+        }
+
+        return storageConfigurations;
     }
 
     @Override

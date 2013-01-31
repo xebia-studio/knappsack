@@ -81,11 +81,11 @@ public class InvitationValidatorTest {
         organization.setName("Test Organziation");
         organization.setDomainConfiguration(new DomainConfiguration());
 
-        Mockito.when(domainService.get(invitationForm.getDomainId(), invitationForm.getDomainType())).thenReturn(organization);
+        Mockito.when(domainService.get(invitationForm.getDomainId())).thenReturn(organization);
         Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
 
         Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
-        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong(), Matchers.any(DomainType.class))).thenReturn(new ArrayList<Invitation>());
+        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong())).thenReturn(new ArrayList<Invitation>());
         Mockito.when(userService.getByEmail(Matchers.anyString())).thenReturn(null);
 
         validator.validate(invitationForm, errors);
@@ -107,8 +107,7 @@ public class InvitationValidatorTest {
 
         List<Invitation> invitations = new ArrayList<Invitation>();
         Invitation invitation = new Invitation();
-        invitation.setDomainId(1L);
-        invitation.setDomainType(DomainType.ORGANIZATION);
+        invitation.setDomain(createDomain(DomainType.ORGANIZATION));
         invitation.setEmail("test@test.com");
         Role role = new Role();
         role.setAuthority(UserRole.ROLE_ORG_USER.name());
@@ -116,7 +115,7 @@ public class InvitationValidatorTest {
         invitations.add(invitation);
 
 //        when(invitationService.getAll(inviteeForm1.getEmail(), invitationForm.getDomainId(), invitationForm.getDomainType())).thenReturn(invitations);
-        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong(), Matchers.any(DomainType.class))).thenReturn(invitations);
+        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong())).thenReturn(invitations);
 
         User user1 = new User();
 
@@ -127,13 +126,13 @@ public class InvitationValidatorTest {
         organization.setName("Test Organziation");
         organization.setDomainConfiguration(new DomainConfiguration());
 
-        Mockito.when(domainService.get(invitationForm.getDomainId(), invitationForm.getDomainType())).thenReturn(organization);
+        Mockito.when(domainService.get(invitationForm.getDomainId())).thenReturn(organization);
         Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
 
         Mockito.when(userService.getByEmail(inviteeForm1.getEmail())).thenReturn(user1);
-        Mockito.when(userService.isUserInDomain(user1, invitationForm.getDomainId(), invitationForm.getDomainType())).thenReturn(false);
+        Mockito.when(userService.isUserInDomain(user1, invitationForm.getDomainId())).thenReturn(false);
         Mockito.when(userService.getByEmail(inviteeForm2.getEmail())).thenReturn(user2);
-        Mockito.when(userService.isUserInDomain(user2, invitationForm.getDomainId(), invitationForm.getDomainType())).thenReturn(true);
+        Mockito.when(userService.isUserInDomain(user2, invitationForm.getDomainId())).thenReturn(true);
 
         validator.validate(invitationForm, errors);
 
@@ -152,10 +151,10 @@ public class InvitationValidatorTest {
         organization.setName("Test Organziation");
         organization.setDomainConfiguration(new DomainConfiguration());
 
-        Mockito.when(domainService.get(invitationForm.getDomainId(), invitationForm.getDomainType())).thenReturn(organization);
+        Mockito.when(domainService.get(invitationForm.getDomainId())).thenReturn(organization);
         Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
 
-        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong(), Matchers.any(DomainType.class))).thenReturn(null);
+        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong())).thenReturn(null);
         Mockito.when(userService.getByEmail(Matchers.anyString())).thenReturn(null);
 
         validator.validate(invitationForm, errors);
@@ -171,7 +170,7 @@ public class InvitationValidatorTest {
         organization.setName("Test Organziation");
         organization.setDomainConfiguration(new DomainConfiguration());
 
-        Mockito.when(domainService.get(invitationForm.getDomainId(), invitationForm.getDomainType())).thenReturn(organization);
+        Mockito.when(domainService.get(invitationForm.getDomainId())).thenReturn(organization);
         Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
 
         validator.validate(invitationForm, errors);
@@ -207,5 +206,18 @@ public class InvitationValidatorTest {
         inviteeForm.setUserRole(UserRole.ROLE_ORG_USER);
 
         return inviteeForm;
+    }
+
+    private Domain createDomain(DomainType domainType) {
+        Domain domain = null;
+        switch (domainType) {
+            case GROUP:
+                domain = new Group();
+                break;
+            case ORGANIZATION:
+                domain = new Organization();
+                break;
+        }
+        return domain;
     }
 }

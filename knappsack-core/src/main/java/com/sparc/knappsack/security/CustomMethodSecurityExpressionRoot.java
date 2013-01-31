@@ -1,10 +1,7 @@
 package com.sparc.knappsack.security;
 
 import com.sparc.knappsack.components.entities.*;
-import com.sparc.knappsack.components.services.ApplicationVersionService;
-import com.sparc.knappsack.components.services.CategoryService;
-import com.sparc.knappsack.components.services.GroupService;
-import com.sparc.knappsack.components.services.UserService;
+import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.UserRole;
@@ -26,6 +23,12 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
 
     private CategoryService categoryService;
 
+    private DomainService domainService;
+
+    private DomainUserRequestService domainUserRequestService;
+
+    private DomainRequestService domainRequestService;
+
     /**
      * @param authentication Authentication
      */
@@ -38,34 +41,20 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
     }
 
     @SuppressWarnings("unused")
-    public boolean hasGroupAdminAccess(Long id) {
-        //Check for Admin Access for the Organization that this group belongs to
-        return false;
-    }
-
-    @SuppressWarnings("unused")
-    public boolean isGroupAdmin(Long id) {
-        return id != null && isUserInDomain(id, DomainType.GROUP, UserRole.ROLE_GROUP_ADMIN);
-    }
-
-    @SuppressWarnings("unused")
     public boolean isOrganizationAdmin() {
         return getUser() != null && getUser().isOrganizationAdmin();
     }
 
     @SuppressWarnings("unused")
     public boolean isOrganizationAdmin(Long id) {
-        return isUserInDomain(id, DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN);
+        return isUserInDomain(id, UserRole.ROLE_ORG_ADMIN);
     }
 
-    @SuppressWarnings("unused")
-    public boolean isOrganizationAdminForGroup(Long groupId) {
-        Group group = groupService.get(groupId);
+    private boolean isOrganizationAdminForGroup(Group group) {
         if (group == null) {
-            throw new EntityNotFoundException();
+            return false;
         }
-        Long organizationId = group.getOrganization().getId();
-        return isUserInDomain(organizationId, DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN);
+        return isUserInDomain(group.getOrganization().getId(), UserRole.ROLE_ORG_ADMIN);
     }
 
     @SuppressWarnings("unused")
@@ -103,36 +92,52 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
     }
 
     @SuppressWarnings("unused")
-    public boolean hasUserDomainAccess(UserDomain userDomain) {
-        if (userDomain != null) {
-            switch (userDomain.getDomainType()) {
-                case GROUP:
-                    return isUserInDomain(userDomain.getDomainId(), DomainType.GROUP, UserRole.ROLE_GROUP_ADMIN, UserRole.ROLE_ORG_ADMIN);
-                case ORGANIZATION:
-                    return isUserInDomain(userDomain.getDomainId(), DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN);
+    public boolean isDomainAdmin() {
+        User user = getUser();
+        return user != null && (user.isGroupAdmin() || user.isOrganizationAdmin());
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isDomainAdmin(Long domainId) {
+        return isUserInDomain(domainId, UserRole.ROLE_GROUP_ADMIN, UserRole.ROLE_ORG_ADMIN);
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isDomainAdmin(List<Long> domainIds) {
+        if(domainIds == null) {
+            return false;
+        }
+
+        for (Long domainId : domainIds) {
+            if(!isDomainAdmin(domainId)) {
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
     @SuppressWarnings("unused")
-    public boolean isDomainAdmin(Long domainId, DomainType domainType) {
-        return isUserInDomain(domainId, domainType, UserRole.ROLE_GROUP_ADMIN, UserRole.ROLE_ORG_ADMIN);
+    private boolean isDomainAdmin(Domain domain) {
+        return isUserInDomain(domain, UserRole.ROLE_ORG_ADMIN, UserRole.ROLE_GROUP_ADMIN);
     }
 
     @SuppressWarnings("unused")
-    public boolean hasDomainConfigurationAccess(Long domainId, DomainType domainType) {
+    public boolean hasDomainConfigurationAccess(Long domainId) {
         User user = getUser();
         if(user == null) {
             return false;
         }
 
-        switch (domainType) {
-            case GROUP:
-                return isUserInDomain(domainId, DomainType.GROUP, UserRole.ROLE_ORG_ADMIN) || user.isSystemAdmin();
-            case ORGANIZATION:
-                return user.isSystemAdmin();
+        Domain domain = domainService.get(domainId);
+
+        if (domain != null) {
+            switch (domain.getDomainType()) {
+                case GROUP:
+                    return isUserInDomain(domain, UserRole.ROLE_ORG_ADMIN) || user.isSystemAdmin();
+                case ORGANIZATION:
+                    return user.isSystemAdmin();
+            }
         }
 
         return false;
@@ -179,17 +184,49 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
         return false;
     }
 
-    private boolean isUserInDomain(Long id, DomainType domainType, UserRole... userRoles) {
-        if (id != null && id > 0) {
+    @SuppressWarnings("unused")
+    public boolean canEditDomainUserRequest(Long domainUserRequestId) {
+        DomainUserRequest domainUserRequest = domainUserRequestService.get(domainUserRequestId);
+
+        if (domainUserRequest != null) {
+            return isDomainAdmin(domainUserRequest.getDomain());
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean canEditDomainRequest(Long domainRequestId) {
+        DomainRequest domainRequest = domainRequestService.get(domainRequestId);
+
+        if (domainRequest != null) {
+            return isDomainAdmin(domainRequest.getDomain());
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean canEditDomainRegion(Long regionId) {
+        Domain domain = domainService.getDomainForRegion(regionId);
+
+        return isDomainAdmin(domain);
+    }
+
+    private boolean isUserInDomain(Long id, UserRole... userRoles) {
+        return isUserInDomain(domainService.get(id), userRoles);
+    }
+
+    private boolean isUserInDomain(Domain domain, UserRole... userRoles) {
+        if (domain != null) {
             User user = getUser();
 
             if (user != null) {
                 for (UserDomain userDomain : user.getUserDomains()) {
-                    if (id.equals(userDomain.getDomainId())
-                            && domainType.equals(userDomain.getDomainType())
+                    if (domain.equals(userDomain.getDomain())
                             && Arrays.asList(userRoles).contains(UserRole.valueOf(userDomain.getRole().getAuthority()))) {
                         return true;
-                    } else if(DomainType.GROUP.equals(domainType) && isOrganizationAdminForGroup(id)) {
+                    } else if(DomainType.GROUP.equals(domain.getDomainType()) && isOrganizationAdminForGroup((Group) domain)) {
                         return true;
                     }
                 }
@@ -213,6 +250,18 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
 
     public void setCategoryService(CategoryService categoryService) {
         this.categoryService = categoryService;
+    }
+
+    public void setDomainService(DomainService domainService) {
+        this.domainService = domainService;
+    }
+
+    public void setDomainUserRequestService(DomainUserRequestService domainUserRequestService) {
+        this.domainUserRequestService = domainUserRequestService;
+    }
+
+    public void setDomainRequestService(DomainRequestService domainRequestService) {
+        this.domainRequestService = domainRequestService;
     }
 
     private User getUser() {

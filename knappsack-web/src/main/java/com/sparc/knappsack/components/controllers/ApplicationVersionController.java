@@ -24,10 +24,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.*;
 
 @Controller
@@ -72,7 +69,7 @@ public class ApplicationVersionController extends AbstractController {
             result.setResult(false);
             return result;
         }
-        boolean success = applicationVersionControllerService.updateApplicationVersionState(appVersionId, AppState.valueOf(appState));
+        boolean success = applicationVersionControllerService.updateApplicationVersionState(appVersionId, AppState.valueOf(appState), true);
         result.setResult(success);
         return result;
     }
@@ -85,7 +82,7 @@ public class ApplicationVersionController extends AbstractController {
         checkRequiredEntity(applicationService, parentId);
 
         Application application = applicationService.get(parentId);
-        Group group = groupService.getOwnedGroup(application);
+        Group group = application.getOwnedGroup();
 
         if (group != null) {
             model.addAttribute("parentApplicationId", application.getId());
@@ -123,7 +120,7 @@ public class ApplicationVersionController extends AbstractController {
 
         ApplicationVersion version = applicationVersionService.get(versionId);
         Application application = applicationService.get(parentId);
-        Group group = groupService.getOwnedGroup(application);
+        Group group = application.getOwnedGroup();
         if (group != null) {
             model.addAttribute("parentApplicationId", application.getId());
             model.addAttribute("parentApplicationName", application.getName());
@@ -158,7 +155,7 @@ public class ApplicationVersionController extends AbstractController {
             model.addAttribute("version", uploadApplicationVersion);
 
             //Put this app versions guest groups on the model so we can highlight them in the multi-select box
-            List<Group> currentGuestGroups = groupService.getGuestGroups(version);
+            List<Group> currentGuestGroups = version.getGuestGroups();
             Set<Long> currentGuestGroupIds = new HashSet<Long>();
             if (currentGuestGroups != null) {
                 for (Group guestGroup : currentGuestGroups) {
@@ -181,31 +178,31 @@ public class ApplicationVersionController extends AbstractController {
         }
     }
 
-    @RequestMapping(value = "/manager/applicationVersionUploadProgress", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Result applicationVersionUploadProgress(HttpServletResponse response, @ModelAttribute("version") UploadApplicationVersion uploadApplicationVersion) {
-        MultipartFile file = uploadApplicationVersion.getAppFile();
-        Result result = new Result();
-
-        try {
-            if (file != null && !file.isEmpty()) {
-                file.getBytes();
-                result.setResult(true);
-            } else {
-                result.setResult(false);
-            }
-        } catch (IOException e) {
-            log.error("IOException getting bytes for file during application version upload.", e);
-            result.setResult(false);
-        }
-
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Cache-Control", "no-cache");
-        response.setDateHeader("Expires", 0);
-
-        return result;
-    }
+//    @RequestMapping(value = "/manager/applicationVersionUploadProgress", method = RequestMethod.POST)
+//    public
+//    @ResponseBody
+//    Result applicationVersionUploadProgress(HttpServletResponse response, @ModelAttribute("version") UploadApplicationVersion uploadApplicationVersion) {
+//        MultipartFile file = uploadApplicationVersion.getAppFile();
+//        Result result = new Result();
+//
+//        try {
+//            if (file != null && !file.isEmpty()) {
+//                file.getBytes();
+//                result.setResult(true);
+//            } else {
+//                result.setResult(false);
+//            }
+//        } catch (IOException e) {
+//            log.error("IOException getting bytes for file during application version upload.", e);
+//            result.setResult(false);
+//        }
+//
+//        response.setHeader("Pragma", "no-cache");
+//        response.setHeader("Cache-Control", "no-cache");
+//        response.setDateHeader("Expires", 0);
+//
+//        return result;
+//    }
 
     @PreAuthorize("canEditApplication(#uploadApplicationVersion.parentId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadVersion", method = RequestMethod.POST)
@@ -220,7 +217,7 @@ public class ApplicationVersionController extends AbstractController {
         Long parentId = uploadApplicationVersion.getParentId();
 
         //TODO: error handling
-        boolean success = applicationVersionControllerService.saveApplicationVersion(uploadApplicationVersion);
+        boolean success = applicationVersionControllerService.saveApplicationVersion(uploadApplicationVersion, true);
 
         return "redirect:/manager/editApplication/" + parentId;
     }

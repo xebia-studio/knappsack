@@ -8,14 +8,13 @@
 <p th:text="#{greeting(${name})}">
     Hello, Peter Static!
 </p>
-<p th:inline="text">
-    Your account has been successfully created, however, it must be activated before you can use it.  Please navigate to the below url to activate your account or log in and enter the activation code when prompted.
+<p th:text="#{email.accountActivation.org(${organizationName})}" th:if="${not #strings.isEmpty(organizationName)}">
+    Your account was successfully created!  However, it must be activated before you can use it.  Please click the link below to activate your account.
 </p>
+<p th:text="#{email.accountActivation}" th:if="${#strings.isEmpty(organizationName)}">
+    Your account was successfully created!  However, it must be activated before you can use it.  Please click the link below to activate your account.</p>
 <p>
     <a th:href="${url}" th:text="${url}"/>
-</p>
-<p>
-    Activation Code: <span th:text="${activationCode}"/>
 </p>
 <p>
     Regards, <br />

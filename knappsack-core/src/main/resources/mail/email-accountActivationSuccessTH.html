@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack user activation success</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<p th:text="#{greeting(${name})}">
+    Hello, Peter Static!
+</p>
+<p th:text="#{email.accountActivationSuccess.org(${organizationName})}" th:if="${not #strings.isEmpty(organizationName)}">
+    You have successfully registered to your organization.
+</p>
+
+<p th:text="#{email.accountActivationSuccess}" th:if="${#strings.isEmpty(organizationName)}">
+    You have successfully activated your Knappsack account!
+</p>
+
+<p th:text="#{email.accountActivationSuccess.linkMessage}">Click on the following link to access your applications:</p>
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+<p>
+    Regards, <br />
+    &emsp; <em>The Knappsack Team</em>
+</p>
+</body>
+</html>

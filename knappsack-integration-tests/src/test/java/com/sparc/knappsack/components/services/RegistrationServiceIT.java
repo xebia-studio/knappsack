@@ -1,12 +1,14 @@
 package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.*;
-import com.sparc.knappsack.enums.DomainType;
+import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.models.UserModel;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.UUID;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -47,19 +49,14 @@ public class RegistrationServiceIT extends AbstractServiceTests {
     public void registerUserWithInvitationTest() {
         User user = getUser();
 
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
+        Organization organization = getOrganization();
 
-        organizationService.add(organization);
-        organizationService.getAll();
-
-        Domain orgDomain = domainService.get(organization.getId(), DomainType.ORGANIZATION);
+        Domain orgDomain = domainService.get(organization.getId());
         Assert.assertNotNull(orgDomain);
         Assert.assertTrue(orgDomain.getName().equals("Test Organization"));
 
         Invitation invitation = new Invitation();
-        invitation.setDomainId(organization.getId());
-        invitation.setDomainType(DomainType.ORGANIZATION);
+        invitation.setDomain(orgDomain);
         invitation.setEmail(user.getEmail());
         Role role = roleService.getRoleByAuthority(UserRole.ROLE_ORG_USER.toString());
         invitation.setRole(role);
@@ -76,5 +73,25 @@ public class RegistrationServiceIT extends AbstractServiceTests {
         assertTrue(user.getEmail().equals("test@test.com"));
         assertTrue(user.getFirstName().equals("John"));
         assertTrue(user.getLastName().equals("Doe"));
+    }
+
+    private Organization getOrganization() {
+        Organization organization = new Organization();
+        organization.setName("Test Organization");
+
+        LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
+        localStorageConfiguration.setBaseLocation("/path");
+        localStorageConfiguration.setName("Local Storage Configuration");
+        localStorageConfiguration.setStorageType(StorageType.LOCAL);
+
+        OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
+        orgStorageConfig.getStorageConfigurations().add(localStorageConfiguration);
+        orgStorageConfig.setPrefix("testPrefix");
+        orgStorageConfig.setOrganization(organization);
+        organization.setOrgStorageConfig(orgStorageConfig);
+
+        organizationService.add(organization);
+
+        return organization;
     }
 }

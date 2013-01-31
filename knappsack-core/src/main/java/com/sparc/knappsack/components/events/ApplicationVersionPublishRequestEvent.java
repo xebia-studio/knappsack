@@ -32,7 +32,7 @@ public class ApplicationVersionPublishRequestEvent implements EventDelivery<Appl
             userModel.setLastName(principal.getLastName());
             userModel.setId(principal.getId());
             userModel.setUserName(principal.getUsername());
-            success = emailService.sendApplicationPublishRequestEmail(applicationVersion, userModel);
+            success = emailService.sendApplicationPublishRequestEmail(applicationVersion.getId(), userModel);
         }
 
         return success;

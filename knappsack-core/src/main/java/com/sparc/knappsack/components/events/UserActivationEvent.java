@@ -17,7 +17,7 @@ public class UserActivationEvent implements EventDelivery<User> {
     public boolean sendNotifications(User user) {
         boolean success = false;
         if (user != null) {
-            success = emailService.sendActivationEmail(user);
+            success = emailService.sendActivationEmail(user.getId());
         }
 
         return success;

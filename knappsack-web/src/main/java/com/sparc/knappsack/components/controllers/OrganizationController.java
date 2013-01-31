@@ -6,12 +6,13 @@ import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.components.validators.OrganizationValidator;
 import com.sparc.knappsack.enums.AppState;
-import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.OrganizationForm;
 import com.sparc.knappsack.forms.Result;
-import com.sparc.knappsack.models.*;
+import com.sparc.knappsack.models.DomainStatisticsModel;
+import com.sparc.knappsack.models.OrganizationModel;
+import com.sparc.knappsack.models.UserDomainModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,10 @@ public class OrganizationController extends AbstractController {
     @Autowired(required = true)
     private CategoryService categoryService;
 
+    @Qualifier("bandwidthService")
+    @Autowired(required = true)
+    private BandwidthService bandwidthService;
+
     @Qualifier("organizationValidator")
     @Autowired
     private OrganizationValidator organizationValidator;
@@ -65,7 +70,7 @@ public class OrganizationController extends AbstractController {
     @Autowired(required = true)
     private UserService userService;
 
-    @InitBinder("organizationForm")
+    @InitBinder("organization")
     protected void initBinder(WebDataBinder binder) {
         binder.setValidator(organizationValidator);
         binder.registerCustomEditor(Date.class, new CustomDateEditor(new SimpleDateFormat("MM/dd/yyyy"), true));
@@ -73,10 +78,7 @@ public class OrganizationController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin() or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/viewOrgs", method = RequestMethod.GET)
-    public String viewOrgs(Model model) {
-        User user = userService.getUserFromSecurityContext();
-
-        model.addAttribute("orgs", userService.getOrganizations(user));
+    public String viewOrgs() {
         return "manager/organizationsTH";
     }
 
@@ -149,12 +151,22 @@ public class OrganizationController extends AbstractController {
 
     //TODO: Make it so OrgAdmins can also delete
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/deleteOrg/{id}", method = RequestMethod.GET)
-    public String deleteOrganization(Model model, @PathVariable Long id) {
-        checkRequiredEntity(organizationService, id);
+    @RequestMapping(value = "/manager/deleteOrg", method = RequestMethod.POST)
+    public @ResponseBody Result deleteOrganization(@RequestParam(required = true) Long id) {
+        Result result = new Result();
+        try {
+            checkRequiredEntity(organizationService, id);
+        } catch (EntityNotFoundException ex) {
+            log.info(String.format("Attempted to delete non-existent organization: %s", id));
+            result.setResult(false);
+            return result;
+        }
+
         organizationService.delete(id);
 
-        return addOrganization(model);
+        result.setResult(!organizationService.doesEntityExist(id));
+
+        return result;
     }
 
     @PreAuthorize("isOrganizationAdmin(#organizationForm.id) or hasRole('ROLE_ADMIN')")
@@ -180,6 +192,7 @@ public class OrganizationController extends AbstractController {
         organizationModel.setStorageConfigurationId(organizationForm.getStorageConfigurationId());
         organizationModel.setStoragePrefix(organizationForm.getStoragePrefix());
 
+        Long orgId = organizationForm.getId();
         if(organizationForm.getId() != null && organizationForm.getId() > 0) {
             organizationService.editOrganization(organizationModel);
         } else {
@@ -200,9 +213,13 @@ public class OrganizationController extends AbstractController {
                 return addOrganization(model);
             }
             categoryService.createDefaultCategories(organization.getId());
+            orgId = organization.getId();
         }
 
-        return viewOrgs(model);
+        if (orgId == null || orgId <= 0) {
+            return "redirect:/manager/viewOrgs";
+        }
+        return "redirect:/manager/editOrg/" + orgId;
     }
 
     @PreAuthorize("isOrganizationAdmin(#orgId) or hasRole('ROLE_ADMIN')")
@@ -224,9 +241,14 @@ public class OrganizationController extends AbstractController {
             result.setResult(false);
             return result;
         }
-        result.setResult(true);
 
-        userDomainService.updateUserDomainRole(userId, orgId, DomainType.ORGANIZATION, userRole);
+        User user = userService.getUserFromSecurityContext();
+        if (user != null && !userId.equals(user.getId())) {
+            userDomainService.updateUserDomainRole(userId, orgId, userRole);
+            result.setResult(true);
+        } else {
+            result.setResult(false);
+        }
 
         return result;
     }
@@ -246,15 +268,22 @@ public class OrganizationController extends AbstractController {
             return result;
         }
 
+        User user = userService.getUserFromSecurityContext();
+
         if (organizationId != null && organizationId > 0 && userIds != null) {
             for (Long userId : userIds) {
-                organizationService.removeUserFromOrganization(organizationId, userId);
+                if (user != null && !userId.equals(user.getId())) {
+                    organizationService.removeUserFromOrganization(organizationId, userId);
+                    result.getIds().add(userId);
+                }
             }
-            result.setResult(true);
-        } else {
-            result.setResult(false);
         }
-        result.setResult(true);
+
+        if (result.getIds().size() != userIds.size()) {
+            result.setResult(false);
+        } else {
+            result.setResult(true);
+        }
 
         return result;
     }
@@ -290,12 +319,21 @@ public class OrganizationController extends AbstractController {
         return organizationService.getAllOrganizationAdmins(orgId);
     }
 
+    @PreAuthorize("isOrganizationAdmin() or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/getOrganizationsForUser", method = RequestMethod.GET)
+    public @ResponseBody List<OrganizationModel> getOrganizationsForUser() {
+        User user = userService.getUserFromSecurityContext();
+
+        return organizationService.createOrganizationModelsWithoutStorageConfiguration(userService.getAdministeredOrganizations(user), false);
+    }
+
     private DomainStatisticsModel getDomainStatisticsModel(Organization organization) {
         DomainStatisticsModel domainStatisticsModel = new DomainStatisticsModel();
         domainStatisticsModel.setTotalApplications(organizationService.getTotalApplications(organization));
         domainStatisticsModel.setTotalApplicationVersions(organizationService.getTotalApplicationVersions(organization));
         domainStatisticsModel.setTotalUsers(organizationService.getTotalUsers(organization));
         domainStatisticsModel.setTotalMegabyteStorageAmount(organizationService.getTotalMegabyteStorageAmount(organization));
+        domainStatisticsModel.setTotalMegabyteBandwidthUsed(bandwidthService.getMegabyteBandwidthUsed(organization.getId()));
 
         return domainStatisticsModel;
     }

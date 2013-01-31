@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="title=#{desktop.faq.title}">
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+<div th:substituteby="/includesTH :: header"></div>
+
+<script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            $('.question').on('click', function(e) {
+                e.preventDefault();
+                var target = $(this).attr('href');
+                $('html, body').animate({scrollTop: $(target).offset().top - 100}, 500);
+            });
+        });
+        /*]]>*/
+    </script>
+
+<div class="container">
+    <header id="overview">
+        <h2 th:text="#{desktop.faq.overview.header}">FAQ</h2>
+        <p class="lead" th:text="#{desktop.faq.overview.lead}">Frequently Asked Questions</p>
+    </header>
+
+    <hr />
+
+    <div>
+        <section id="questions">
+            <header class="subhead">
+                <h4 th:text="#{desktop.faq.questions.header}">Questions</h4>
+            </header>
+            <ul class="nav nav-list">
+                <li><a href="#1" class="question">I just signed up for a Knappsack organization.  What do I do now?</a></li>
+                <li><a href="#2" class="question">How do I build and deploy an iOS application?</a></li>
+                <li><a href="#3" class="question">I've forgotten my login password.  How do I reset it?</a></li>
+                <li><a href="#4" class="question">I don't want a specific version of an application available to my organization anymore.  How do I achieve this?</a></li>
+                <li><a href="#5" class="question">Is there any way to invite more than one person at a time to my Knappsack organization?</a></li>
+                <li><a href="#6" class="question">Can I change the credit card information associated with my organization?</a></li>
+                <li><a href="#7" class="question">I have a question that this FAQ does not answer.  How can I contact you?</a></li>
+            </ul>
+        </section>
+        <hr />
+        <section id="answers">
+            <header class="subhead">
+                <h4 th:text="#{desktop.faq.answers.header}">Answers</h4>
+            </header>
+            <section id="1" class="well">
+                <div>
+                    <p><b>I just signed up for a Knappsack organization.  What do I do now?</b></p>
+                    <p>Thank you for signing up with Knappsack!  To get started please read over the <a href="https://docs.google.com/document/d/18J3Rb2rnNZdXxvDA3Riq2Zae456wyhzUOe2JctJQKlg/edit" rel="external">Quick Start Guide</a> </p>
+                </div>
+            </section>
+            <section id="2" class="well">
+                <div>
+                    <p><b>How do I build and deploy an iOS application?</b></p>
+                    <p>Building and deploying an iOS application may seem like a daunting task, but don't worry, after reading through our <a href="https://docs.google.com/a/sparcedge.com/document/d/1HGi-dxdAN6JVSgxe0jsdav54s9PCXQsq2KkticXlu8g/edit" rel="external">iOS Build and Deployment Guide</a> you will be an expert!</p>
+                </div>
+            </section>
+            <section id="3" class="well">
+                <div>
+                    <p><b>I've forgotten my login password.  How do I reset it?</b></p>
+                    <p>Don't worry, it happens to the best of us.  Luckily we make it easy to reset your password.  Navigate to the <a th:href="@{/auth/forgotPassword}" href="/auth/forgotPassword">Forgot Password</a> page and follow the instructions to have your password rest.</p>
+                </div>
+            </section>
+            <section id="4" class="well">
+                <div>
+                    <p><b>I don't want a specific version of an application available to my organization anymore.  How do I achieve this?</b></p>
+                    <p>We've provided you with two different options for achieving this.  <br/><br/>First, you can flat out delete the application version.  This will completely delete the application version and all its resources out of Knappsack.  Once deleted it is gone for good.  <br/><br/>Second, you can set the state of the application verion to disabled.  Disabling the application does not delete the application.  It simply makes the version unavailable to everyone.  The application version state can be changed at any time.</p>
+                </div>
+            </section>
+            <section id="5" class="well">
+                <div>
+                    <p><b>Is there any way to invite more than one person at a time to my Knappsack organization?</b></p>
+                    <p>Yes, we support batch invites from Gmail and Outlook.  From either Gmail or Outlook, export the desired contacts to a CSV and at the Knappsack invite page you will see options to import from your CSV.</p>
+                </div>
+            </section>
+            <section id="6" class="well">
+                <div>
+                    <p><b>Can I change the credit card information associated with my organization?</b></p>
+                    <p>Yes, you can change the credit card information for your organization at any time.
+                        <ol>
+                            <li>While logged in as an Organization Administrator, click on the Manage Application link in the header</li>
+                            <li>Click on Organizations in the side menu</li>
+                            <li>Click edit beside the organization which you want to update the credit card information</li>
+                            <li>On the Update Organization page click the Organization dropdown tab and select Account Management</li>
+                        </ol>
+                    </p>
+                </div>
+            </section>
+            <section id="7" class="well">
+                <div>
+                    <p><b>I have a question that this FAQ does not answer.  How can I contact you?</b></p>
+                    <p>You can contact us by email at <a th:href="'mailto:' + #{knappsack.support}" href="mailto:support@knappsack.com" th:title="#{desktop.includes.footer.support}" title="Contact Us" th:text="#{knappsack.support}" rel="external">support@knappsack.com</a>
+                    </p>
+                </div>
+            </section>
+        </section>
+    </div>
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+
+</body>
+
+</html>

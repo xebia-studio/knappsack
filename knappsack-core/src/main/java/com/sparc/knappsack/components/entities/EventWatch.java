@@ -12,6 +12,7 @@ import java.util.List;
 @Table(name = "EVENT_WATCH",
         uniqueConstraints = {@UniqueConstraint(columnNames={"NOTIFIABLE_TYPE", "USER_ID", "NOTIFIABLE_ID"})}
 )
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class EventWatch extends BaseEntity {
 
     private static final long serialVersionUID = -7046760432772496845L;

@@ -8,6 +8,12 @@ import java.util.List;
 public interface OrganizationDao extends Dao<Organization> {
 
     /**
+     * @param organizationIds List<Long> - a list of organization IDs used to get their corresponding Organization entity
+     * @return List<Organization> - all organizations matching the list of given IDs
+     */
+    List<Organization> get(List<Long> organizationIds);
+
+    /**
      * @return List of all Organization entities
      */
     List<Organization> getAll();
@@ -30,4 +36,28 @@ public interface OrganizationDao extends Dao<Organization> {
      * @return
      */
     List<Organization> getAllForCreateDateRange(Date minDate, Date maxDate);
+
+    /**
+     * @param orgId Long - count all groups belonging to this organization
+     * @return long - the total amount of groups belonging to this organization
+     */
+    long countOrganizationGroups(Long orgId);
+
+    /**
+     * @param orgId Long - count all users belonging to this organization
+     * @return long - the total amount of users belonging to this organization
+     */
+    long countOrganizationUsers(Long orgId);
+
+    /**
+     * @param orgId Long - count all application belonging to this organization
+     * @return long - the total amount of applications belonging to this organization
+     */
+    long countOrganizationApps(Long orgId);
+
+    /**
+     * @param orgId Long - count all application versions belonging to this organization
+     * @return long - the total amount of application versions belonging to this organization
+     */
+    long countOrganizationAppVersions(Long orgId);
 }

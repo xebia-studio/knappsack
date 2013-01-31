@@ -1,13 +1,13 @@
 package com.sparc.knappsack.components.controllers;
 
-import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.Category;
 import com.sparc.knappsack.components.entities.Group;
 import com.sparc.knappsack.components.entities.User;
-import com.sparc.knappsack.components.services.ApplicationService;
 import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.enums.AppState;
+import com.sparc.knappsack.models.ApplicationModel;
 import com.sparc.knappsack.util.UserAgentInfo;
+import com.sparc.knappsack.util.WebRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -19,9 +19,6 @@ import java.util.List;
 
 @Controller
 public class HomeController extends AbstractController {
-    @Qualifier("applicationService")
-    @Autowired
-    private ApplicationService applicationService;
 
     @Qualifier("userService")
     @Autowired(required = true)
@@ -37,8 +34,8 @@ public class HomeController extends AbstractController {
 
         User user = userService.getUserFromSecurityContext();
 
-        List<Application> applications = userService.getApplicationsForUser(user, userAgentInfo.getApplicationType(), AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, (user.isOrganizationAdmin() ? AppState.ORG_PUBLISH_REQUEST : null));
-        model.addAttribute("applications", applicationService.createApplicationModels(applications));
+        List<ApplicationModel> applicationModels = userService.getApplicationModelsForUser(user, userAgentInfo.getApplicationType(), AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, (user.isOrganizationAdmin() ? AppState.ORG_PUBLISH_REQUEST : null));
+        model.addAttribute("applications", applicationModels);
 
         List<Group> userGroups =  userService.getGroups(user);
         if (userService.getOrganizations(user).isEmpty() && userGroups.isEmpty()) {
@@ -49,6 +46,7 @@ public class HomeController extends AbstractController {
 
         List<Category> categories = userService.getCategoriesForUser(user, userAgentInfo.getApplicationType());
         model.addAttribute("categories", categories);
+        model.addAttribute("homeURL", WebRequest.getInstance().generateURL("/"));
 
         return "homeTH";
     }

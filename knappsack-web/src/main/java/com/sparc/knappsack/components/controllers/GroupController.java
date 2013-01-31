@@ -1,21 +1,19 @@
 package com.sparc.knappsack.components.controllers;
 
 import com.sparc.knappsack.components.entities.*;
-import com.sparc.knappsack.components.events.EventDelivery;
-import com.sparc.knappsack.components.events.EventDeliveryFactory;
+import com.sparc.knappsack.components.services.DomainUserRequestService;
 import com.sparc.knappsack.components.services.GroupService;
-import com.sparc.knappsack.components.services.GroupUserRequestService;
 import com.sparc.knappsack.components.services.UserDomainService;
 import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.components.validators.GroupValidator;
-import com.sparc.knappsack.enums.DomainType;
-import com.sparc.knappsack.enums.EventType;
 import com.sparc.knappsack.enums.Status;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.GroupForm;
 import com.sparc.knappsack.forms.Result;
 import com.sparc.knappsack.models.DomainStatisticsModel;
-import com.sparc.knappsack.models.GroupUserRequestModel;
+import com.sparc.knappsack.models.DomainUserRequestModel;
+import com.sparc.knappsack.models.GroupModel;
 import com.sparc.knappsack.models.UserModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -34,13 +33,13 @@ import java.util.List;
 
 @Controller
 public class GroupController extends AbstractController{
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(GroupController.class);
 
     @Autowired(required = true)
     private GroupService groupService;
 
     @Autowired(required = true)
-    private GroupUserRequestService requestService;
+    private DomainUserRequestService requestService;
 
     @Autowired(required = true)
     private UserService userService;
@@ -52,76 +51,15 @@ public class GroupController extends AbstractController{
     @Autowired(required = true)
     private GroupValidator groupValidator;
 
-    @Qualifier("eventDeliveryFactory")
-    @Autowired(required = true)
-    private EventDeliveryFactory eventDeliveryFactory;
-
     @InitBinder("group")
     protected void initBinder(WebDataBinder binder) {
         binder.setValidator(groupValidator);
     }
 
-    @RequestMapping(value = "/group/requestAccess", method = RequestMethod.GET)
-    public String showRequestAccessPage() {
-        return "group_accessTH";
-    }
-
-    @RequestMapping(value = "/group/requestAccess/{accessCode}", method = RequestMethod.POST)
-    public String requestAccess(Model model, @PathVariable String accessCode) {
-        boolean success = false;
-
-        User user = userService.getUserFromSecurityContext();
-        GroupUserRequest groupUserRequest = requestService.createGroupUserRequest(user, accessCode);
-
-        if (groupUserRequest != null && groupUserRequest.getId() != null && groupUserRequest.getId() > 0) {
-            EventDelivery deliveryMechanism = eventDeliveryFactory.getEventDelivery(EventType.GROUP_ACCESS_REQUEST);
-            if (deliveryMechanism != null) {
-                success = deliveryMechanism.sendNotifications(groupUserRequest);
-            }
-            if (!success) {
-                log.info("Error sending GroupAccessRequest email.", groupUserRequest);
-                requestService.delete(groupUserRequest.getId());
-            }
-        }
-
-        model.addAttribute("success", success);
-
-        return showRequestAccessPage();
-    }
-
-    @RequestMapping(value = "/manager/userRequest", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Result userRequest(@RequestParam Long requestId, @RequestParam boolean status, @RequestParam(required = false) UserRole userRole) {
-        Result result = new Result();
-        result.setResult(false);
-
-        boolean success = false;
-        GroupUserRequest groupUserRequest = requestService.get(requestId);
-        User user = userService.getUserFromSecurityContext();
-
-        if (groupUserRequest != null && groupUserRequest.getGroup() != null
-                && (user.isSystemAdmin()
-                    || userService.isUserInGroup(user, groupUserRequest.getGroup(), UserRole.ROLE_GROUP_ADMIN)
-                    || userService.isUserInOrganization(user, groupUserRequest.getGroup().getOrganization(), UserRole.ROLE_ORG_ADMIN))) {
-
-            if (status) {
-                success = requestService.acceptRequest(groupUserRequest, userRole);
-            } else {
-                success = requestService.declineRequest(groupUserRequest);
-            }
-
-        }
-
-        result.setResult(success);
-
-        return result;
-    }
-
     @RequestMapping(value = "/manager/viewGroups", method = RequestMethod.GET)
     public String viewGroups(Model model) {
-        User user = userService.getUserFromSecurityContext();
-        model.addAttribute("groups", userService.getGroups(user));
+//        User user = userService.getUserFromSecurityContext();
+//        model.addAttribute("groups", userService.getGroups(user));
         return "manager/groupsTH";
     }
 
@@ -138,7 +76,7 @@ public class GroupController extends AbstractController{
         return "manager/manageGroupTH";
     }
 
-    @PreAuthorize("isOrganizationAdminForGroup(#id) or isGroupAdmin(#id) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editGroup/{id}", method = RequestMethod.GET)
     public String editGroup(Model model, @PathVariable Long id) {
         checkRequiredEntity(groupService, id);
@@ -149,7 +87,7 @@ public class GroupController extends AbstractController{
             GroupForm groupForm = new GroupForm();
             groupService.mapGroupToGroupForm(existingGroup, groupForm);
             model.addAttribute("group", groupForm);
-            model.addAttribute("accessCode", existingGroup.getAccessCode());
+            model.addAttribute("accessCode", existingGroup.getUuid());
 
             model.addAttribute("applications", existingGroup.getOwnedApplications());
 
@@ -157,11 +95,11 @@ public class GroupController extends AbstractController{
             organizations.add(existingGroup.getOrganization());
             model.addAttribute("organizations", organizations);
 
-            List<GroupUserRequest> requests = requestService.getAll(existingGroup.getId(), Status.PENDING);
-            List<GroupUserRequestModel> pendingRequests = new ArrayList<GroupUserRequestModel>();
+            List<DomainUserRequest> requests = requestService.getAll(existingGroup.getId(), Status.PENDING);
+            List<DomainUserRequestModel> pendingRequests = new ArrayList<DomainUserRequestModel>();
             if (requests != null) {
-                for (GroupUserRequest request : requests) {
-                    GroupUserRequestModel requestModel = new GroupUserRequestModel();
+                for (DomainUserRequest request : requests) {
+                    DomainUserRequestModel requestModel = new DomainUserRequestModel();
                     requestModel.setId(request.getId());
 
                     UserModel userModel = new UserModel();
@@ -187,7 +125,7 @@ public class GroupController extends AbstractController{
             groupUserRoles.add(UserRole.ROLE_GROUP_ADMIN);
             model.addAttribute("userRoles", groupUserRoles);
 
-            List<UserDomain> groupUsers = userDomainService.getAll(existingGroup.getId(), DomainType.GROUP);
+            List<UserDomain> groupUsers = userDomainService.getAll(existingGroup.getId());
             model.addAttribute("groupUsers", groupUsers);
             model.addAttribute("domainStatistics", getDomainStatisticsModel(existingGroup));
         }
@@ -197,32 +135,54 @@ public class GroupController extends AbstractController{
         return "manager/manageGroupTH";
     }
 
-    @PreAuthorize("isOrganizationAdminForGroup(#id) or isGroupAdmin(#id) or hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/deleteGroup/{id}", method = RequestMethod.GET)
-    public String deleteGroup(@PathVariable Long id) {
-        checkRequiredEntity(groupService, id);
+    @PreAuthorize("isDomainAdmin(#id) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/deleteGroup", method = RequestMethod.POST)
+    public @ResponseBody Result deleteGroup(@RequestParam(required = true) Long id) {
+        Result result = new Result();
+        try {
+            checkRequiredEntity(groupService, id);
+        } catch (EntityNotFoundException ex) {
+            log.info(String.format("Attempted to delete non-existent group: %s", id));
+            result.setResult(false);
+            return result;
+        }
+
         groupService.delete(id);
 
-        return "redirect:/manager/viewGroups";
+        result.setResult(!groupService.doesEntityExist(id));
+
+        return result;
     }
 
-    @PreAuthorize("isOrganizationAdmin(#groupForm.organizationId) or isGroupAdmin(#groupForm.id) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isOrganizationAdmin(#groupForm.organizationId) or isDomainAdmin(#groupForm.id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadGroup", method = RequestMethod.POST)
     public String uploadGroup(Model model, @ModelAttribute("group") @Validated GroupForm groupForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return addGroup(model);
         }
 
+        Long groupId = groupForm.getId();
         if (groupForm.getId() != null && groupForm.getId() > 0) {
             groupService.editGroup(groupForm);
         } else {
-            groupService.createGroup(groupForm);
+            Group group = groupService.createGroup(groupForm);
+            if (group == null || group.getId() == null || group.getId() <= 0) {
+                String[] codes = {"desktop.manager.group.create.error"};
+                ObjectError error = new ObjectError("organizationForm", codes, null, null);
+                bindingResult.addError(error);
+                return addGroup(model);
+            }
+
+            groupId = group.getId();
         }
 
-        return viewGroups(model);
+        if (groupId == null || groupId <= 0) {
+            return "redirect:/manager/viewGroups";
+        }
+        return "redirect:/manager/editGroup/" + groupId;
     }
 
-    @PreAuthorize("isOrganizationAdminForGroup(#groupId) or isGroupAdmin(#groupId) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#groupId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/removeUsers", method = RequestMethod.POST)
     public
     @ResponseBody
@@ -239,6 +199,20 @@ public class GroupController extends AbstractController{
         }
 
         return result;
+    }
+
+    @PreAuthorize("isDomainAdmin() or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/getGroupsForUser", method = RequestMethod.GET)
+    public @ResponseBody List<GroupModel> getGroupsForUser() {
+        User user = userService.getUserFromSecurityContext();
+
+        List<GroupModel> models = new ArrayList<GroupModel>();
+
+        for (Group group : userService.getGroups(user)) {
+            models.add(groupService.createGroupModelWithOrganization(group, false, false));
+        }
+
+        return models;
     }
 
     private DomainStatisticsModel getDomainStatisticsModel(Group group) {

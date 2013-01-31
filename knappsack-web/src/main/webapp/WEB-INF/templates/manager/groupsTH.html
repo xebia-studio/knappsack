@@ -13,20 +13,121 @@
     <script type="text/javascript" th:inline="javascript">
         /*<![CDATA[*/
         $(document).ready(function () {
-            var recordText = /*[[#{desktop.group.records}]]*/ "records per page";
-            $('table').dataTable( {
+            var contextPath = /*[[${#httpServletRequest.contextPath}]]*/ "";
+            var getGroupsUrl = /*[[@{/manager/getGroupsForUser}]]*/ '/manager/getGroupsForUser';
+
+            var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
+            var $groupTable = $('#groupTable').dataTable( {
                 "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
                 "sPaginationType": "bootstrap",
                 "oLanguage": {
-                    "sLengthMenu": "_MENU_ " + recordText
+                    "sLengthMenu": "_MENU_ " + recordsPerPage
                 },
-                "aoColumns": [
-                    null,
-                    null,
-                    { "bSortable": false },
-                    { "bSortable": false }
-                ]
+                "bSort": true,
+                "sAjaxSource": getGroupsUrl,
+                "sAjaxDataProp":"",
+                "bProcessing": true,
+                "bAutoWidth": true,
+                "aoColumnDefs" : [
+                    {
+                        "aTargets" : [0],
+                        "mData" : "name",
+                        "sDefaultContent" : "N/A"
+                    },
+                    {
+                        "aTargets" : [1],
+                        "mData" : "organization.name",
+                        "sDefaultContent" : "N/A"
+                    },
+                    {
+                        "bSortable" : false,
+                        "aTargets" : [2],
+                        "mData" : "id",
+                        "mRender" : function(data, type, full) {
+                            var editGroupUrl = contextPath + '/manager/editGroup/';
+                            var editText = /*[[#{desktop.group.edit}]]*/ 'Edit';
+                            var $elem = $('<a>').attr('href', editGroupUrl + data).text(editText);
+                            return $('<div>').append($elem).html();
+                        },
+                        "sDefaultContent" : "N/A"
+                    },
+                    {
+                        "bSortable" : false,
+                        "aTargets" : [3],
+                        "mData" : "id",
+                        "mRender" : function(data, type, full) {
+                            var deleteText = /*[[#{desktop.group.delete}]]*/ 'Delete';
+                            var $elem = $('<a>').attr('href', '#').text(deleteText).addClass('deleteGroup');
+                            return $('<div>').append($elem).html();
+                        },
+                        "sDefaultContent" : "N/A"
+                    }
+                ],
+                "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+                    $(nRow).data('group-id', aData.id);
+                },
+                "fnInitComplete": function() {
+                    this.fnAdjustColumnSizing(true);
+                },
+                "fnDrawCallback": function () {
+                    $('.deleteGroup').on('click', deleteGroupEvent);
+                }
             });
+
+            var deleteGroupEvent = function(e) {
+                e.preventDefault();
+
+                var title = /*[[#{desktop.group.deleteConfirmation.title}]]*/ 'Delete Group';
+                var data = { 'title' : title, 'groupId' : $(this).closest('tr').data('group-id')}
+                showModal("#confirmationModal", data, fnOnDeleteGroupConfirmationModalShow, fnOnDeleteGroupConfirmationModalHide);
+            }
+
+            var fnOnDeleteGroupConfirmationModalShow = function(data) {
+                var deleteGroupUrl = /*[[@{/manager/deleteGroup}]]*/ '/manager/deleteGroup';
+                $('.modal-header h3', '#confirmationModal').text(data.title);
+                $('#confirmationModalSubmit').off('click');
+                $('#confirmationModalSubmit').on('click', function(e) {
+                    $.post(deleteGroupUrl, {"id":data.groupId}, function(result) {
+                        if (result.result) {
+                            $('#confirmationModal .modal-body .alert-error').hide();
+                            $('#confirmationModal .modal-body .alert-success').show();
+                            $groupTable.fnReloadAjax(getGroupsUrl);
+                            hideModal(500);
+                        } else {
+                            $('#confirmationModal .modal-body .alert-error').show();
+                            $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                            $('#confirmationModal .close').removeAttr('disabled');
+                        }
+                    });
+                });
+            }
+
+            var fnOnDeleteGroupConfirmationModalHide = function() {
+                $('#confirmationModal .modal-body .alert').hide();
+                $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                $('#confirmationModal .close').removeAttr('disabled');
+            };
+
+            function showModal(id, data, fnOnShow, fnOnHide) {
+                if (id.substr(0, 1) !== '#') {
+                    id = '#' + id;
+                }
+
+                $(id).off('show');
+                $(id).on('show', fnOnShow(data));
+
+                $(id).off('hidden');
+                $(id).on('hidden', fnOnHide());
+
+                $(id).modal();
+            }
+
+            function hideModal(delay) {
+                setTimeout(function () {
+                            $('.modal').modal('hide');
+                        }, delay
+                );
+            }
         });
         /*]]>*/
     </script>
@@ -45,12 +146,12 @@
                 </p>
 
                 <div>
-                    <a href="manageGroupTH.html" th:href="@{/manager/addGroup}" class="btn btn-success" th:if="${user.systemOrOrganizationAdmin}" th:inline="text"><i class="icon-plus icon-white"/> [[#{destkop.group.addGroup}]]</a>
+                    <a id="newGroupBtn" href="manageGroupTH.html" th:href="@{/manager/addGroup}" class="btn btn-success" th:if="${user.systemOrOrganizationAdmin}" th:inline="text"><i class="icon-plus icon-white"/> [[#{destkop.group.addGroup}]]</a>
                 </div>
             </header>
 
             <section class="well">
-                <table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                <table id="groupTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
                     <thead>
                     <tr>
                         <th th:text="#{desktop.group.name}">Name</th>
@@ -60,12 +161,12 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="group : ${groups}">
-                        <td th:text="${group.name}">1</td>
-                        <td th:text="${group.organization.name}"></td>
-                        <td><a href="" th:href="@{'/manager/editGroup/' + ${group.id}}" th:text="#{desktop.group.edit}">Edit</a></td>
-                        <td><a href="" th:href="@{'/manager/deleteGroup/' + ${group.id}}" th:text="#{desktop.group.delete}">Delete</a></td>
-                    </tr>
+                    <!--<tr th:each="group : ${groups}">-->
+                        <!--<td th:text="${group.name}">1</td>-->
+                        <!--<td th:text="${group.organization.name}"></td>-->
+                        <!--<td><a href="" th:href="@{'/manager/editGroup/' + ${group.id}}" th:text="#{desktop.group.edit}">Edit</a></td>-->
+                        <!--<td><a href="" th:href="@{'/manager/deleteGroup/' + ${group.id}}" th:text="#{desktop.group.delete}">Delete</a></td>-->
+                    <!--</tr>-->
                     </tbody>
                 </table>
             </section>
@@ -75,6 +176,8 @@
     </div>
 
 </div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
 
 <footer th:substituteby="/includesTH :: footer"></footer>
 

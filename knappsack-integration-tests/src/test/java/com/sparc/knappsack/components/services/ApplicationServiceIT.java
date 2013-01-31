@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class ApplicationServiceIT extends AbstractServiceTests {
@@ -30,28 +31,26 @@ public class ApplicationServiceIT extends AbstractServiceTests {
     private OrganizationService organizationService;
 
     @Autowired(required = true)
+    private CategoryService categoryService;
+
+    @Autowired(required = true)
     private StorageConfigurationService storageConfigurationService;
 
     @Test
     public void addTest() {
-        Application application = new Application();
-        application.setName("Test Application");
-        application.setApplicationType(ApplicationType.ANDROID);
-        application.setDescription("This is a description.");
-        applicationService.add(application);
+        Application application = getApplication();
+
         List<Application> applications = applicationService.getAll();
         assertTrue(applications.size() == 1);
+        assertEquals(applications.get(0), application);
     }
 
     @Test
     public void updateTest() {
-        Application application = new Application();
-        application.setName("Test Application");
-        application.setApplicationType(ApplicationType.ANDROID);
-        application.setDescription("This is a description.");
-        applicationService.add(application);
+        Application application = getApplication();
         List<Application> applications = applicationService.getAll();
         assertTrue(applications.size() == 1);
+        assertEquals(applications.get(0), application);
 
         application.setName("New Application");
         applicationService.update(application);
@@ -64,6 +63,7 @@ public class ApplicationServiceIT extends AbstractServiceTests {
         Application application = getApplication();
         List<Application> applications = applicationService.getAll();
         assertTrue(applications.size() == 1);
+        assertEquals(applications.get(0), application);
 
         applicationService.delete(application.getId());
         applications = applicationService.getAll();
@@ -124,18 +124,28 @@ public class ApplicationServiceIT extends AbstractServiceTests {
         Assert.assertNotNull(newApplication);
     }
 
-    private Application getApplication() {
+    private Organization getOrganization() {
         Organization organization = new Organization();
-        organization.setAccessCode(UUID.randomUUID().toString());
         organization.setName("Test Organization");
-        organizationService.add(organization);
 
         LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
         localStorageConfiguration.setBaseLocation("/path");
         localStorageConfiguration.setName("Local Storage Configuration");
         localStorageConfiguration.setStorageType(StorageType.LOCAL);
 
-        storageConfigurationService.add(localStorageConfiguration);
+        OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
+        orgStorageConfig.getStorageConfigurations().add(localStorageConfiguration);
+        orgStorageConfig.setPrefix("testPrefix");
+        orgStorageConfig.setOrganization(organization);
+        organization.setOrgStorageConfig(orgStorageConfig);
+
+        organizationService.add(organization);
+
+        return organization;
+    }
+
+    private Application getApplication() {
+        Organization organization = getOrganization();
 
         Category category = new Category();
         category.setName("Test Category");
@@ -144,12 +154,19 @@ public class ApplicationServiceIT extends AbstractServiceTests {
 
         organizationService.getAll();
 
+
+        Group group = new Group();
+        group.setName("Test Group");
+        group.setOrganization(organization);
+        groupService.add(group);
+
         Application application = new Application();
         application.setName("Test Application");
         application.setDescription("This is a description.");
         application.setApplicationType(ApplicationType.ANDROID);
         application.setCategory(category);
-        application.setStorageConfiguration(localStorageConfiguration);
+        application.setStorageConfiguration(organization.getStorageConfigurations().get(0));
+        application.setOwnedGroup(group);
 
         ApplicationVersion applicationVersion = new ApplicationVersion();
         applicationVersion.setVersionName("1.0.0");
@@ -159,16 +176,11 @@ public class ApplicationServiceIT extends AbstractServiceTests {
         application.getApplicationVersions().add(applicationVersion);
         applicationService.add(application);
 
-        Group group = new Group();
-        group.setAccessCode(UUID.randomUUID().toString());
-        group.setName("Test Group");
-        group.setOrganization(organization);
-        group.setOwnedApplications(new ArrayList<Application>());
         group.getOwnedApplications().add(application);
         groupService.save(group);
+        application.setOwnedGroup(group);
 
         Group group2 = new Group();
-        group2.setAccessCode(UUID.randomUUID().toString());
         group2.setName("Test Group 2");
         group2.setOrganization(organization);
         group2.setGuestApplicationVersions(new ArrayList<ApplicationVersion>());

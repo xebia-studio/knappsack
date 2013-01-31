@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack Organization Registration</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<p th:text="#{greeting(${user.fullName})}" th:if="${user}">
+    Hello, Peter Static!
+</p>
+<p th:unless="${user}">
+    Hello!
+</p>
+
+<div>
+    <p th:inline="text" th:if="${#bools.isTrue(existingUser)}">
+        Thank you for registering <b>[[${organization.name}]]</b> with Knappsack!  Your existing login <b>[[${user.userName}]]</b> has been added to the organization.
+        Please log in to take full advantage of all the benefits Knappsack has to offer.
+    </p>
+    <p th:inline="text" th:if="${#bools.isFalse(existingUser)}">
+        Thank you for registering <b>[[${organization.name}]]</b> with Knappsack!  You will be receiving an email momentarily with instructions for creating your log in account.
+    </p>
+</div>
+
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+
+<p>
+    Regards, <br/>
+    &emsp; <em>The Knappsack Team</em>
+</p>
+</body>
+</html>

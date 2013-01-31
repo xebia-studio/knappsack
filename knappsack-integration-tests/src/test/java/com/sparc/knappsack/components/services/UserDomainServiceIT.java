@@ -24,6 +24,9 @@ public class UserDomainServiceIT extends AbstractServiceTests {
     private OrganizationService organizationService;
 
     @Autowired
+    private GroupService groupService;
+
+    @Autowired
     private StorageConfigurationService storageConfigurationService;
 
     @Autowired
@@ -39,17 +42,12 @@ public class UserDomainServiceIT extends AbstractServiceTests {
 
     @Test
     public void addTest() {
-        User user = new User();
-        user.setEmail("test@test.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setUsername("test@test.com");
+        User user = getUser();
 
         Organization organization = createOrganization();
 
         UserDomain userDomain = new UserDomain();
-        userDomain.setDomainId(organization.getId());
-        userDomain.setDomainType(DomainType.ORGANIZATION);
+        userDomain.setDomain(organization);
         Role roleOrgAdmin = roleService.getRoleByAuthority("ROLE_ORG_ADMIN");
         user.getRoles().add(roleOrgAdmin);
 
@@ -59,22 +57,17 @@ public class UserDomainServiceIT extends AbstractServiceTests {
         userDomainService.add(userDomain);
         List<UserDomain> userDomains = userDomainService.getAll(user, DomainType.ORGANIZATION);
         assertTrue(userDomains.size() == 1);
-        assertTrue(userDomains.get(0).getDomainId().equals(organization.getId()));
+        assertTrue(userDomains.get(0).getDomain().getId().equals(organization.getId()));
     }
 
     @Test
     public void deleteTest() {
-        User user = new User();
-        user.setEmail("test@test.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setUsername("test@test.com");
+        User user = getUser();
 
         Organization organization = createOrganization();
 
         UserDomain userDomain = new UserDomain();
-        userDomain.setDomainId(organization.getId());
-        userDomain.setDomainType(DomainType.ORGANIZATION);
+        userDomain.setDomain(organization);
         Role roleOrgAdmin = roleService.getRoleByAuthority("ROLE_ORG_ADMIN");
         user.getRoles().add(roleOrgAdmin);
 
@@ -93,17 +86,12 @@ public class UserDomainServiceIT extends AbstractServiceTests {
 
     @Test
     public void updateTest() {
-        User user = new User();
-        user.setEmail("test@test.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setUsername("test@test.com");
+        User user = getUser();
 
         Organization organization = createOrganization();
 
         UserDomain userDomain = new UserDomain();
-        userDomain.setDomainId(organization.getId());
-        userDomain.setDomainType(DomainType.ORGANIZATION);
+        userDomain.setDomain(organization);
         Role roleOrgAdmin = roleService.getRoleByAuthority("ROLE_ORG_ADMIN");
         user.getRoles().add(roleOrgAdmin);
 
@@ -114,7 +102,7 @@ public class UserDomainServiceIT extends AbstractServiceTests {
         List<UserDomain> userDomains = userDomainService.getAll(user, DomainType.ORGANIZATION);
         assertTrue(userDomains.size() == 1);
 
-        userDomain.setDomainType(DomainType.GROUP);
+        userDomain.setDomain(createGroup(organization));
         userDomainService.update(userDomain);
 
         userDomains = userDomainService.getAll(user, DomainType.ORGANIZATION);
@@ -126,17 +114,12 @@ public class UserDomainServiceIT extends AbstractServiceTests {
 
     @Test
     public void getByUserDomainIdDomainTypeUserRoleTest() {
-        User user = new User();
-        user.setEmail("test@test.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setUsername("test@test.com");
+        User user = getUser();
 
         Organization organization = createOrganization();
 
         UserDomain userDomain = new UserDomain();
-        userDomain.setDomainId(organization.getId());
-        userDomain.setDomainType(DomainType.ORGANIZATION);
+        userDomain.setDomain(organization);
         Role roleOrgAdmin = roleService.getRoleByAuthority("ROLE_ORG_ADMIN");
         user.getRoles().add(roleOrgAdmin);
 
@@ -145,23 +128,18 @@ public class UserDomainServiceIT extends AbstractServiceTests {
 
         userDomainService.add(userDomain);
 
-        userDomain = userDomainService.get(user, organization.getId(), DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN);
+        userDomain = userDomainService.get(user, organization.getId(), UserRole.ROLE_ORG_ADMIN);
         assertNotNull(userDomain);
     }
 
     @Test
     public void getByUserDomainIdDomainTypeTest() {
-        User user = new User();
-        user.setEmail("test@test.com");
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setUsername("test@test.com");
+        User user = getUser();
 
         Organization organization = createOrganization();
 
         UserDomain userDomain = new UserDomain();
-        userDomain.setDomainId(organization.getId());
-        userDomain.setDomainType(DomainType.ORGANIZATION);
+        userDomain.setDomain(organization);
         Role roleOrgAdmin = roleService.getRoleByAuthority("ROLE_ORG_ADMIN");
         user.getRoles().add(roleOrgAdmin);
 
@@ -170,7 +148,7 @@ public class UserDomainServiceIT extends AbstractServiceTests {
 
         userDomainService.add(userDomain);
 
-        userDomain = userDomainService.get(user, organization.getId(), DomainType.ORGANIZATION);
+        userDomain = userDomainService.get(user, organization.getId());
         assertNotNull(userDomain);
     }
 
@@ -191,11 +169,19 @@ public class UserDomainServiceIT extends AbstractServiceTests {
         storageConfigurations.add(storageConfiguration);
         orgStorageConfig.setStorageConfigurations(storageConfigurations);
         organization.setOrgStorageConfig(orgStorageConfig);
-        organization.setAccessCode(UUID.randomUUID().toString());
         organizationService.add(organization);
         organizationService.getAll();
 
         return organization;
+    }
+
+    private Group createGroup(Organization organization) {
+        Group group = new Group();
+        group.setName("Test Group");
+        group.setOrganization(organization);
+        groupService.add(group);
+
+        return group;
     }
 
     private StorageConfiguration getStorageConfiguration() {

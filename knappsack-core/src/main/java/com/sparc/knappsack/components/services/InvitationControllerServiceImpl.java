@@ -3,7 +3,6 @@ package com.sparc.knappsack.components.services;
 import com.sparc.knappsack.components.entities.Invitation;
 import com.sparc.knappsack.components.events.EventDelivery;
 import com.sparc.knappsack.components.events.EventDeliveryFactory;
-import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.EventType;
 import com.sparc.knappsack.forms.InviteeForm;
 import org.slf4j.Logger;
@@ -28,10 +27,10 @@ public class InvitationControllerServiceImpl implements InvitationControllerServ
     private EventDeliveryFactory eventDeliveryFactory;
 
     @Override
-    public boolean inviteUser(InviteeForm inviteeForm, Long domainId, DomainType domainType, boolean deleteInvitationOnSendError) {
+    public boolean inviteUser(InviteeForm inviteeForm, Long domainId, boolean deleteInvitationOnSendError) {
         boolean userInvited = false;
-        if (inviteeForm != null && StringUtils.hasText(inviteeForm.getEmail()) && inviteeForm.getUserRole() != null && domainId != null && domainType != null) {
-            Invitation invitation = invitationService.createInvitation(inviteeForm, domainId, domainType);
+        if (inviteeForm != null && StringUtils.hasText(inviteeForm.getEmail()) && inviteeForm.getUserRole() != null && domainId != null) {
+            Invitation invitation = invitationService.createInvitation(inviteeForm, domainId);
 
             userInvited = sendInvitation(invitation, deleteInvitationOnSendError);
         }

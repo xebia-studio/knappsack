@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="title=#{desktop.group.access.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"></div>
+
+<div class="container">
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+            var url = /*[[@{/domain/requestAccess/}]]*/ '';
+            $('#accessForm').submit(function() {
+                url = url + $('#accessCode').val();
+                $(this).attr('action', url);
+                return true;
+            })
+        });
+        /*]]>*/
+    </script>
+
+    <header class="jumbotron subhead" id="overview">
+        <h1 th:text="#{desktop.group.access.overview.header}">Request Group Access</h1>
+
+        <p class="lead" th:text="#{desktop.group.access.overview.header.lead}">
+            Enter the access code for the group which you want to join.
+        </p>
+    </header>
+
+    <section>
+        <div class="row-fluid">
+            <div class="span7 well">
+                <form id="accessForm" action="" method="POST" class="form-horizontal">
+                    <div th:unless="${success == null}">
+                        <div class="alert alert-success" th:if="${#bools.isTrue(success)}">
+                            <strong th:text="#{desktop.alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.group.access.success}">Request submitted successfully!</span>
+                        </div>
+
+                        <div class="alert alert-error" th:if="${#bools.isFalse(success)}">
+                            <strong th:text="#{desktop.alert.error.prefix}">Oh snap!</strong> <span th:text="#{desktop.group.access.error}">Request submission failed!</span>
+                        </div>
+                    </div>
+
+                    <fieldset>
+                        <div class="control-group">
+                            <label class="control-label" for="accessCode"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.group.access.code.label}">Access Code:</span></label>
+
+                            <div class="controls">
+                                <input type="text" id="accessCode" name="accessCode" required="required" th:title="#{desktop.group.access.code.title}" title="Access Code" size="36" maxlength="36"/>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" th:text="#{desktop.group.access.submit}" th:title="#{desktop.group.access.submit.title}" title="Submit">Submit</button>
+                        </div>
+                    </fieldset>
+
+                    <div class="alert alert-info">
+                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                    </div>
+                </form>
+            </div>
+            <div class="span5">
+                <dl>
+                    <dt th:text="#{desktop.group.access.faq.dt}">Access Code</dt>
+                    <dd th:text="#{desktop.group.access.faq.dd.line1}">The access code is a unique identifier for each group in your organization.  In order to belong to a group you must request group access using this code.</dd>
+                    <dd th:text="#{desktop.group.access.faq.dd.line2}">Please contact your administrator in order to get this code.</dd>
+                </dl>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+
+</body>
+</html>

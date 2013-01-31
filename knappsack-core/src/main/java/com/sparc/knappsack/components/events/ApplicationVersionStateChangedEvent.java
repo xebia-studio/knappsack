@@ -34,6 +34,10 @@ public class ApplicationVersionStateChangedEvent implements EventDelivery<Applic
     @Autowired(required = true)
     private ApplicationVersionPublishRequestEvent applicationVersionPublishRequestEvent;
 
+    @Qualifier("applicationVersionErrorEvent")
+    @Autowired(required = true)
+    private ApplicationVersionErrorEvent applicationVersionErrorEvent;
+
     @Override
     public boolean sendNotifications(ApplicationVersion applicationVersion) {
         boolean success = false;
@@ -52,6 +56,9 @@ public class ApplicationVersionStateChangedEvent implements EventDelivery<Applic
                     break;
                 case DISABLED:
                     success = true;
+                    break;
+                case ERROR:
+                    success = applicationVersionErrorEvent.sendNotifications(applicationVersion);
                     break;
             }
 
@@ -95,7 +102,12 @@ public class ApplicationVersionStateChangedEvent implements EventDelivery<Applic
                 }
             }
 
-            success = emailService.sendApplicationVersionBecameVisibleEmail(applicationVersion, usersToNotify);
+            List<Long> userIds = new ArrayList<Long>();
+            for (User user : usersToNotify) {
+                userIds.add(user.getId());
+            }
+
+            success = emailService.sendApplicationVersionBecameVisibleEmail(applicationVersion.getId(), userIds);
         }
         return success;
     }

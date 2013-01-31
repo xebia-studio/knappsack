@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active=${subNav},title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"></div>
+
+<div class="container-fluid">
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    $(document).ready(function () {
+        var tmpSelectedRow;
+
+        var successFunction;
+
+        var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
+
+        var $requestsTable = $('#requestsTable').dataTable({
+            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+            "sPaginationType": "bootstrap",
+            "oLanguage": {
+                "sLengthMenu": "_MENU_ " + recordsPerPage
+            },"aoColumns": [
+                null,
+                null,
+                { "bSortable": false },
+                { "bSortable": false },
+                { "bSortable": false },
+                { "bSortable": false }
+            ],
+            "aaSorting": [[1, "asc"]]
+        });
+
+        $('#requestsTable').data('table', $requestsTable);
+
+        function processPendingRequest(data, url, options) {
+            $('.modal-header h3', '#confirmationModal').text(data);
+            $('#confirmationModalSubmit').off('click');
+            $('#confirmationModalSubmit').on('click', function(e) {
+                $.post(url, options, function(result) {
+                    if (result.result) {
+                        $('#confirmationModal .modal-body .alert-error').hide();
+                        $('#confirmationModal .modal-body .alert-success').show();
+                        $requestsTable.fnDeleteRow(tmpSelectedRow);
+                        tmpSelectedRow = '';
+                        hideModal(500);
+                    } else {
+                        $('#confirmationModal .modal-body .alert-error').show();
+                        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                        $('#confirmationModal .close').removeAttr('disabled');
+                    }
+                });
+            });
+        }
+
+        $('.declineRequest').on('click', function() {
+            tmpSelectedRow = $(this).closest('tr').get(0);
+            processDeclineRequest();
+        });
+
+        function processDeclineRequest() {
+            var declineRequestConfirmationModalHeaderTxt = 'Decline Member Request?';
+            showModal("#confirmationModal", declineRequestConfirmationModalHeaderTxt, fnOnDeclineRequestModalShow, fnOnRequestModalHide);
+        };
+
+        function processAcceptRequest() {
+            var acceptRequestConfirmationModalHeaderTxt = 'Accept Member Request?';
+            showModal("#confirmationModal", acceptRequestConfirmationModalHeaderTxt, fnOnAcceptRequestModalShow, fnOnRequestModalHide);
+        };
+
+        $('.actionForm').on('submit', function(e) {
+            e.preventDefault();
+            tmpSelectedRow = $(this).closest('tr').get(0);
+            processAcceptRequest();
+        });
+
+        var fnOnDeclineRequestModalShow = function(data) {
+            var url = /*[[@{/manager/declineDomainRequest}]]*/ '/manager/declineDomainRequest';
+            var requestId = $(tmpSelectedRow).attr('data-request-id');
+            var options = { requestId:requestId };
+            processPendingRequest(data, url, options);
+        };
+
+        var fnOnAcceptRequestModalShow = function(data) {
+            var url = /*[[@{/manager/acceptDomainRequest}]]*/ '/manager/acceptDomainRequest';
+            var requestId = $(tmpSelectedRow).attr('data-request-id');
+            var domainIds = $(tmpSelectedRow).children('td.select-td').children('select').val();
+            var options = { requestId:requestId, domainIds:domainIds };
+            processPendingRequest(data, url, options);
+        };
+
+        var fnOnRequestModalHide = function() {
+            $('#confirmationModal .modal-body .alert').hide();
+            $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+            $('#confirmationModal .close').removeAttr('disabled');
+        };
+
+        function showModal(id, data, fnOnShow, fnOnHide) {
+            if (id.substr(0, 1) !== '#') {
+                id = '#' + id;
+            }
+
+            $(id).off('show');
+            $(id).on('show', function () {
+                return fnOnShow(data);
+            });
+
+            $(id).off('hidden');
+            $(id).on('hidden', function () {
+                return fnOnHide();
+            });
+
+            $(id).modal();
+        }
+
+        function hideModal(delay) {
+            setTimeout(function () {
+                        $('.modal').modal('hide');
+                    }, delay
+            );
+        }
+
+
+    });
+    /*]]>*/
+</script>
+
+<div class="row-fluid">
+
+    <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"></div>
+
+    <div class="span10 manager-body">
+        <ul class="breadcrumb">
+            <li>
+                <a th:href="@{'/manager/editOrg/' + ${domainId}}" th:text="${domainName}"
+                   th:if="${domainType} eq 'ORGANIZATION'"></a>
+                <a th:href="@{'/manager/editGroup/' + ${domainId}}" th:text="${domainName}"
+                   th:if="${domainType} eq 'GROUP'"></a>
+                <span class="divider">/</span>
+            </li>
+            <li class="active">
+                <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.invitees.invitesPending}">Requests
+                    Pending</a>
+            </li>
+        </ul>
+
+        <div>
+            <table id="requestsTable" border="0" class="table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <!--<th><input type="checkbox" class="check-all"/></th>-->
+                    <th th:text="#{desktop.requests.email}">Email</th>
+                    <th th:text="#{desktop.requests.region}">Region</th>
+                    <th th:text="#{desktop.requests.info}">Info</th>
+                    <th th:text="#{desktop.requests.domain}">Domain</th>
+                    <th th:text="#{desktop.requests.decline}">Decline</th>
+                    <th th:text="#{desktop.requests.approve}">Approve</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="domainRequest,iterStat : ${domainRequests}"
+                    th:attr="data-request-id=${domainRequest.id}"
+                    th:id="'request-row-' + ${domainRequest.id}">
+                    <!--<td><input class="check" type="checkbox"/></td>-->
+                    <td th:text="${domainRequest.emailAddress}">Email</td>
+                    <td th:text="${domainRequest.region.name}">Region</td>
+                    <td>
+                        <p>Name: <span th:text="${domainRequest.firstName + ' ' + domainRequest.lastName}">Name</span></p>
+
+                        <p>Address: <span th:text="${domainRequest.address}">Address</span></p>
+
+                        <p>Phone Number: <span th:text="${domainRequest.phoneNumber}">Phone Number</span></p>
+
+                        <p>Company: <span th:text="${domainRequest.companyName}">Company Name</span></p>
+
+                        <p>Device: <span th:text="#{${domainRequest.deviceType.messageKey}}">Device Type</span></p>
+
+                        <p>Languages: <span th:each="language,iterStat : ${domainRequest.languages}" th:text="${iterStat.last} ? #{${language.messageKey}} : #{${language.messageKey}} + ', '">Langagues</span></p>
+                    </td>
+                    <form class="actionForm" action="#">
+                        <td class="select-td">
+                            <select multiple="multiple" class="domainSelect" required="required">
+                                <option th:each="domain : ${domainRequest.assignableDomains}" th:value="${domain.id}"
+                                        th:text="${domain.name}"></option>
+                            </select>
+                        </td>
+                        <td>
+                            <button type="button" class="btn declineRequest" th:value="*{iterStat.index}" href="#"
+                                    th:text="#{desktop.requests.decline}">Decline</button>
+                        </td>
+                        <td>
+                            <button type="submit" class="btn btn-primary acceptRequest" th:value="*{iterStat.index}" href="#"
+                                    th:text="#{desktop.requests.approve}">Approve</button>
+                        </td>
+                    </form>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+<div id="requestErrorModal" class="modal hide fade in">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h3>This is a Modal Heading</h3>
+    </div>
+    <div class="modal-body">
+        <h4>Text in a modal</h4>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Okay</a>
+    </div>
+</div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"></section>
+    <section th:include="/includesTH :: table_scripts"></section>
+</section>
+
+</body>
+</html>

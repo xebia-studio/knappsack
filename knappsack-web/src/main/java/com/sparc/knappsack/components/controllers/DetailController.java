@@ -11,6 +11,7 @@ import com.sparc.knappsack.forms.EnumEditor;
 import com.sparc.knappsack.models.ApplicationModel;
 import com.sparc.knappsack.models.ApplicationVersionModel;
 import com.sparc.knappsack.util.UserAgentInfo;
+import com.sparc.knappsack.util.WebRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,6 +46,9 @@ public class DetailController extends AbstractController {
     @Autowired(required = true)
     private EventWatchService eventWatchService;
 
+    @Autowired
+    private BandwidthService bandwidthService;
+
     @InitBinder
     protected void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(ApplicationType.class, new EnumEditor(ApplicationType.class));
@@ -57,7 +61,10 @@ public class DetailController extends AbstractController {
         User user = userService.getUserFromSecurityContext();
         Application application = applicationService.get(id);
 
-        ApplicationModel applicationModel = applicationService.createApplicationModel(id);
+        ApplicationModel applicationModel = applicationService.createApplicationModel(application);
+        if (applicationModel != null) {
+            applicationModel.setCanUserEdit(userService.canUserEditApplication(user, application));
+        }
         model.addAttribute("selectedApplication", applicationModel);
         model.addAttribute("applicationType", applicationModel.getApplicationType().name());
 
@@ -67,6 +74,8 @@ public class DetailController extends AbstractController {
         if (userAgentInfo.detectIos()) {
             iosDetected = true;
         }
+
+        model.addAttribute("bandwidthExceeded", bandwidthService.isBandwidthLimitReached(application));
 
         model.addAttribute("downloadDirectly", determineDownloadDirectly(userAgentInfo));
 
@@ -81,6 +90,7 @@ public class DetailController extends AbstractController {
         model.addAttribute("initialVersionId", (versions != null && versions.size() > 0 ? versions.get(0).getId() : null));
 
         model.addAttribute("isSubscribed", eventWatchService.doesEventWatchExist(user, applicationService.get(id)));
+        model.addAttribute("homeURL", WebRequest.getInstance().generateURL("/"));
 
         return "detailTH";
     }

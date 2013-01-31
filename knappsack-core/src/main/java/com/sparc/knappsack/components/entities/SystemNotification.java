@@ -8,6 +8,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "SYSTEM_NOTIFICATION")
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class SystemNotification extends BaseEntity {
 
     @Id

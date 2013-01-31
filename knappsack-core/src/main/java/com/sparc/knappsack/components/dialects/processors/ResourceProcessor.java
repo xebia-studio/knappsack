@@ -16,7 +16,7 @@ public abstract class ResourceProcessor extends AbstractAttributeModifierAttrPro
 
     private static final int ATTR_PRECEDENCE = 1000;
 
-    @Value("${static.content.url}")
+    @Value("${CloudFrontURL}")
     private String staticContentURL = "";
 
     public ResourceProcessor(String attributeName) {
@@ -42,7 +42,7 @@ public abstract class ResourceProcessor extends AbstractAttributeModifierAttrPro
             throw new TemplateProcessingException("Could not parse as expression: \"" + attributeValue + "\"");
         }
 
-        if(staticContentURL != null && !staticContentURL.isEmpty() && !"${static.content.url}".equals(staticContentURL)) {
+        if(staticContentURL != null && !staticContentURL.isEmpty() && !"${CloudFrontURL}".equals(staticContentURL)) {
             resourceValue = staticContentURL + linkBase;
         } else {
 

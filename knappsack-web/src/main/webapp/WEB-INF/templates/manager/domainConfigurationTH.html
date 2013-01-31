@@ -54,7 +54,6 @@
                         <fieldset>
                             <input type="hidden" th:field="*{id}"/>
                             <input type="hidden" th:field="*{domainId}"/>
-                            <input type="hidden" th:field="*{domainType}"/>
 
                             <div class="control-group">
                                 <label class="control-label" for="disabled" style="" th:text="#{desktop.domainConfiguration.disabled}">Disabled</label>
@@ -103,6 +102,22 @@
                                 </div>
                             </div>
 
+                            <div class="control-group">
+                                <label class="control-label" for="monitorBandwidth"><span th:text="#{desktop.domainConfiguration.monitorBandwidth}">Monitor Bandwidth Usage</span></label>
+
+                                <div class="controls">
+                                    <input type="checkbox" th:field="*{monitorBandwidth}" placeholder="Monitor Bandwidth"/>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label class="control-label" for="megabyteBandwidthLimit"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.domainConfiguration.bandwidthLimit}">Bandwidth Limit (MB)</span></label>
+
+                                <div class="controls">
+                                    <input id="megabyteBandwidthLimit" name="megabyteBandwidthLimit" th:value="*{megabyteBandwidthLimit}" placeholder="Storage Limit (MB)" required="required" type="number"/>
+                                </div>
+                            </div>
+
                             <!--<input type="hidden" id="domainId" name="domainId" th:value="${parentOrgId}"/>-->
 
                             <div class="form-actions">
@@ -130,6 +145,8 @@
                         <dd th:text="#{desktop.domainConfiguration.applicationVersionLimit.help}">The total number of versions for an individual application.</dd>
                         <dt th:text="#{desktop.domainConfiguration.storageLimit}">Storage Limit</dt>
                         <dd th:text="#{desktop.domainConfiguration.storageLimit.help}">The total amount of physical storage allowed for all of your organization's applications.</dd>
+                        <dt th:text="#{desktop.domainConfiguration.bandwidthLimit}">Bandwidth Limit</dt>
+                        <dd th:text="#{desktop.domainConfiguration.bandwidthLimit.help}">The total amount of bandwidth per month allowed for the transfer of applications to your users.</dd>
                     </dl>
                 </div>
             </div>

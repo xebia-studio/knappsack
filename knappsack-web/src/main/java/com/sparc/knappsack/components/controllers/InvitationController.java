@@ -9,6 +9,7 @@ import com.sparc.knappsack.components.services.InvitationService;
 import com.sparc.knappsack.components.validators.InvitationValidator;
 import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.InvitationForm;
 import com.sparc.knappsack.forms.InviteeForm;
 import com.sparc.knappsack.forms.Result;
@@ -58,16 +59,15 @@ public class InvitationController extends AbstractController {
         binder.setBindEmptyMultipartFiles(false);
     }
 
-    private void initModel(Model model, Long domainId, DomainType domainType) {
-        model.addAttribute("domainType", domainType.name());
+    private void initModel(Model model, Domain domain) {
+        model.addAttribute("domainType", domain.getDomainType().name());
 
-        Domain domain = domainService.get(domainId, domainType);
         model.addAttribute("domainName", domain.getName());
         model.addAttribute("domainId", domain.getId());
 
-        if (DomainType.ORGANIZATION.equals(domainType)) {
+        if (DomainType.ORGANIZATION.equals(domain.getDomainType())) {
             initOrgInvite(model);
-        } else if (DomainType.GROUP.equals(domainType)) {
+        } else if (DomainType.GROUP.equals(domain.getDomainType())) {
             initGroupInvite(model);
         }
     }
@@ -90,28 +90,34 @@ public class InvitationController extends AbstractController {
         model.addAttribute("userRoles", roles);
     }
 
-    @PreAuthorize("isDomainAdmin(#id, #domainType) or hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/inviteUser/{id}/{domainType}", method = RequestMethod.GET)
-    public String inviteUser(Model model, @PathVariable Long id, @PathVariable String domainType) {
-        DomainType dt = DomainType.valueOf(domainType);
-        initModel(model, id, dt);
+    @PreAuthorize("isDomainAdmin(#id) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/inviteUser/{id}", method = RequestMethod.GET)
+    public String inviteUser(Model model, @PathVariable Long id) {
+        Domain domain = domainService.get(id);
+        if (domain == null) {
+            throw new EntityNotFoundException(String.format("Domain entity not found while viewing InviteUser page: %s", id));
+        }
+        initModel(model, domain);
 
         InvitationForm invitationForm = new InvitationForm();
-        invitationForm.setDomainId(id);
-        invitationForm.setDomainType(dt);
+        invitationForm.setDomainId(domain.getId());
+        invitationForm.setDomainType(domain.getDomainType());
         model.addAttribute("invitationForm", invitationForm);
 
         return "manager/inviteUserTH";
     }
 
 
-    @PreAuthorize("isDomainAdmin(#id, #domainType) or hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/invitesPending/{id}/{domainType}", method = RequestMethod.GET)
-    public String invitesPending(Model model, @PathVariable Long id, @PathVariable String domainType) {
-        DomainType dt = DomainType.valueOf(domainType);
-        initModel(model, id, dt);
+    @PreAuthorize("isDomainAdmin(#id) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/invitesPending/{id}", method = RequestMethod.GET)
+    public String invitesPending(Model model, @PathVariable Long id) {
+        Domain domain = domainService.get(id);
+        if (domain == null) {
+            throw new EntityNotFoundException(String.format("Domain entity not found while viewing pending invites: %s", id));
+        }
+        initModel(model, domain);
 
-        List<Invitation> invitations = invitationService.getAll(id, dt);
+        List<Invitation> invitations = invitationService.getAll(domain.getId());
         List<InviteeForm> inviteeForms = new ArrayList<InviteeForm>();
 
         for (Invitation invitation : invitations) {
@@ -122,15 +128,15 @@ public class InvitationController extends AbstractController {
             inviteeForms.add(inviteeForm);
         }
         model.addAttribute("inviteeForms", inviteeForms);
-        model.addAttribute("domainId", id);
-        model.addAttribute("domainType", domainType);
+        model.addAttribute("domainId", domain.getId());
+        model.addAttribute("domainType", domain.getDomainType().name());
 
         return "manager/inviteesTH";
     }
 
-    @PreAuthorize("isDomainAdmin(#domainId, #domainType) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#domainId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteInvitations", method = RequestMethod.POST)
-    public @ResponseBody Result deleteInvite(@RequestParam Long domainId, @RequestParam DomainType domainType, @RequestParam(value = "invitationIds[]") List<Long> invitationIds) {
+    public @ResponseBody Result deleteInvite(@RequestParam Long domainId, @RequestParam(value = "invitationIds[]") List<Long> invitationIds) {
         List<Long> idsSuccesfullyDeleted = new ArrayList<Long>();
 
         for (Long id : invitationIds) {
@@ -152,16 +158,16 @@ public class InvitationController extends AbstractController {
         return result;
     }
 
-    @PreAuthorize("isDomainAdmin(#domainId, #domainType) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#domainId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/reSendInvitation", method = RequestMethod.POST)
-    public @ResponseBody Result reSendInvitation(@RequestParam(value = "invitationIds[]") List<Long> invitationIds, @RequestParam Long domainId, @RequestParam DomainType domainType, WebRequest request) {
+    public @ResponseBody Result reSendInvitation(@RequestParam(value = "invitationIds[]") List<Long> invitationIds, @RequestParam Long domainId, WebRequest request) {
         List<Long> idsFailure = new ArrayList<Long>();
 
         for (Long id : invitationIds) {
             Invitation invitation = invitationService.get(id);
             Domain domain = null;
             if (invitation != null) {
-                domain = domainService.get(invitation.getDomainId(), invitation.getDomainType());
+                domain = invitation.getDomain();
             }
 
             if (domain != null) {
@@ -183,28 +189,37 @@ public class InvitationController extends AbstractController {
     }
 
 
-    @PreAuthorize("isDomainAdmin(#invitationForm.domainId, #invitationForm.domainType) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#invitationForm.domainId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/sendInvitation", method = RequestMethod.POST)
     public String sendInvitation(Model model, @ModelAttribute("invitationForm") @Validated InvitationForm invitationForm, BindingResult bindingResult, WebRequest webRequest) {
+        Domain domain = domainService.get(invitationForm.getDomainId());
+        if (domain == null) {
+            throw new EntityNotFoundException(String.format("Domain entity not found while sending invitation: %s", invitationForm.getDomainId()));
+        }
+
         if (bindingResult.hasErrors()) {
-            initModel(model, invitationForm.getDomainId(), invitationForm.getDomainType());
+            initModel(model, domain);
             return "manager/inviteUserTH";
         }
 
-        boolean invitationSent = invitationControllerService.inviteUser(invitationForm.getInviteeForms().get(0), invitationForm.getDomainId(), invitationForm.getDomainType(), true);
+        boolean invitationSent = invitationControllerService.inviteUser(invitationForm.getInviteeForms().get(0), invitationForm.getDomainId(), true);
 
         model.addAttribute("emailError", !invitationSent);
-        return inviteUser(model, invitationForm.getDomainId(), invitationForm.getDomainType().name());
+        return inviteUser(model, invitationForm.getDomainId());
     }
 
-    @PreAuthorize("isDomainAdmin(#invitationForm.domainId, #invitationForm.domainType) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#invitationForm.domainId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/batchInvitations", method = RequestMethod.POST)
-    public String batchInvitations(Model model, @ModelAttribute("invitationForm") @Validated InvitationForm invitationForm, BindingResult bindingResult) {
-        initModel(model, invitationForm.getDomainId(), invitationForm.getDomainType());
+    public String batchInvitations(Model model, @ModelAttribute("invitationForm") InvitationForm invitationForm, BindingResult bindingResult) {
+        Domain domain = domainService.get(invitationForm.getDomainId());
+        if (domain == null) {
+            throw new EntityNotFoundException(String.format("Domain entity not found while view batch invites: %s", invitationForm.getDomainId()));
+        }
+        initModel(model, domain);
         invitationForm.getInviteeForms().clear();
         invitationForm.setDomainId(invitationForm.getDomainId());
         invitationForm.setDomainType(invitationForm.getDomainType());
-        List<InviteeForm> googleInviteeForms = invitationService.parseContactsGoogle(invitationForm.getContactsGoogle());
+        List<InviteeForm> googleInviteeForms = invitationService.parseContactsGoogle(invitationForm.getContactsGmail());
         for (InviteeForm inviteeForm : googleInviteeForms) {
             invitationForm.getInviteeForms().add(inviteeForm);
         }
@@ -227,19 +242,26 @@ public class InvitationController extends AbstractController {
         return "manager/inviteBatchUsersTH";
     }
 
-    @PreAuthorize("isDomainAdmin(#invitationForm.domainId, #invitationForm.domainType) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#invitationForm.domainId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/sendBatchInvitations", method = RequestMethod.POST)
     public String sendBatchInvitations(Model model, @ModelAttribute("invitationForm") @Validated InvitationForm invitationForm, WebRequest request, BindingResult bindingResult) {
         List<InviteeForm> errors = new ArrayList<InviteeForm>();
         for (InviteeForm inviteeForm : invitationForm.getInviteeForms()) {
-            boolean invitationSent = invitationControllerService.inviteUser(inviteeForm, invitationForm.getDomainId(), invitationForm.getDomainType(), true);
-            if (!invitationSent) {
-                errors.add(inviteeForm);
+            if (!inviteeForm.isDelete()) {
+                boolean invitationSent = invitationControllerService.inviteUser(inviteeForm, invitationForm.getDomainId(), true);
+                if (!invitationSent) {
+                    errors.add(inviteeForm);
+                }
             }
         }
         invitationForm.getInviteeForms().clear();
         if (errors.size() > 0) {
-            initModel(model, invitationForm.getDomainId(), invitationForm.getDomainType());
+            Domain domain = domainService.get(invitationForm.getDomainId());
+            if (domain == null) {
+                throw new EntityNotFoundException(String.format("Domain entity not found sending batch invites: %s", invitationForm.getDomainId()));
+            }
+
+            initModel(model, domain);
             model.addAttribute("emailError", true);
             invitationForm.getInviteeForms().addAll(errors);
 
@@ -250,6 +272,6 @@ public class InvitationController extends AbstractController {
 
         model.addAttribute("emailError", false);
 
-        return inviteUser(model, invitationForm.getDomainId(), invitationForm.getDomainType().name());
+        return inviteUser(model, invitationForm.getDomainId());
     }
 }

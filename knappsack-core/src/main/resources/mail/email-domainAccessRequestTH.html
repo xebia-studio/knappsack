@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack Domain Access Request</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+<p th:text="#{greeting(${user.fullName})}" th:if="${user}">
+    Hello, Peter Static!
+</p>
+<p th:unless="${user}">
+    Hello!
+</p>
+
+<p>
+    A request has been made by <b><span th:text="${requesterFirstName}">FirstName</span> <span th:text="${requesterLastName}">LastName</span></b> (<span th:text="${requesterEmail}">Email</span>) to join the <span th:text="#{${domain.domainType.messageKey}}">DomainType</span> <b><span th:text="${domain.name}">DomainName</span></b>.  Please navigate to the below url to approve or deny the request.
+</p>
+
+<p>
+    <ul>
+        <li style="list-style-type: none;"><span>Name:</span> <b><span th:text="${requesterFirstName}">FirstName</span> <span th:text="${requesterLastName}">LastName</span></b></li>
+        <li style="list-style-type: none;"><span>Company Name:</span> <b><span th:text="${#strings.isEmpty(requesterCompanyName)} ? #{notApplicable} : ${requesterCompanyName}">CompanyName</span></b></li>
+        <li style="list-style-type: none;"><span>Address:</span> <b><span th:text="${#strings.isEmpty(requesterAddress)} ? #{notApplicable} : ${requesterAddress}">Address</span></b></li>
+        <li style="list-style-type: none;"><span>Phone #:</span> <b><span th:text="${#strings.isEmpty(requesterPhone)} ? #{notApplicable} : ${requesterPhone}">PhoneNumber</span></b></li>
+        <li style="list-style-type: none;"><span>Email:</span> <b><span th:text="${#strings.isEmpty(requesterEmail)} ? #{notApplicable} : ${requesterEmail}">EmailAddress</span></b></li>
+        <li style="list-style-type: none;"><span>Device Type:</span> <b><span th:text="${#bools.isTrue(requesterDeviceType)} ? #{${requesterDeviceType.messageKey}} : #{notApplicable}">DeviceType</span></b></li>
+        <li style="list-style-type: none;"><span>Region:</span> <b><span th:text="${#bools.isTrue(requesterRegion)} ? ${requesterRegion.name} : #{notApplicable}">Region</span></b></li>
+        <li style="list-style-type: none;"><span>Languages:</span> <b><span th:each="language,iterStat : ${requesterLanguages}" th:text="${iterStat.last} ? #{${language.messageKey}} : #{${language.messageKey}} + ', '">Languages</span></b></li>
+    </ul>
+</p>
+
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+
+<p>
+    Regards, <br/>
+    &emsp; <em>The Knappsack Team</em>
+</p>
+</body>
+</html>

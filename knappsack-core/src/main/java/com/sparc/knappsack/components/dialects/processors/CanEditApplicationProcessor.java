@@ -55,7 +55,7 @@ public class CanEditApplicationProcessor extends AbstractConditionalVisibilityAt
 
             Application application = applicationService.get((Long) value);
             if (application != null) {
-                return userService.canUserEditApplication(user.getId(), application.getId());
+                return userService.canUserEditApplication(user, application);
             }
         }
 

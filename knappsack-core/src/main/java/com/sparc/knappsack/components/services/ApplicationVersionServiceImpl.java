@@ -9,6 +9,7 @@ import com.sparc.knappsack.enums.AppFileType;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.forms.UploadApplicationVersion;
 import com.sparc.knappsack.models.ApplicationVersionModel;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,10 +42,6 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
     @Autowired(required = true)
     private GroupService groupService;
 
-    @Qualifier("organizationService")
-    @Autowired(required = true)
-    private OrganizationService organizationService;
-
     @Qualifier("storageConfigurationService")
     @Autowired(required = true)
     protected StorageConfigurationService storageConfigurationService;
@@ -56,6 +53,10 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
     @Qualifier("appFileService")
     @Autowired(required = true)
     private AppFileService appFileService;
+
+    @Qualifier("applicationVersionUserStatisticService")
+    @Autowired(required = true)
+    private ApplicationVersionUserStatisticService applicationVersionUserStatisticService;
 
     @Override
     public void add(ApplicationVersion applicationVersion) {
@@ -100,11 +101,9 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
         }
         if (application != null && application.getApplicationVersions() != null) {
 
-            StorageConfiguration storageConfiguration = application.getStorageConfiguration();
-            StorageService storageService = getStorageService(storageConfiguration.getId());
+            applicationVersionUserStatisticService.deleteAllForApplicationVersion(applicationVersion);
 
-            storageService.delete(applicationVersion.getInstallationFile());
-            storageService.delete(applicationVersion.getProvisioningProfile());
+            deleteFiles(applicationVersion);
 
             application.getApplicationVersions().remove(applicationVersion);
             applicationVersionDao.delete(applicationVersion);
@@ -113,9 +112,15 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
 
     @Override
     public void updateAppState(Long appVersionId, AppState appState) {
-        ApplicationVersion appVersion = applicationVersionDao.get(appVersionId);
-        appVersion.setAppState(appState);
-        applicationVersionDao.update(appVersion);
+        updateAppState(applicationVersionDao.get(appVersionId), appState);
+    }
+
+    @Override
+    public void updateAppState(ApplicationVersion applicationVersion, AppState appState) {
+        if (applicationVersion != null && appState != null) {
+            applicationVersion.setAppState(appState);
+            applicationVersionDao.update(applicationVersion);
+        }
     }
 
     @Override
@@ -123,13 +128,15 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
         ApplicationVersion versionToSave = null;
         if (version != null) {
             Application application = applicationService.get(version.getParentId());
-            if (application != null && version != null) {
+            if (application != null) {
 
                 versionToSave = createApplicationVersion(version);
 
                 StorageService storageService = getStorageService(application.getStorageConfiguration().getId());
                 Group group = groupService.get(version.getGroupId());
                 Long orgStorageConfigId = group.getOrganization().getOrgStorageConfig().getId();
+
+                setIOSPlistInfoOnApplication(version, versionToSave);
 
                 if (version.getAppFile() != null) {
                     AppFile installationAppFile = storeInstallationFile(version, orgStorageConfigId, application.getStorageConfiguration().getId(), storageService, versionToSave.getUuid());
@@ -143,24 +150,29 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
                     versionToSave.setProvisioningProfile(provisioningAppFile);
                 }
 
-                setIOSPlistInfoOnApplication(version, versionToSave);
-
                 versionToSave.setApplication(application);
 
-                List<Group> existingGuestGroups = groupService.getGuestGroups(versionToSave);
-                if (existingGuestGroups != null) {
-                    for (Group guestGroup : existingGuestGroups) {
-                        guestGroup.getGuestApplicationVersions().remove(versionToSave);
+                List<Group> guestGroups = versionToSave.getGuestGroups();
+
+                //Remove old guest groups
+                List<Group> guestGroupsToRemove = new ArrayList<Group>();
+                for (Group guestGroup : guestGroups) {
+                    if (!version.getGuestGroupIds().contains(guestGroup.getId())) {
+                        guestGroupsToRemove.add(guestGroup);
                     }
+                }
+                for (Group guestGroupToRemove : guestGroupsToRemove) {
+                    versionToSave.getGuestGroups().remove(guestGroupToRemove);
                 }
 
                 List<Long> guestGroupIds = version.getGuestGroupIds();
                 for (Long guestGroupId : guestGroupIds) {
                     Group guestGroup = groupService.get(guestGroupId);
 
-                    if (!guestGroup.getGuestApplicationVersions().contains(versionToSave)) {
-                        guestGroup.getGuestApplicationVersions().add(versionToSave);
+                    if (!versionToSave.getGuestGroups().contains(guestGroup)) {
+                        versionToSave.getGuestGroups().add(guestGroup);
                     }
+
                 }
 
                 if (!application.getApplicationVersions().contains(versionToSave)) {
@@ -174,22 +186,26 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
         return versionToSave;
     }
 
+    public List<ApplicationVersion> getAll() {
+        return applicationVersionDao.getAll();
+    }
+
     @Override
     public List<ApplicationVersion> getAll(Long organizationId) {
         return getAll(organizationId, AppState.values());
     }
 
+    public List<ApplicationVersion> getAll(List<Organization> organizations, AppState... appStates) {
+        if(organizations.isEmpty()) {
+            return new ArrayList<ApplicationVersion>();
+        }
+        return applicationVersionDao.getAll(organizations, appStates);
+    }
+
+
     @Override
     public List<ApplicationVersion> getAll(Long organizationId, AppState... appStates) {
-        List<ApplicationVersion> versions = new ArrayList<ApplicationVersion>();
-        Organization organization = organizationService.get(organizationId);
-        if (organization != null && appStates != null && appStates.length > 0) {
-            List<Group> groups = organization.getGroups();
-            for (Group group : groups) {
-                versions.addAll(getAll(group, appStates));
-            }
-        }
-        return versions;
+        return applicationVersionDao.getAll(organizationId, appStates);
     }
 
     @Override
@@ -219,8 +235,13 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
 
     @Override
     public ApplicationVersionModel createApplicationVersionModel(Long applicationVersionId) {
+        return createApplicationVersionModel(get(applicationVersionId));
+    }
+
+    @Override
+    public ApplicationVersionModel createApplicationVersionModel(ApplicationVersion applicationVersion) {
         ApplicationVersionModel model = null;
-        ApplicationVersion applicationVersion = get(applicationVersionId);
+
         if (applicationVersion != null) {
             model = new ApplicationVersionModel();
             model.setId(applicationVersion.getId());
@@ -235,7 +256,33 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
                 model.setInstallationFile(appFileService.createAppFileModel(installationFile.getId()));
             }
         }
+
         return model;
+    }
+
+    @Override
+    public void deleteAllForApplication(Application application) {
+        if (application != null) {
+            for (ApplicationVersion applicationVersion : application.getApplicationVersions()) {
+
+                applicationVersion.setGuestGroups(null);
+
+                applicationVersionUserStatisticService.deleteAllForApplicationVersion(applicationVersion);
+
+                deleteFiles(applicationVersion);
+                applicationVersion.setInstallationFile(null);
+                applicationVersion.setProvisioningProfile(null);
+            }
+
+            applicationVersionDao.deleteAllForApplication(application);
+        }
+    }
+
+    private void deleteFiles(ApplicationVersion applicationVersion) {
+        if (applicationVersion != null) {
+            appFileService.delete(applicationVersion.getInstallationFile());
+            appFileService.delete(applicationVersion.getProvisioningProfile());
+        }
     }
 
     @Override
@@ -266,6 +313,8 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
         }
         uploadApplicationVersion.setStorageConfigurationId(storageConfigurationId);
         applicationVersion.setStorageConfiguration(storageConfigurationService.get(storageConfigurationId));
+
+        save(applicationVersion);
 
         return applicationVersion;
     }
@@ -299,15 +348,16 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
             try {
                 inputStream = new ZipInputStream(uploadApplicationVersion.getAppFile().getInputStream());
                 ZipEntry zipEntry = inputStream.getNextEntry();
-                boolean payloadLocated = false;
+                boolean appLocated = false;
                 String infoPlistName = "";
                 while (zipEntry != null) {
-                    if (payloadLocated) {
-                        payloadLocated = false;
-                        infoPlistName = zipEntry.getName() + "Info.plist";
-                    }
-                    if (zipEntry.getName().equals("Payload/")) {
-                        payloadLocated = true;
+                    if (!appLocated && StringUtils.endsWithAny(zipEntry.getName(), new String[] {".app", ".app/"})) {
+                        if (zipEntry.getName().endsWith("/")) {
+                            infoPlistName = zipEntry.getName() + "Info.plist";
+                        } else {
+                            infoPlistName = zipEntry.getName() + "/" + "Info.plist";
+                        }
+                        appLocated = true;
                     } else if (zipEntry.getName().equalsIgnoreCase(infoPlistName)) {
                         break;
                     }

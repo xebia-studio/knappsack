@@ -55,6 +55,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Autowired(required = true)
     private EventWatchService eventWatchService;
 
+    @Qualifier("applicationVersionService")
+    @Autowired(required = true)
+    private ApplicationVersionService applicationVersionService;
+
     @Override
     public void add(Application application) {
         applicationDao.add(application);
@@ -88,36 +92,30 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         if (application != null) {
 
-            deleteApplicationFilesAndVersions(id);
+            deleteApplicationFilesAndVersions(application);
 
-            Group group = groupService.getOwnedGroup(application);
+            Group group = application.getOwnedGroup();
             group.getOwnedApplications().remove(application);
-            groupService.save(group);
             applicationDao.delete(application);
         }
     }
 
     @Override
-    public void deleteApplicationFilesAndVersions(Long applicationId) {
-        Application application = get(applicationId);
+    public void deleteApplicationFilesAndVersions(Application application) {
 
         if (application != null) {
             eventWatchService.deleteAllEventWatchForNotifiable(application);
 
-            StorageConfiguration storageConfiguration = application.getStorageConfiguration();
-            StorageService storageService = storageServiceFactory.getStorageService(storageConfiguration.getStorageType());
+            applicationVersionService.deleteAllForApplication(application);
+            application.setApplicationVersions(null);
 
-            storageService.delete(application.getIcon());
+            appFileService.delete(application.getIcon());
+            application.setIcon(null);
 
             for (AppFile screenShot : application.getScreenShots()) {
-                storageService.delete(screenShot);
+                appFileService.delete(screenShot);
             }
-
-            List<ApplicationVersion> applicationVersions = application.getApplicationVersions();
-            for (ApplicationVersion applicationVersion : applicationVersions) {
-                deleteVersion(application, applicationVersion, false);
-            }
-            application.getApplicationVersions().clear();
+            application.setScreenShots(null);
         }
     }
 
@@ -142,10 +140,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     public List<ApplicationModel> createApplicationModels(List<Application> applications) {
         List<ApplicationModel> items = new ArrayList<ApplicationModel>();
         for (Application application : applications) {
-            ApplicationModel item = new ApplicationModel();
-            mapApplicationToModel(application, item);
-
-            items.add(item);
+            ApplicationModel item = createApplicationModel(application);
+            if (item != null) {
+                items.add(item);
+            }
         }
 
         return items;
@@ -153,14 +151,17 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public ApplicationModel createApplicationModel(Long applicationId) {
-        Application application = applicationDao.get(applicationId);
-        if (application != null) {
-            ApplicationModel model = new ApplicationModel();
-            mapApplicationToModel(application, model);
+        return createApplicationModel(applicationDao.get(applicationId));
+    }
 
-            return model;
+    @Override
+    public ApplicationModel createApplicationModel(Application application) {
+        ApplicationModel model = null;
+        if (application != null) {
+            model = new ApplicationModel();
+            mapApplicationToModel(application, model);
         }
-        return null;
+        return model;
     }
 
     private void mapApplicationToModel(Application application, ApplicationModel model) {
@@ -170,11 +171,8 @@ public class ApplicationServiceImpl implements ApplicationService {
             model.setDescription(application.getDescription());
             model.setApplicationType(application.getApplicationType());
             model.setIcon(appFileService.createImageModel(application.getIcon()));
-
-            Group group = groupService.getOwnedGroup(application);
-            if (group != null) {
-                model.setGroupId(group.getId());
-            }
+            model.setGroupId(application.getOwnedGroup().getId());
+            model.setGroupName(application.getOwnedGroup().getName());
 
             List<ImageModel> screenShotImageModels = new ArrayList<ImageModel>();
             for (AppFile screenShot : application.getScreenShots()) {
@@ -200,6 +198,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setName(uploadApplication.getName());
         application.setDescription(uploadApplication.getDescription());
         application.setCategory(categoryService.get(uploadApplication.getCategoryId()));
+        application.setOwnedGroup(groupService.get(uploadApplication.getGroupId()));
 
         if (application != null && (application.getId() == null || application.getId() <= 0)) {
             application.setApplicationType(uploadApplication.getApplicationType());
@@ -212,6 +211,8 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
         uploadApplication.setStorageConfigurationId(storageConfigurationId);
         application.setStorageConfiguration(storageConfigurationService.get(storageConfigurationId));
+
+        add(application);
 
         return application;
     }

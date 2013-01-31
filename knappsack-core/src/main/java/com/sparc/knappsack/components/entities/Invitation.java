@@ -1,6 +1,5 @@
 package com.sparc.knappsack.components.entities;
 
-import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.NotifiableType;
 
 import javax.persistence.*;
@@ -9,7 +8,8 @@ import javax.persistence.*;
  * An invitation represents a request by an admin of a domain (group, organization, etc...) to a user for access to the admin's domain.
  */
 @Entity
-@Table(name = "INVITATION", uniqueConstraints = {@UniqueConstraint(columnNames={"EMAIL", "DOMAIN_TYPE", "DOMAIN_ID", "ROLE_ID"})})
+@Table(name = "INVITATION", uniqueConstraints = {@UniqueConstraint(name = "UNQ_INVITATION", columnNames={"EMAIL", "DOMAIN_ID", "ROLE_ID"})})
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class Invitation extends BaseEntity implements Notifiable {
 
     private static final long serialVersionUID = -1170543161710859798L;
@@ -22,15 +22,12 @@ public class Invitation extends BaseEntity implements Notifiable {
     @Column(name = "EMAIL")
     private String email;
 
-    @Column(name = "DOMAIN_TYPE")
-    @Enumerated(EnumType.STRING)
-    private DomainType domainType;
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "DOMAIN_ID", nullable = false)
+    private Domain domain;
 
-    @Column(name = "DOMAIN_ID")
-    private Long domainId;
-
-    @OneToOne(cascade = CascadeType.REFRESH)
-    @JoinColumn(name = "ROLE_ID")
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = false)
+    @JoinColumn(name = "ROLE_ID", nullable = false)
     private Role role;
 
     public Long getId() {
@@ -45,20 +42,12 @@ public class Invitation extends BaseEntity implements Notifiable {
         this.email = email;
     }
 
-    public DomainType getDomainType() {
-        return domainType;
+    public Domain getDomain() {
+        return initializeAndUnproxy(domain);
     }
 
-    public void setDomainType(DomainType domainType) {
-        this.domainType = domainType;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+    public void setDomain(Domain domain) {
+        this.domain = domain;
     }
 
     public Role getRole() {

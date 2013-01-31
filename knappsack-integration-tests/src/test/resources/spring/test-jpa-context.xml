@@ -19,6 +19,29 @@
 
     <context:property-placeholder location="classpath:properties/test-jdbc.properties" ignore-unresolvable="true"/>
 
+    <!--TO TEST WITH FLYWAY-->
+    <!--<beans:bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean" depends-on="flyway"-->
+                <!--p:packagesToScan="com.sparc.knappsack.components.entities"-->
+                <!--p:jpaDialect-ref="jpaDialect"-->
+                <!--p:dataSource-ref="dataSource"-->
+                <!--p:jpaVendorAdapter-ref="jpaVendorAdapter"-->
+                <!--p:persistenceUnitName="ComposerJPA"-->
+                <!--p:jpaPropertyMap-ref="jpaPropertyMap"/>-->
+
+    <!--<beans:bean id="flyway" class="com.googlecode.flyway.core.Flyway" init-method="migrate">-->
+        <!--<beans:property name="dataSource" ref="dataSource"/>-->
+    <!--</beans:bean>-->
+
+    <!--<util:map id="jpaPropertyMap">-->
+        <!--<beans:entry key="hibernate.hbm2ddl.auto" value="none"/>-->
+        <!--<beans:entry key="hibernate.dialect" value="org.hibernate.dialect.MySQL5InnoDBDialect"/>-->
+        <!--<beans:entry key="hibernate.show_sql" value="false"/>-->
+        <!--<beans:entry key="hibernate.cache.use_second_level_cache" value="true"/>-->
+        <!--<beans:entry key="hibernate.cache.use_query_cache" value="true"/>-->
+        <!--<beans:entry key="hibernate.cache.region.factory_class" value="com.sparc.knappsack.components.cache.KnappsackIntegrationTestCacheRegionFactory"/>-->
+    <!--</util:map>-->
+    <!--END TO TEST WITH FLYWAY-->
+
     <beans:bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
                 p:packagesToScan="com.sparc.knappsack.components.entities"
                 p:jpaDialect-ref="jpaDialect"
@@ -28,19 +51,30 @@
                 p:jpaPropertyMap-ref="jpaPropertyMap"/>
 
     <util:map id="jpaPropertyMap">
-        <beans:entry key="eclipselink.ddl-generation" value="create-tables"/>
-        <beans:entry key="eclipselink.ddl-generation.output-mode" value="both"/>
-        <beans:entry key="eclipselink.weaving" value="false"/>
-        <beans:entry key="eclipselink.logging.level" value="FINEST"/>
+        <beans:entry key="hibernate.hbm2ddl.auto" value="create-drop"/>
+        <beans:entry key="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
+        <beans:entry key="hibernate.show_sql" value="false"/>
     </util:map>
 
-    <beans:bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter"
+    <beans:bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"
                 p:showSql="false"/>
 
-    <beans:bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.EclipseLinkJpaDialect"/>
-
+    <beans:bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
 
     <!-- Declare a datasource that has pooling capabilities-->
+
+    <!--TO TEST WITH FLYWAY-->
+    <!--<beans:bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"-->
+                <!--destroy-method="close"-->
+                <!--p:driverClass="${test.jdbc.driverClassName}"-->
+                <!--p:jdbcUrl="${test.jdbc.url}"-->
+                <!--p:acquireIncrement="5"-->
+                <!--p:idleConnectionTestPeriod="60"-->
+                <!--p:maxPoolSize="10"-->
+                <!--p:maxStatements="10"-->
+                <!--p:minPoolSize="5"/>-->
+    <!--END TO TEST WITH FLYWAY-->
+
     <beans:bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
                 destroy-method="close"
                 p:driverClass="${test.jdbc.driverClassName}"
@@ -54,7 +88,6 @@
                 p:minPoolSize="5"/>
 
 
-
     <beans:bean id="txManager" class="org.springframework.orm.jpa.JpaTransactionManager">
         <beans:property name="dataSource" ref="dataSource"/>
         <beans:property name="entityManagerFactory" ref="entityManagerFactory"/>
@@ -62,6 +95,5 @@
     </beans:bean>
 
     <tx:annotation-driven transaction-manager="txManager" proxy-target-class="true"/>
-
 
 </beans:beans>

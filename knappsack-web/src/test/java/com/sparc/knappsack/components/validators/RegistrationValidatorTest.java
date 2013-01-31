@@ -137,7 +137,6 @@ public class RegistrationValidatorTest {
         registrationForm.setFirstPassword("firstPassword");
         registrationForm.setSecondPassword("");
 
-
         validator.validate(registrationForm, errors);
         assertTrue(errors.hasErrors());
         Assert.assertEquals(errors.getErrorCount(), 1);

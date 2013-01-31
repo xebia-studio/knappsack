@@ -1,3 +1,5 @@
+@import url("TableTools_JUI.min.css");
+@import url("TableTools.min.css");
 
 div.dataTables_length label {
 	float: left;
@@ -45,3 +47,4 @@ table.table thead .sorting_desc_disabled { background: url('../images/sort_desc_
 table.dataTable th:active {
 	outline: none;
 }
+

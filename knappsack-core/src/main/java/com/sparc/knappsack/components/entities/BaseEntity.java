@@ -1,5 +1,7 @@
 package com.sparc.knappsack.components.entities;
 
+import org.hibernate.Hibernate;
+import org.hibernate.proxy.HibernateProxy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -139,5 +141,19 @@ public class BaseEntity implements Serializable {
     @Override
     public int hashCode() {
         return uuid != null ? uuid.hashCode() : super.hashCode();
+    }
+
+    @Transient
+    public static <T> T initializeAndUnproxy(T entity) {
+        if (entity == null) {
+            return entity;
+        }
+
+        Hibernate.initialize(entity);
+        if (entity instanceof HibernateProxy) {
+            entity = (T) ((HibernateProxy) entity).getHibernateLazyInitializer()
+                    .getImplementation();
+        }
+        return entity;
     }
 }

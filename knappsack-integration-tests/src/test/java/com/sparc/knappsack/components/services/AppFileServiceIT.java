@@ -85,7 +85,6 @@ public class AppFileServiceIT extends AbstractServiceTests {
         storageConfigurations.add(storageConfiguration);
         orgStorageConfig.setStorageConfigurations(storageConfigurations);
         organization.setOrgStorageConfig(orgStorageConfig);
-        organization.setAccessCode(UUID.randomUUID().toString());
 
         Category category = new Category();
         category.setOrganization(organization);

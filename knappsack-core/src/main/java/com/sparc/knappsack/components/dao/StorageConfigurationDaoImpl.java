@@ -26,6 +26,11 @@ public class StorageConfigurationDaoImpl extends BaseDao implements StorageConfi
         return query().from(storageConfiguration).where(storageConfiguration.name.equalsIgnoreCase(name.trim())).uniqueResult(storageConfiguration);
     }
 
+    @Override
+    public StorageConfiguration getRegistrationDefault() {
+        return query().from(storageConfiguration).where(storageConfiguration.registrationDefault.isTrue()).uniqueResult(storageConfiguration);
+    }
+
     public void delete(StorageConfiguration storageConfiguration) {
         getEntityManager().remove(getEntityManager().merge(storageConfiguration));
     }

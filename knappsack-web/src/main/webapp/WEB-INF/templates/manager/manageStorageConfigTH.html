@@ -12,15 +12,17 @@
     <script type="text/javascript" th:inline="javascript">
         /*<![CDATA[*/
 
-        $(document).ready(function() {
-
+        $(document).ready(function () {
             $("#baseLocationLabel").text("* Local Path");
+
+            var isEdit = /*[[${isEdit}]]*/ false;
+            if (isEdit) {
+                var storageType = $('#storageType option:selected').val();
+            }
 
             $("#storageType").live("change", function () {
                 var storageType = $("#storageType").val();
-                if (storageType == 'LOCAL') {
-                    $("#baseLocationLabel").text("* Local Path");
-                }
+                $("#baseLocationLabel").text("* Local Path");
             });
         });
         /*]]>*/
@@ -37,96 +39,123 @@
                 <ul class="breadcrumb">
                     <li class="active">
                         <a href="#" th:text="${originalName}" th:if="${#bools.isTrue(isEdit)}"/>
-                        <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageStorageConfig.create}">Create Storage Configuration</a>
+                        <a href="#" th:if="${#bools.isFalse(isEdit)}">Create Storage Configuration</a>
                     </li>
                 </ul>
 
-                <h1 th:if="${#bools.isTrue(isEdit)}" style="text-align: left" th:text="#{desktop.manageStorageConfig.manage}">Manage Storage Configuration</h1>
+                <h1 th:if="${#bools.isTrue(isEdit)}" style="text-align: left">Manage Storage Configuration</h1>
 
-                <h1 th:if="${#bools.isFalse(isEdit)}" style="text-align: left" th:text="#{desktop.manageStorageConfig.create}">Create Storage Configuration</h1>
+                <h1 th:if="${#bools.isFalse(isEdit)}" style="text-align: left">Create Storage Configuration</h1>
 
-                <p class="lead" th:if="${#bools.isTrue(isEdit)}" th:text="#{desktop.manageStorageConfig.manageInfo}">
+                <p class="lead" th:if="${#bools.isTrue(isEdit)}">
                     Manage the information for this storage configuration.
                 </p>
 
-                <p class="lead" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageStorageConfig.enterInfo}">
+                <p class="lead" th:if="${#bools.isFalse(isEdit)}">
                     Enter information for your new storage configuration.
                 </p>
             </header>
 
-            <div class="row-fluid">
-                <div class="span7 well">
+            <div class="span7 well">
 
-                    <form id="storageForm" th:object="${storageForm}" th:action="@{/manager/saveStorageConfiguration}" method="POST"
-                          class="form-horizontal">
-                        <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
-                            <h1 th:text="#{errors.header}"/>
-                            <ul th:if="${#fields.hasErrors('*')}">
-                                <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
-                            </ul>
+                <form id="storageForm" th:object="${storageForm}" th:action="@{/manager/saveStorageConfiguration}"
+                      method="POST"
+                      class="form-horizontal">
+                    <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                        <h1 th:text="#{errors.header}"/>
+                        <ul th:if="${#fields.hasErrors('*')}">
+                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                        </ul>
+                    </div>
+                    <fieldset>
+                        <input type="hidden" th:field="*{id}"/>
+                        <input type="hidden" name="editing" th:value="*{editing}"/>
+
+                        <div class="control-group">
+                            <label class="control-label" for="storageType"><span class="required">*</span> <span
+                                    th:text="#{desktop.manageStorageConfig.type}">Type</span></label>
+
+                            <div class="controls">
+                                <select id="storageType" th:field="*{storageType}" autofocus="autofocus"
+                                        required="required" th:disabled="${#bools.isTrue(isEdit)}">
+                                    <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                    <option th:each="storage : ${storageTypes}"
+                                            th:value="${storage}" th:text="#{${storage.messageKey}}"></option>
+                                </select>
+                                <input type="hidden" th:field="*{storageType}" th:if="${#bools.isTrue(isEdit)}"/>
+                            </div>
                         </div>
-                        <fieldset>
-                            <input type="hidden" th:field="*{id}"/>
-                            <input type="hidden" name="editing" th:value="*{editing}"/>
+                        <div class="control-group">
+                            <label class="control-label" for="name"><span class="required">*</span> <span
+                                    th:text="#{desktop.manageStorageConfig.name}">Name</span></label>
 
-                            <div class="control-group">
-                                <label class="control-label" for="storageType"><span class="required">*</span> <span th:text="#{desktop.manageStorageConfig.type}">Type</span></label>
-
-                                <div class="controls">
-                                    <select id="storageType" th:field="*{storageType}" autofocus="autofocus" required="required" th:disabled="${#bools.isTrue(isEdit)}">
-                                        <option value="" th:text="#{select.option.default}">--Please Select--</option>
-                                        <option th:each="storage : ${storageTypes}"
-                                                th:value="${storage}" th:text="#{${storage.messageKey}}"></option>
-                                    </select>
-                                    <input type="hidden" th:field="*{storageType}" th:if="${#bools.isTrue(isEdit)}"/>
-                                </div>
+                            <div class="controls">
+                                <input id="name" type="text" th:field="*{name}" required="required"/>
                             </div>
-                            <div class="control-group">
-                                <label class="control-label" for="name"><span class="required">*</span> <span th:text="#{desktop.manageStorageConfig.name}">Name</span></label>
-
-                                <div class="controls">
-                                    <input id="name" type="text" th:field="*{name}" required="required"/>
-                                </div>
-                            </div>
-                            <div class="control-group">
-                                <label class="control-label" id="baseLocationLabel" for="baseLocation"><span class="required">*</span> <span>URL</span></label>
-
-                                <div class="controls">
-                                    <input xml:id="baseLocation" type="text" th:field="*{baseLocation}" required="required" th:readonly="${#bools.isTrue(isEdit)}"/>
-                                </div>
-                            </div>
-
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary" th:text="#{desktop.manageStorageConfig.submit}">Submit</button>
-                            </div>
-
-                        </fieldset>
-
-                        <div class="alert alert-info">
-                            <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
                         </div>
-                    </form>
+                        <div class="control-group">
+                            <label class="control-label" id="baseLocationLabel" for="baseLocation"><span
+                                    class="required">*</span> <span>URL</span></label>
 
-                </div>
-                <div class="span5">
-                    <dl>
-                        <dt th:text="#{desktop.manageStorageConfig.storageType}">Storage Type</dt>
-                        <dd th:text="#{desktop.manageStorageConfig.storageType.help}">Select 'local' if you want to store files on your local server or 'S3' if you wish to host your files with Amazon's S3 service.</dd>
-                        <dt th:text="#{desktop.manageStorageConfig.name}">Name</dt>
-                        <dd th:text="#{desktop.manageStorageConfig.name.help}">The name of this particular storage configuration.  This will be used to identify storage configurations when multiple are available.</dd>
-                        <dt th:text="#{desktop.manageStorageConfig.localPath}">Local Path</dt>
-                        <dd th:text="#{desktop.manageStorageConfig.localPath.help.1}">If you selected a type of 'Local', this is the base path where you want your files stored.  For example:</dd>
-                        <dd th:text="#{desktop.manageStorageConfig.localPath.help.2}">c:/knappsack/files or /home/user/knappsack/files</dd>
-                    </dl>
-                </div>
+                            <div class="controls">
+                                <input xml:id="baseLocation" type="text" th:field="*{baseLocation}" required="required"
+                                       th:readonly="${#bools.isTrue(isEdit)}"/>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="controls" th:inline="text">
+                                <input type="checkbox" id="registrationDefault" th:field="*{registrationDefault}"/>
+                                [[#{desktop.manageStorageConfig.default}]]
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button id="submitBtn" type="submit" class="btn btn-primary"
+                                    th:text="#{desktop.manageStorageConfig.submit}">Submit
+                            </button>
+                        </div>
+
+                    </fieldset>
+
+                    <div class="alert alert-info">
+                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                    </div>
+                </form>
+
             </div>
+            <div class="span3 well" style="float: right">
+                <dl>
+                    <dt th:text="#{desktop.manageStorageConfig.storageType}">Storage Type</dt>
+                    <dd th:text="#{desktop.manageStorageConfig.storageType.help}">Select 'local' if you want to store
+                        files on your local server.
+                    </dd>
+                    <dt th:text="#{desktop.manageStorageConfig.name}">Name</dt>
+                    <dd th:text="#{desktop.manageStorageConfig.name.help}">The name of this particular storage
+                        configuration. This will be used to identify storage configurations when multiple are available.
+                    </dd>
+                    <dt th:text="#{desktop.manageStorageConfig.localPath}">Local Path</dt>
+                    <dd th:text="#{desktop.manageStorageConfig.localPath.help.1}">If you selected a type of 'Local',
+                        this is the base path where you want your files stored. For example:
+                    </dd>
+                    <dd th:text="#{desktop.manageStorageConfig.localPath.help.2}">c:/knappsack/files or
+                        /home/user/knappsack/files
+                    </dd>
+                    <dt th:text="#{desktop.manageStorageConfig.registrationDefault}">Registration Default</dt>
+                    <dd th:text="#{desktop.manageStorageConfig.registrationDefault.help}">By setting this field you are
+                        specifying that any public Organization registrations will use this storage configuration. Note:
+                        Only one storage configuration can be default at a time.
+                    </dd>
+                </dl>
+            </div>
+
         </div>
 
     </div>
 
-</div>
+    <footer th:substituteby="/includesTH :: footer"></footer>
 
-<footer th:substituteby="/includesTH :: footer"></footer>
+</div>
 
 <section id="scripts">
     <section th:include="/includesTH :: required_scripts"/>

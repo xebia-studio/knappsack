@@ -77,7 +77,6 @@ public class LocalStorageServiceIT extends AbstractServiceTests {
         storageConfigurations.add(getStorageConfiguration());
         orgStorageConfig.setStorageConfigurations(storageConfigurations);
         organization.setOrgStorageConfig(orgStorageConfig);
-        organization.setAccessCode(UUID.randomUUID().toString());
         Category category = new Category();
         category.setStorageConfiguration(storageConfigurations.get(0));
         category.setDescription("Test Category");

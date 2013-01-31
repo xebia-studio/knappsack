@@ -34,6 +34,14 @@ public class StorageConfigurationServiceImpl implements StorageConfigurationServ
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void add(StorageConfiguration storageConfiguration) {
         if (storageConfiguration != null) {
+            if (storageConfiguration.isRegistrationDefault()) {
+                StorageConfiguration currentDefault = storageConfigurationDao.getRegistrationDefault();
+                if (currentDefault != null) {
+                    currentDefault.setRegistrationDefault(false);
+                    update(currentDefault);
+                }
+            }
+
             storageConfigurationDao.add(storageConfiguration);
         }
     }
@@ -45,6 +53,11 @@ public class StorageConfigurationServiceImpl implements StorageConfigurationServ
             storageConfiguration = storageConfigurationDao.get(id);
         }
         return storageConfiguration;
+    }
+
+    @Override
+    public StorageConfiguration getRegistrationDefault() {
+        return storageConfigurationDao.getRegistrationDefault();
     }
 
     @Override
@@ -95,6 +108,14 @@ public class StorageConfigurationServiceImpl implements StorageConfigurationServ
             StorageConfiguration storageConfiguration = get(storageForm.getId());
 
             if (storageConfiguration != null) {
+                if (storageForm.isRegistrationDefault()) {
+                    StorageConfiguration currentDefault = storageConfigurationDao.getRegistrationDefault();
+                    if (currentDefault != null && !currentDefault.equals(storageConfiguration)) {
+                        currentDefault.setRegistrationDefault(false);
+                        update(currentDefault);
+                    }
+                }
+
                 StorageService storageService = storageServiceFactory.getStorageService(storageConfiguration.getStorageType());
                 storageService.mapFormToEntity(storageForm, storageConfiguration);
 

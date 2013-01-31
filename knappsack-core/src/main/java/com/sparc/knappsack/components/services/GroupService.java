@@ -3,29 +3,25 @@ package com.sparc.knappsack.components.services;
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.ApplicationVersion;
 import com.sparc.knappsack.components.entities.Group;
-import com.sparc.knappsack.components.entities.User;
-import com.sparc.knappsack.enums.Status;
 import com.sparc.knappsack.forms.GroupForm;
 import com.sparc.knappsack.models.GroupModel;
 
 import java.util.List;
 
-public interface GroupService extends EntityService<Group> {
+public interface GroupService extends EntityService<Group>, DomainEntityService<Group> {
     void save(Group group);
 
     Group get(String name, Long organizationId);
 
     void mapGroupToGroupForm(Group group, GroupForm groupForm);
 
-    void createGroup(GroupForm groupForm);
+    Group createGroup(GroupForm groupForm);
 
     void editGroup(GroupForm groupForm);
 
     List<Group> getAll();
 
     Group getByAccessCode(String accessCode);
-
-    boolean doesRequestExist(User user, Group group, Status status);
 
     List<Group> getGuestGroups(ApplicationVersion applicationVersion);
 
@@ -53,5 +49,9 @@ public interface GroupService extends EntityService<Group> {
      */
     boolean isUserLimit(Group group);
 
-    GroupModel createGroupModel(Long groupId, boolean includeOrganizationModel);
+    GroupModel createGroupModel(Long groupId);
+
+    GroupModel createGroupModel(Group group);
+
+    GroupModel createGroupModelWithOrganization(Group group, boolean includeOrgStorageConfig, boolean includeExternalData);
 }

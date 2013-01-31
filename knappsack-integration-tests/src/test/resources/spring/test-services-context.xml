@@ -8,7 +8,6 @@
 
     <bean id="emailDeliveryService" class="com.sparc.knappsack.components.services.EmailServiceImpl"/>
 
-
     <context:property-placeholder location="classpath:properties/test-security.properties" ignore-unresolvable="true"/>
 
 </beans>

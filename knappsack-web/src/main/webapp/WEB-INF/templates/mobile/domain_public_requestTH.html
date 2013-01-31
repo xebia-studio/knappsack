@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='Knappsack'" >
+<head th:substituteby="/mobile/includesTH :: mobileHead" ></head>
+<body>
+<div id="requestPage" data-role="page" data-dom-cache="false" data-url="#requestPage" data-ajax="false">
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        $('#requestPage').bind('pageinit', function() {
+
+            $('#requestForm').validate();
+
+        });
+        /*]]>*/
+    </script>
+
+    <div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
+
+    <div data-role="header" data-id="mainHeader" data-theme="b">
+        <h1 id="overview" th:text="#{mobile.domainPublicRequest.requestAccess(${domainName})}">Request Access</h1>
+        <a id="installBtn" rel="external" data-theme="b" th:href="@{/auth/login}" href="/auth/login" class="ui-btn-right" data-icon="star" th:text="#{mobile.domainPublicRequest.login}">Login</a>
+    </div>
+
+    <div data-role="content">
+
+        <h3 id="headerInfo" th:text="#{mobile.domainPublicRequest.headerInfo}" th:unless="${#bools.isTrue(success)}">Enter all of your information to request access.  You will be notified at the specified email address if your request was approved.</h3>
+
+        <div th:if="${#bools.isTrue(success)}">
+            <div class="alert alert-success" style="text-align: center;">
+                <h2 th:text="#{mobile.domainPublicRequest.success.alert}">Request submitted successfully</h2>
+            </div>
+            <h3 th:text="#{mobile.domainPublicRequest.success.header.main}">Congratulations, your access request has been submitted successfully.</h3>
+            <p th:text="#{mobile.domainPublicRequest.success.header.secondary}">
+                You will be notified at the email address you specified if the request is approved.
+            </p>
+        </div>
+
+        <form id="requestForm" th:object="${domainRequestForm}" th:action="@{/auth/request/process}" action="/auth/request/process" method="POST" th:unless="${#bools.isTrue(success)}">
+            <div id="errors"  class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                <h3 th:text="#{errors.header}"/>
+                <ul>
+                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                </ul>
+            </div>
+            <fieldset>
+                <input type="hidden" id="uuid" th:field="*{domainUUID}"/>
+                <div class="control-group">
+                    <input type="text" id="firstName" th:field="*{firstName}" th:placeholder="#{mobile.domainPublicRequest.requestForm.firstName.placeholder}" placeholder="First Name" class="required" required="required"/>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="lastName" th:field="*{lastName}" th:placeholder="#{mobile.domainPublicRequest.requestForm.lastName.placeholder}" placeholder="Last Name" class="required" required="required" />
+                </div>
+                <div class="control-group">
+                    <input type="text" id="companyName" th:field="*{companyName}" th:placeholder="#{mobile.domainPublicRequest.requestForm.companyName.placeholder}" placeholder="Company Name" class="required" required="required"/>
+                </div>
+                <div class="control-group">
+                    <textarea id="address" th:field="*{address}" th:placeholder="#{mobile.domainPublicRequest.requestForm.address.placeholder}" placeholder="Address" class="required" required="required"/>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="phoneNumber" th:field="*{phoneNumber}" th:placeholder="#{mobile.domainPublicRequest.requestForm.phoneNumber.placeholder}" placeholder="Phone Number" class="required" required="required"/>
+                </div>
+                <div class="control-group">
+                    <input type="email" id="emailAddress" th:field="*{emailAddress}" th:placeholder="#{mobile.domainPublicRequest.requestForm.email.placeholder}" placeholder="Email" class="required email" required="required" />
+                </div>
+                <div class="control-group">
+                    <select id="deviceType" class="required" required="required" th:field="*{deviceType}">
+                        <option value="" th:text="#{mobile.domainPublicRequest.requestForm.deviceType.default}">--Device Type--</option>
+                        <option th:each="deviceType : ${deviceTypes}"
+                                th:value="${deviceType}" th:text="#{${deviceType.messageKey}}"></option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <select id="regions" class="required" required="required" th:field="*{region}">
+                        <option value="" th:text="#{mobile.domainPublicRequest.requestForm.region.default}">--World Region--</option>
+                        <option th:each="region : ${regions}"
+                                th:value="${region.id}" th:text="${region.name}"></option>
+                    </select>
+                </div>
+                <div class="control-group" data-role="fieldcontain">
+                    <fieldset data-role="controlgroup">
+                        <legend th:text="#{mobile.domainPublicRequest.languages.legend}">Languages</legend>
+                        <div th:each="language,iterStat : ${languages}" class="checkbox">
+                            <input type="checkbox" th:id="${'language-' + iterStat.index}" th:value="${language}" th:field="*{languages}"/>
+                            <label th:for="${'language-' + iterStat.index}" th:text="#{${language.messageKey}}"/>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="form-actions">
+                    <button data-role="submit" value="Submit" data-mini="true" data-theme="b"/>
+                </div>
+            </fieldset>
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

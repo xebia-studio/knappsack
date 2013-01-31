@@ -98,17 +98,17 @@
                                     </select>
                                 </div>
                                 <div class="pull-right">
-                                    <button type="submit" class="btn btn-primary" value="single" th:text="#{desktop.inviteUser.invite}">Invite</button>
+                                    <button id="inviteBtn" type="submit" class="btn btn-primary" value="single" th:text="#{desktop.inviteUser.invite}">Invite</button>
                                 </div>
                             </div>
 
                         </div>
 
                         <div class="well">
-                            <div class="control-group" id="contactsGoogleDiv">
-                                <label class="control-label" for="contactsGoogle" th:text="#{desktop.inviteUser.importContactsGoogle}">Import Contacts - Google CSV</label>
+                            <div class="control-group" id="contactsGmailDiv">
+                                <label class="control-label" for="contactsGmail" th:text="#{desktop.inviteUser.importContactsGmail}">Import Contacts - Gmail CSV</label>
                                 <div class="controls">
-                                    <input class="button" type="file" id="contactsGoogle" name="contactsGoogle"/>
+                                    <input class="button" type="file" id="contactsGmail" name="contactsGmail"/>
                                 </div>
                                 <div class="pull-right">
                                     <button type="submit" class="btn btn-primary" value="batch" th:text="#{desktop.inviteUser.next}">Next</button>
@@ -132,6 +132,24 @@
                 </form>
 
             </div>
+
+            <div class="span5">
+                <dl>
+                    <dt th:text="#{desktop.inviteUser.inviteMember}">Invite User</dt>
+                    <dd th:text="#{desktop.inviteUser.inviteMemberHelp}">Enter the email address and select the role for the user to invite.</dd>
+                    <dt th:text="#{desktop.inviteUser.importContacts}">Import Contacts</dt>
+                    <dd th:text="#{desktop.inviteUser.importContactsHelp}">Load a CSV file for importing users in to the system. The CSV file needs to be formatted as a table and must include a header, or first line, that defines the fields in your table and contains each element as shown in the example below. </dd>
+                    <dt th:text="#{desktop.inviteUser.importContactsGmailFormat}">Gmail CSV Format</dt>
+                    <dd th:text="#{desktop.inviteUser.importContactsGmailHelp.1}">E-mail 1 - Value,Name</dd>
+                    <dd th:text="#{desktop.inviteUser.importContactsGmailHelp.2}">user1@knappsack.com,John Doe</dd>
+                    <dd th:text="#{desktop.inviteUser.importContactsGmailHelp.3}">user2@knappsack.com,Jane Doe</dd>
+                    <dt th:text="#{desktop.inviteUser.importContactsOutlookFormat}">Outlook CSV Format</dt>
+                    <dd th:text="#{desktop.inviteUser.importContactsOutlookHelp.1}">E-mail Address,First Name, Last Name</dd>
+                    <dd th:text="#{desktop.inviteUser.importContactsOutlookHelp.2}">user1@knappsack.com,John,Doe</dd>
+                    <dd th:text="#{desktop.inviteUser.importContactsOutlookHelp.3}">user2@knappsack.com,Jane,Doe</dd>
+                </dl>
+            </div>
+
             </div>
 
         </div>

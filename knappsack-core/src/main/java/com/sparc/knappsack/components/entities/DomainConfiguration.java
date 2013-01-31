@@ -4,6 +4,7 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "DOMAIN_CONFIGURATION")
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class DomainConfiguration extends BaseEntity {
 
     private static final long serialVersionUID = -4164986380312034725L;
@@ -31,6 +32,15 @@ public class DomainConfiguration extends BaseEntity {
     @Column(name = "MEGABYTE_STORAGE_LIMIT", nullable = false)
     private long megabyteStorageLimit;
 
+    @Column(name = "MONITOR_BANDWIDTH", nullable = false)
+    private boolean monitorBandwidth;
+
+    @Column(name = "MEGABYTE_BANDWIDTH_LIMIT")
+    private long megabyteBandwidthLimit;
+
+    @Column(name = "BANDWIDTH_LIMIT_REACHED", nullable = false)
+    private boolean bandwidthLimitReached;
+
     public DomainConfiguration() {
         applicationLimit = 2;
         applicationVersionLimit = 5;
@@ -38,6 +48,9 @@ public class DomainConfiguration extends BaseEntity {
         disableLimitValidations = false;
         userLimit = 10;
         megabyteStorageLimit = 500;
+        monitorBandwidth = false;
+        megabyteBandwidthLimit = 2048;
+        bandwidthLimitReached = false;
     }
 
     public Long getId() {
@@ -96,4 +109,27 @@ public class DomainConfiguration extends BaseEntity {
         this.megabyteStorageLimit = megabyteStorageLimit;
     }
 
+    public boolean isMonitorBandwidth() {
+        return monitorBandwidth;
+    }
+
+    public void setMonitorBandwidth(boolean monitorBandwidth) {
+        this.monitorBandwidth = monitorBandwidth;
+    }
+
+    public long getMegabyteBandwidthLimit() {
+        return megabyteBandwidthLimit;
+    }
+
+    public void setMegabyteBandwidthLimit(long megabyteBandwidthLimit) {
+        this.megabyteBandwidthLimit = megabyteBandwidthLimit;
+    }
+
+    public boolean isBandwidthLimitReached() {
+        return bandwidthLimitReached;
+    }
+
+    public void setBandwidthLimitReached(boolean bandwidthLimitReached) {
+        this.bandwidthLimitReached = bandwidthLimitReached;
+    }
 }

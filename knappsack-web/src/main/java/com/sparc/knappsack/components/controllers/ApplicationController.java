@@ -4,6 +4,7 @@ import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.components.validators.ApplicationValidator;
 import com.sparc.knappsack.enums.ApplicationType;
+import com.sparc.knappsack.enums.EventType;
 import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.exceptions.TokenException;
@@ -11,6 +12,8 @@ import com.sparc.knappsack.forms.EnumEditor;
 import com.sparc.knappsack.forms.Result;
 import com.sparc.knappsack.forms.UploadApplication;
 import com.sparc.knappsack.forms.UploadApplicationVersion;
+import com.sparc.knappsack.models.ApplicationVersionStatisticSummaryModel;
+import com.sparc.knappsack.models.ApplicationVersionUserStatisticModel;
 import com.sparc.knappsack.security.SingleUseToken;
 import com.sparc.knappsack.security.SingleUseTokenRepository;
 import com.sparc.knappsack.util.UserAgentInfo;
@@ -50,6 +53,18 @@ public class ApplicationController extends AbstractController {
     @Autowired(required = true)
     private ApplicationVersionService applicationVersionService;
 
+    @Qualifier("applicationVersionUserStatisticService")
+    @Autowired(required = true)
+    private ApplicationVersionUserStatisticService applicationVersionUserStatisticService;
+
+    @Qualifier("eventWatchService")
+    @Autowired(required = true)
+    private EventWatchService eventWatchService;
+
+    @Qualifier("userService")
+    @Autowired(required = true)
+    private UserService userService;
+
     @Qualifier("applicationValidator")
     @Autowired(required = true)
     private ApplicationValidator applicationValidator;
@@ -61,6 +76,10 @@ public class ApplicationController extends AbstractController {
     @Qualifier("groupService")
     @Autowired(required = true)
     private GroupService groupService;
+
+    @Qualifier("bandwidthService")
+    @Autowired(required = true)
+    private BandwidthService bandwidthService;
 
     @Qualifier("iosService")
     @Autowired(required = true)
@@ -77,7 +96,7 @@ public class ApplicationController extends AbstractController {
         binder.registerCustomEditor(StorageType.class, new EnumEditor(StorageType.class));
     }
 
-    @PreAuthorize("isOrganizationAdminForGroup(#uploadApplication.groupId) or isGroupAdmin(#uploadApplication.groupId) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#uploadApplication.groupId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadFile", method = RequestMethod.POST)
     public String saveApplication(Model model, @ModelAttribute("uploadApplication") @Validated UploadApplication uploadApplication, BindingResult bindingResult, HttpServletRequest request) {
         if(bindingResult.hasErrors()) {
@@ -103,7 +122,7 @@ public class ApplicationController extends AbstractController {
         checkRequiredEntity(applicationService, id);
 
         Application application = applicationService.get(id);
-        Group group = groupService.getOwnedGroup(application);
+        Group group = application.getOwnedGroup();
         applicationService.delete(id);
 
         return "redirect:/manager/editGroup/" + group.getId();
@@ -129,6 +148,23 @@ public class ApplicationController extends AbstractController {
     }
 
     @PreAuthorize("canEditApplication(#applicationId) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/viewDownloadSummary/{applicationId}", method = RequestMethod.GET)
+    public @ResponseBody List<ApplicationVersionStatisticSummaryModel> viewDownloadSummary(@PathVariable Long applicationId) {
+        Application application = applicationService.get(applicationId);
+
+        return applicationVersionUserStatisticService.getApplicationVersionUserStatisticSummaryModels(application);
+    }
+
+    @PreAuthorize("canEditApplication(#applicationId) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/viewDownloadDetails/{applicationId}", method = RequestMethod.GET)
+    public @ResponseBody List<ApplicationVersionUserStatisticModel> viewDownloadDetails(@PathVariable Long applicationId) {
+        Application application = applicationService.get(applicationId);
+        List<ApplicationVersionUserStatistic> applicationVersionUserStatistics = applicationVersionUserStatisticService.get(application);
+
+        return applicationVersionUserStatisticService.toModels(applicationVersionUserStatistics);
+    }
+
+    @PreAuthorize("canEditApplication(#applicationId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteScreenShot/{applicationId}/{index}", method = RequestMethod.POST)
     public @ResponseBody Result deleteScreenShot(@PathVariable Long applicationId, @PathVariable int index) {
         Result result = new Result();
@@ -148,7 +184,7 @@ public class ApplicationController extends AbstractController {
         return result;
     }
 
-    @PreAuthorize("isOrganizationAdminForGroup(#groupId) or isGroupAdmin(#groupId) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isDomainAdmin(#groupId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/addApplication/{groupId}", method = RequestMethod.GET)
     public String addApplication(Model model, @PathVariable Long groupId) {
 
@@ -183,7 +219,7 @@ public class ApplicationController extends AbstractController {
 
         Application application = applicationService.get(id);
 
-        Group group = groupService.getOwnedGroup(application);
+        Group group = application.getOwnedGroup();
 
         if (group != null) {
 
@@ -244,14 +280,18 @@ public class ApplicationController extends AbstractController {
 
     @PreAuthorize("hasAccessToApplicationVersion(#applicationVersionId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/downloadApplication/{applicationVersionId}", method = RequestMethod.GET)
-    public String downloadApplication(HttpServletResponse response, @PathVariable String applicationVersionId, UserAgentInfo userAgentInfo) {
+    public String downloadApplication(HttpServletRequest request, HttpServletResponse response, @PathVariable String applicationVersionId, UserAgentInfo userAgentInfo) {
 
         checkRequiredEntity(applicationVersionService, Long.valueOf(applicationVersionId));
 
         String url = addApplicationToResponse(response, applicationVersionId, userAgentInfo);
+
+        subscribeUserAndCreateStatistic(Long.valueOf(applicationVersionId), request);
+
         if (url.isEmpty()) {
             return "";
         }
+
         return "redirect:" + url;
     }
 
@@ -280,6 +320,7 @@ public class ApplicationController extends AbstractController {
             int index = request.getRequestURL().indexOf(request.getServletPath());
             String newContext = "/ios/downloadIOSPlist/" + id + "/" + token.getSessionIdHash();
             StringBuffer url = request.getRequestURL().replace(index, request.getRequestURL().length(), newContext);
+            subscribeUserAndCreateStatistic(Long.valueOf(id), request);
 
             return "itms-services://?action=download-manifest&url=" + url.toString();
         } else {
@@ -291,7 +332,7 @@ public class ApplicationController extends AbstractController {
     private String addApplicationToResponse(HttpServletResponse response, String id, UserAgentInfo userAgentInfo) {
         ApplicationVersion version = applicationVersionService.get(Long.parseLong(id));
 
-        if (version != null) {
+        if (version != null && version.getAppState() != null && version.getAppState().isDownloadable()) {
             if (!applicationService.determineApplicationVisibility(version.getApplication(), userAgentInfo.getApplicationType())) {
                 try {
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "The specified application is unsupported on your current device.");
@@ -303,6 +344,16 @@ public class ApplicationController extends AbstractController {
 
             AppFile appFile = version.getInstallationFile();
             StorageService storageService = storageServiceFactory.getStorageService(appFile.getStorageType());
+            if (storageService instanceof RemoteStorageService) {
+                if(bandwidthService.isBandwidthLimitReached(version)) {
+                    return "/detail/" + version.getApplication().getId();
+                }
+
+                String url = ((RemoteStorageService)storageService).getUrl(appFile, 20);
+                response.setContentType(appFile.getType());
+                response.setHeader("Content-Disposition", "attachment; filename=\"" + url + "\"");
+                return url;
+            }
 
             File file = new File(appFile.getAbsolutePath());
 
@@ -330,6 +381,20 @@ public class ApplicationController extends AbstractController {
         response.setContentType("text/xml");
 
         return (iosService.createIOSPlistXML(id, request, token));
+    }
+
+    /**
+     * When a user downloads a specific application version, automatically subscribe them to that application and
+     * create an ApplicationVersionUserStatistic to track the download.
+     */
+    private void subscribeUserAndCreateStatistic(Long applicationVersionId, HttpServletRequest request) {
+        User user = userService.getUserFromSecurityContext();
+        ApplicationVersion applicationVersion = applicationVersionService.get(applicationVersionId);
+        applicationVersionUserStatisticService.create(applicationVersion, user, request.getRemoteAddr(), request.getHeader("User-Agent"));
+        boolean isSubscribed = eventWatchService.doesEventWatchExist(user, applicationVersion.getApplication());
+        if(!isSubscribed) {
+            eventWatchService.createEventWatch(user, applicationVersion.getApplication(), EventType.APPLICATION_VERSION_BECOMES_AVAILABLE);
+        }
     }
 
 }

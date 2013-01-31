@@ -5,6 +5,10 @@ import com.sparc.knappsack.components.dao.OrganizationDao;
 import com.sparc.knappsack.components.dao.UserDetailsDao;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.*;
+import com.sparc.knappsack.models.ApplicationModel;
+import com.sparc.knappsack.models.Contact;
+import com.sparc.knappsack.models.Contacts;
+import com.sparc.knappsack.models.UserModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +22,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Collections.reverseOrder;
 import static java.util.Collections.sort;
@@ -61,6 +62,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired(required = true)
     private GroupService groupService;
+
+    @Autowired(required = true)
+    private DomainService domainService;
 
     @Qualifier("organizationService")
     @Autowired(required = true)
@@ -117,13 +121,13 @@ public class UserServiceImpl implements UserService {
             List<UserDomain> orgAdminUserDomains = new ArrayList<UserDomain>();
 
             for (UserDomain userDomain : user.getUserDomains()) {
-                if (DomainType.ORGANIZATION.equals(userDomain.getDomainType()) && UserRole.ROLE_ORG_ADMIN.equals(userDomain.getRole().getUserRole()) && !orgAdminUserDomains.contains(userDomain)) {
+                if (DomainType.ORGANIZATION.equals(userDomain.getDomain().getDomainType()) && UserRole.ROLE_ORG_ADMIN.equals(userDomain.getRole().getUserRole()) && !orgAdminUserDomains.contains(userDomain)) {
                     orgAdminUserDomains.add(userDomain);
                 }
             }
 
             for (UserDomain userDomain : orgAdminUserDomains) {
-                Organization organization = organizationService.get(userDomain.getDomainId());
+                Organization organization = organizationService.get(userDomain.getDomain().getId());
                 if (organization != null) {
                     groups.addAll(organization.getGroups());
                 }
@@ -132,7 +136,7 @@ public class UserServiceImpl implements UserService {
         }
         List<UserDomain> userDomains = userDomainService.getAll(user, DomainType.GROUP);
         for (UserDomain userDomain : userDomains) {
-            Group group = groupService.get(userDomain.getDomainId());
+            Group group = groupService.get(userDomain.getDomain().getId());
             if (group != null && !groups.contains(group)) {
                 groups.add(group);
             }
@@ -142,32 +146,93 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<Organization> getOrganizations(User user) {
-        List<Organization> organizations = new ArrayList<Organization>();
+        Set<Organization> organizations = new HashSet<Organization>();
 
         if(user.isSystemAdmin()) {
             organizations.addAll(organizationDao.getAll());
         } else {
 
-            //Get all organizations for which the user is a member of
-            List<UserDomain> userDomainList = userDomainService.getAll(user, DomainType.ORGANIZATION);
-            for (UserDomain userDomain : userDomainList) {
-                organizations.add(organizationDao.get(userDomain.getDomainId()));
+            List<Domain> domains = domainService.getAll(user, DomainType.ORGANIZATION, DomainType.GROUP);
+            for (Domain domain : domains) {
+                if(DomainType.ORGANIZATION.equals(domain.getDomainType())) {
+                    organizations.add((Organization) domain);
+                } else if(DomainType.GROUP.equals(domain.getDomainType())) {
+                    organizations.add(((Group)domain).getOrganization());
+                }
             }
+        }
 
-            //Get all organizations for which the user is a guest of
-            userDomainList = userDomainService.getAll(user, DomainType.GROUP);
+        return new ArrayList<Organization>(organizations);
+    }
+
+    @Override
+    public List<Organization> getAdministeredOrganizations(User user) {
+        List<Organization> organizations = new ArrayList<Organization>();
+
+        if (user != null) {
+//            if(user.isSystemAdmin()) {
+//                return organizationService.getAll();
+//            }
+
+            List<UserDomain> userDomainList = userDomainService.getAll(user, DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN);
             for (UserDomain userDomain : userDomainList) {
-                Group group = groupService.get(userDomain.getDomainId());
-                if (group != null) {
-                    Organization organization = group.getOrganization();
-                    if (!organizations.contains(organization)) {
-                        organizations.add(organization);
-                    }
+                Domain domain = userDomain.getDomain();
+                if (domain != null && DomainType.ORGANIZATION.equals(domain.getDomainType())) {
+                    organizations.add((Organization) domain);
                 }
             }
         }
 
         return organizations;
+    }
+
+    @Override
+    public List<Group> getAdministeredGroups(User user) {
+        Set<Group> groups = new HashSet<Group>();
+
+        if (user != null) {
+//            if (user.isSystemAdmin()) {
+//                groups.addAll(groupService.getAll());
+//            } else {
+                List<Organization> administeredOrganizations = getAdministeredOrganizations(user);
+                for (Organization organization : administeredOrganizations) {
+                     groups.addAll(organization.getGroups());
+                }
+
+                for (UserDomain userDomain : userDomainService.getAll(user, DomainType.GROUP, UserRole.ROLE_GROUP_ADMIN)) {
+                    Domain domain = userDomain.getDomain();
+                    if (domain instanceof Group) {
+                        groups.add((Group) domain);
+                    }
+                }
+//            }
+        }
+
+        return new ArrayList<Group>(groups);
+    }
+
+    @Override
+    public long countAdministeredOrganizations(User user) {
+        return userDomainService.countDomains(user, DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN);
+    }
+
+    @Override
+    public List<Contacts> getContacts(User user) {
+        List<Contacts> contactsList = new ArrayList<Contacts>();
+        List<Organization> organizations = getOrganizations(user);
+        for (Organization organization : organizations) {
+            Contacts contacts = new Contacts();
+            contacts.setDomainName(organization.getName());
+            Set<User> users = organizationService.getAllAdmins(organization, false);
+            for (User admin : users) {
+                Contact contact = new Contact();
+                contact.setName(admin.getFullName());
+                contact.setEmail(admin.getEmail());
+                contacts.getContacts().add(contact);
+            }
+            contactsList.add(contacts);
+        }
+        return contactsList;
     }
 
     @Override
@@ -177,6 +242,10 @@ public class UserServiceImpl implements UserService {
             user = userDetailsDao.findByEmail(email.trim());
         }
         return user;
+    }
+
+    public List<User> get(List<Long> ids) {
+        return userDetailsDao.get(ids);
     }
 
     public List<ApplicationVersion> getApplicationVersions(User user) {
@@ -191,9 +260,8 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        for (Organization organization : organizations) {
-            applicationVersions.addAll(applicationVersionService.getAll(organization.getId(), AppState.ORGANIZATION_PUBLISH));
-        }
+        applicationVersions.addAll(applicationVersionService.getAll(organizations, AppState.ORGANIZATION_PUBLISH));
+
         return new ArrayList<ApplicationVersion>(applicationVersions);
     }
 
@@ -244,6 +312,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<ApplicationModel> getApplicationModelsForUser(User user, ApplicationType deviceType, AppState... appStates) {
+        List<Application> applications = getApplicationsForUser(user, deviceType, AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, (user.isOrganizationAdmin() ? AppState.ORG_PUBLISH_REQUEST : null));
+        List<ApplicationModel> applicationModels = new ArrayList<ApplicationModel>();
+        for (Application application : applications) {
+            ApplicationModel applicationModel = applicationService.createApplicationModel(application);
+            if (applicationModel != null) {
+                applicationModel.setCanUserEdit(canUserEditApplication(user, application));
+            }
+
+            applicationModels.add(applicationModel);
+        }
+
+        return applicationModels;
+    }
+
+    @Override
     public List<Application> getApplicationsForUser(User user, ApplicationType deviceType, Long categoryId, AppState... appStates) {
         List<Application> applications;
         Category category = categoryService.get(categoryId);
@@ -269,19 +353,25 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean addUserToGroup(User user, Long groupId, UserRole userRole) {
         Group group = groupService.get(groupId);
-        boolean isUserInGroup = isUserInGroup(user, group, userRole);
-        if(!isUserInGroup) {
-            Role role = roleService.getRoleByAuthority(userRole.toString());
-            UserDomain userDomain = new UserDomain();
-            userDomain.setDomainType(DomainType.GROUP);
-            userDomain.setDomainId(groupId);
-            userDomain.setRole(role);
-            userDomain.setUser(userDetailsDao.get(user.getId()));
+        return addUserToGroup(user, group, userRole);
+    }
 
-            userDomainService.add(userDomain);
-            user.getUserDomains().add(userDomain);
+    @Override
+    public boolean addUserToGroup(User user, Group group, UserRole userRole) {
+        if (user != null && group != null && userRole != null) {
+            boolean isUserInGroup = isUserInGroup(user, group, userRole);
+            if(!isUserInGroup) {
+                Role role = roleService.getRoleByAuthority(userRole.toString());
+                UserDomain userDomain = new UserDomain();
+                userDomain.setDomain(group);
+                userDomain.setRole(role);
+                userDomain.setUser(userDetailsDao.get(user.getId()));
 
-            return true;
+                userDomainService.add(userDomain);
+                user.getUserDomains().add(userDomain);
+
+                return true;
+            }
         }
 
         return false;
@@ -290,39 +380,54 @@ public class UserServiceImpl implements UserService {
     @Override
     public void addUserToOrganization(User user, Long organizationId, UserRole userRole) {
         Organization organization = organizationService.get(organizationId);
-        boolean isUserInOrganization = isUserInOrganization(user, organization, userRole);
-        if(!isUserInOrganization) {
-            Role role = roleService.getRoleByAuthority(userRole.toString());
-            UserDomain userDomain = new UserDomain();
-            userDomain.setDomainType(DomainType.ORGANIZATION);
-            userDomain.setDomainId(organization.getId());
-            userDomain.setRole(role);
-            userDomain.setUser(userDetailsDao.get(user.getId()));
+        addUserToOrganization(user, organization, userRole);
+    }
 
-            userDomainService.add(userDomain);
-            user.getUserDomains().add(userDomain);
+    @Override
+    public void addUserToOrganization(User user, Organization organization, UserRole userRole) {
+        if (user != null && organization != null && userRole != null) {
+            boolean isUserInOrganization = isUserInOrganization(user, organization, userRole);
+            if(!isUserInOrganization) {
+                Role role = roleService.getRoleByAuthority(userRole.toString());
+                UserDomain userDomain = new UserDomain();
+                userDomain.setDomain(organization);
+                userDomain.setRole(role);
+                userDomain.setUser(userDetailsDao.get(user.getId()));
+
+                userDomainService.add(userDomain);
+                user.getUserDomains().add(userDomain);
+            }
         }
     }
 
-    public boolean isUserInDomain(User user, Long domainId, DomainType domainType, UserRole userRole) {
-        UserDomain userDomain = userDomainService.get(user, domainId, domainType, userRole);
+    @Override
+    public void addUserToDomain(User user, Domain domain) {
+        if(DomainType.GROUP.equals(domain.getDomainType())) {
+            addUserToGroup(user, domain.getId(), UserRole.ROLE_GROUP_USER);
+        } else if(DomainType.ORGANIZATION.equals(domain.getDomainType())) {
+            addUserToOrganization(user, domain.getId(), UserRole.ROLE_ORG_USER);
+        }
+    }
+
+    public boolean isUserInDomain(User user, Long domainId, UserRole userRole) {
+        UserDomain userDomain = userDomainService.get(user, domainId, userRole);
         return userDomain != null;
     }
 
-    public boolean isUserInDomain(User user, Long domainId, DomainType domainType) {
-        UserDomain userDomain = userDomainService.get(user, domainId, domainType);
+    public boolean isUserInDomain(User user, Long domainId) {
+        UserDomain userDomain = userDomainService.get(user, domainId);
         return userDomain != null;
     }
 
     @Override
     public boolean isUserInGroup(User user, Group group, UserRole userRole) {
-        UserDomain userDomain = userDomainService.get(user, group.getId(), DomainType.GROUP, userRole);
+        UserDomain userDomain = userDomainService.get(user, group.getId(), userRole);
         return userDomain != null;
     }
 
     @Override
     public boolean isUserInGroup(User user, Group group) {
-        UserDomain userDomain = userDomainService.get(user, group.getId(), DomainType.GROUP);
+        UserDomain userDomain = userDomainService.get(user, group.getId());
         return userDomain != null;
     }
 
@@ -330,7 +435,7 @@ public class UserServiceImpl implements UserService {
     public boolean isUserInOrganization(User user, Organization organization, UserRole userRole) {
         UserDomain userDomain = null;
         if (user != null && organization != null && userRole != null) {
-            userDomain = userDomainService.get(user, organization.getId(), DomainType.ORGANIZATION, userRole);
+            userDomain = userDomainService.get(user, organization.getId(), userRole);
         }
         return userDomain != null;
     }
@@ -423,24 +528,31 @@ public class UserServiceImpl implements UserService {
 
         User user = get(userId);
         if (user != null) {
-            Application application = applicationService.get(applicationId);
+            canEdit = canUserEditApplication(user, applicationService.get(applicationId));
+        }
 
-            if (application != null) {
-                Group group = groupService.getOwnedGroup(application);
-                if (group != null) {
-                    Organization organization = group.getOrganization();
+        return canEdit;
+    }
 
-                    for (UserDomain userDomain : user.getUserDomains()) {
-                        if (DomainType.ORGANIZATION.equals(userDomain.getDomainType())) {
-                            if (organization != null && userDomain.getDomainId().equals(organization.getId()) && UserRole.ROLE_ORG_ADMIN.equals(userDomain.getRole().getUserRole())) {
-                                canEdit = true;
-                                break;
-                            }
-                        } else if (DomainType.GROUP.equals(userDomain.getDomainType())) {
-                            if (userDomain.getDomainId().equals(group.getId()) && UserRole.ROLE_GROUP_ADMIN.equals(userDomain.getRole().getUserRole())) {
-                                canEdit = true;
-                                break;
-                            }
+    @Override
+    public boolean canUserEditApplication(User user, Application application) {
+        boolean canEdit = false;
+
+        if (user != null && application != null) {
+            Group group = application.getOwnedGroup();//groupService.getOwnedGroup(application);
+            if (group != null) {
+                Organization organization = group.getOrganization();
+
+                for (UserDomain userDomain : user.getUserDomains()) {
+                    if (DomainType.ORGANIZATION.equals(userDomain.getDomain().getDomainType())) {
+                        if (organization != null && userDomain.getDomain().equals(organization) && UserRole.ROLE_ORG_ADMIN.equals(userDomain.getRole().getUserRole())) {
+                            canEdit = true;
+                            break;
+                        }
+                    } else if (DomainType.GROUP.equals(userDomain.getDomain().getDomainType())) {
+                        if (userDomain.getDomain().equals(group) && UserRole.ROLE_GROUP_ADMIN.equals(userDomain.getRole().getUserRole())) {
+                            canEdit = true;
+                            break;
                         }
                     }
                 }
@@ -448,6 +560,21 @@ public class UserServiceImpl implements UserService {
         }
 
         return canEdit;
+    }
+
+    @Override
+    public UserModel createUsermodel(User user) {
+        UserModel model = null;
+        if (user != null) {
+            model = new UserModel();
+            model.setId(user.getId());
+            model.setEmail(user.getEmail());
+            model.setFirstName(user.getFirstName());
+            model.setLastName(user.getLastName());
+            model.setUserName(user.getUsername());
+        }
+
+        return model;
     }
 
     @Override

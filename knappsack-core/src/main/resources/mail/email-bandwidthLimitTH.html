@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack: Organization Bandwidth Limit</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+
+<p th:text="#{greeting(${user.fullName})}" th:if="${user}">
+    Hello, Peter Static!
+</p>
+<p th:unless="${user}">
+    Hello!
+</p>
+<p th:inline="text">
+    The organization <b>[[${organizationName}]]</b>, for which you are an administrator, has reached the bandwidth limit for the current billing cycle.  Please log in to Knappsack
+    and update your plan to increase your bandwidth limit.  Your users will not be able to download applications from your organization until the next billing cycle
+    or the bandwidth limit is increased.
+</p>
+<p th:inline="text">
+    The current bandwidth limit is [[${bandwidthLimit}]] megabytes.
+</p>
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+<p>
+    Regards, <br />
+    &emsp; <em>The Knappsack Team</em>
+</p>
+</body>
+</html>

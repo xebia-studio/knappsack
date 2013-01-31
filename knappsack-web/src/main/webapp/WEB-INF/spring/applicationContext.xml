@@ -10,14 +10,10 @@
     <context:component-scan use-default-filters="true" base-package="com.sparc.knappsack.components.validators"/>
 
     <beans:import resource="classpath:/spring/jpa-context.xml"/>
-
-    <!--Uncomment this line in order to use Memcacahed.  Also uncomment MemcachedSessionRegistryImpl bean in security-context.xml-->
-    <!--<beans:import resource="classpath:/spring/memcached-context.xml"/>-->
     <beans:import resource="security-context.xml"/>
     <beans:import resource="classpath:spring/services-context.xml"/>
     <beans:import resource="classpath:spring/mail-context.xml"/>
     <beans:import resource="classpath:spring/thymeleaf-context.xml"/>
     <beans:import resource="classpath:spring/factory-context.xml"/>
     <beans:import resource="classpath:spring/events-context.xml"/>
-
 </beans:beans>

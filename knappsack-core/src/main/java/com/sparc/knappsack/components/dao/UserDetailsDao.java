@@ -11,6 +11,8 @@ public interface UserDetailsDao extends Dao<User> {
      */
     List<User> getAll();
 
+    List<User> get(List<Long> ids);
+
     /**
      * @param openIdIdentifier String
      * @return User with the given openID identifier

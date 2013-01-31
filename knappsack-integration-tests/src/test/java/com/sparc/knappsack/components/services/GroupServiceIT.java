@@ -1,20 +1,15 @@
 package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.*;
-import com.sparc.knappsack.enums.AppState;
-import com.sparc.knappsack.enums.ApplicationType;
-import com.sparc.knappsack.enums.Status;
-import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.enums.*;
 import com.sparc.knappsack.forms.GroupForm;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 
 public class GroupServiceIT extends AbstractServiceTests {
 
@@ -25,43 +20,32 @@ public class GroupServiceIT extends AbstractServiceTests {
     private OrganizationService organizationService;
 
     @Autowired(required = true)
-    private GroupUserRequestService requestService;
+    private DomainUserRequestService requestService;
 
     @Autowired(required = true)
     private UserService userService;
 
+    @Autowired(required = true)
+    private ApplicationService applicationService;
+
+    @Autowired(required = true)
+    private DomainUserRequestService domainUserRequestService;
+
     @Test
     public void addTest() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
+        Group group = getGroup();
 
-        organizationService.add(organization);
-        organizationService.getAll();
-
-        Group group = new Group();
-        group.setName("Test Group");
-        organization.getGroups().add(group);
-
-        groupService.save(group);
         List<Group> groups = groupService.getAll();
         assertTrue(groups.size() == 1);
+        assertEquals(group, groups.get(0));
     }
 
     @Test
     public void updateTest() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-
-        organizationService.add(organization);
-        organizationService.getAll();
-
-        Group group = new Group();
-        group.setName("Test Group");
-        organization.getGroups().add(group);
-
-        groupService.add(group);
+        Group group = getGroup();
         List<Group> groups = groupService.getAll();
         assertTrue(groups.size() == 1);
+        assertEquals(group, groups.get(0));
 
         group = groups.get(0);
         group.setName("New Group");
@@ -74,20 +58,10 @@ public class GroupServiceIT extends AbstractServiceTests {
 
     @Test
     public void deleteTest() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-
-        organizationService.add(organization);
-        organizationService.getAll();
-
-        Group group = new Group();
-        group.setName("Test Group");
-        group.setOrganization(organization);
-        organization.getGroups().add(group);
-
-        groupService.add(group);
+        Group group = getGroup();
         List<Group> groups = groupService.getAll();
         assertTrue(groups.size() == 1);
+        assertEquals(group, groups.get(0));
 
         groupService.delete(group.getId());
         groups = groupService.getAll();
@@ -96,13 +70,11 @@ public class GroupServiceIT extends AbstractServiceTests {
 
     @Test
     public void getByAccessCodeTest() {
-        Group group = new Group();
-        group.setName("Test Group");
-        group.setAccessCode(UUID.randomUUID().toString());
-        groupService.add(group);
+        Group group = getGroup();
 
-        group = groupService.getByAccessCode(group.getAccessCode());
-        assertNotNull(group);
+        Group foundGroup = groupService.getByAccessCode(group.getUuid());
+        assertNotNull(foundGroup);
+        assertEquals(group, foundGroup);
     }
 
     @Test
@@ -112,16 +84,16 @@ public class GroupServiceIT extends AbstractServiceTests {
 
         Group group = getGroup();
 
-        GroupUserRequest groupUserRequest = new GroupUserRequest();
-        groupUserRequest.setGroup(group);
-        groupUserRequest.setStatus(Status.PENDING);
-        groupUserRequest.setUser(user);
+        DomainUserRequest domainUserRequest = new DomainUserRequest();
+        domainUserRequest.setDomain(group);
+        domainUserRequest.setStatus(Status.PENDING);
+        domainUserRequest.setUser(user);
 
-        requestService.add(groupUserRequest);
+        requestService.add(domainUserRequest);
 
-        List<GroupUserRequest> groupUserRequests = requestService.getAll(group.getId());
-        assertTrue(groupUserRequests.size() == 1);
-        boolean isRequest = groupService.doesRequestExist(user, group, Status.PENDING);
+        List<DomainUserRequest> domainUserRequests = requestService.getAll(group.getId());
+        assertTrue(domainUserRequests.size() == 1);
+        boolean isRequest = domainUserRequestService.doesRequestExist(user, group, Status.PENDING);
         assertTrue(isRequest);
     }
 
@@ -137,20 +109,11 @@ public class GroupServiceIT extends AbstractServiceTests {
 
     @Test
     public void mapGroupToGroupFormTest() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
+        Group group = getGroup();
 
-        organizationService.add(organization);
-        organizationService.getAll();
-
-        Group group = new Group();
-        group.setName("Test Group");
-        group.setOrganization(organization);
-        organization.getGroups().add(group);
-
-        groupService.add(group);
         List<Group> groups = groupService.getAll();
         assertTrue(groups.size() == 1);
+        assertEquals(group, groups.get(0));
 
         GroupForm groupForm = new GroupForm();
         groupService.mapGroupToGroupForm(group, groupForm);
@@ -161,27 +124,17 @@ public class GroupServiceIT extends AbstractServiceTests {
 
     @Test
     public void editGroupTest() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-
-        organizationService.add(organization);
-        organizationService.getAll();
-
-        Group group = new Group();
-        group.setName("Test Group");
-        group.setOrganization(organization);
-        organization.getGroups().add(group);
-
-        groupService.add(group);
+        Group group = getGroup();
         List<Group> groups = groupService.getAll();
         assertTrue(groups.size() == 1);
+        assertEquals(group, groups.get(0));
 
         GroupForm groupForm = new GroupForm();
         groupForm.setName("New Group");
         groupForm.setId(group.getId());
         groupForm.setOrganizationId(group.getOrganization().getId());
         groupService.editGroup(groupForm);
-        group = groupService.get(group.getName(), organization.getId());
+        group = groupService.get(group.getName(), group.getOrganization().getId());
         assertNotNull(group);
         assertTrue(group.getName().equals(groupForm.getName()));
     }
@@ -191,11 +144,7 @@ public class GroupServiceIT extends AbstractServiceTests {
         User user = getUser();
         userService.add(user);
 
-        Group group = new Group();
-        group.setName("Test Group");
-        group.setAccessCode(UUID.randomUUID().toString());
-        groupService.add(group);
-        groupService.getAll();
+        Group group = getGroup();
 
         userService.addUserToGroup(user, group.getId(), UserRole.ROLE_GROUP_USER);
         List<Group> groups = userService.getGroups(user);
@@ -208,6 +157,15 @@ public class GroupServiceIT extends AbstractServiceTests {
     @Test
     public void getGuestGroupsTest(){
         Group group = getGroup();
+
+        Group group2 = new Group();
+        group2.setName("Test Group 2");
+        group2.setOrganization(group.getOrganization());
+        group2.setGuestApplicationVersions(new ArrayList<ApplicationVersion>());
+        group2.getGuestApplicationVersions().add(group.getOwnedApplications().get(0).getApplicationVersions().get(0));
+        group.getOwnedApplications().get(0).getApplicationVersions().get(0).getGuestGroups().add(group2);
+        groupService.save(group2);
+
         ApplicationVersion applicationVersion = group.getOwnedApplications().get(0).getApplicationVersions().get(0);
         List<Group> guestGroups = groupService.getGuestGroups(applicationVersion);
         assertTrue(guestGroups.size() == 1);
@@ -222,11 +180,7 @@ public class GroupServiceIT extends AbstractServiceTests {
     }
 
     private GroupForm getGroupForm() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-
-        organizationService.add(organization);
-        organizationService.getAll();
+        Organization organization = getOrganization();
 
         GroupForm groupForm = new GroupForm();
         groupForm.setName("Test Group");
@@ -235,21 +189,48 @@ public class GroupServiceIT extends AbstractServiceTests {
         return groupForm;
     }
 
-    private Group getGroup() {
+    private Organization getOrganization() {
         Organization organization = new Organization();
-        organization.setAccessCode(UUID.randomUUID().toString());
-        organization.setName("Test Organization 2");
+        organization.setName("Test Organization");
+
+        LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
+        localStorageConfiguration.setBaseLocation("/path");
+        localStorageConfiguration.setName("Local Storage Configuration");
+        localStorageConfiguration.setStorageType(StorageType.LOCAL);
+
+        OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
+        orgStorageConfig.getStorageConfigurations().add(localStorageConfiguration);
+        orgStorageConfig.setPrefix("testPrefix");
+        orgStorageConfig.setOrganization(organization);
+        organization.setOrgStorageConfig(orgStorageConfig);
+
         organizationService.add(organization);
+
+        return organization;
+    }
+
+    private Group getGroup() {
+        Organization organization = getOrganization();
 
         Category category = new Category();
         category.setName("Test Category");
         category.setOrganization(organization);
         organization.getCategories().add(category);
 
+        organizationService.getAll();
+
+        Group group = new Group();
+        group.setName("Test Group");
+        group.setOrganization(organization);
+        groupService.add(group);
+
         Application application = new Application();
         application.setName("Test Application");
+        application.setDescription("This is a description.");
         application.setApplicationType(ApplicationType.ANDROID);
         application.setCategory(category);
+        application.setStorageConfiguration(organization.getStorageConfigurations().get(0));
+        application.setOwnedGroup(group);
 
         ApplicationVersion applicationVersion = new ApplicationVersion();
         applicationVersion.setVersionName("1.0.0");
@@ -257,26 +238,13 @@ public class GroupServiceIT extends AbstractServiceTests {
         applicationVersion.setAppState(AppState.GROUP_PUBLISH);
 
         application.getApplicationVersions().add(applicationVersion);
+        applicationService.add(application);
 
-        Group group = new Group();
-        group.setAccessCode(UUID.randomUUID().toString());
-        group.setName("Test Group");
-        group.setOrganization(organization);
-        group.setOwnedApplications(new ArrayList<Application>());
         group.getOwnedApplications().add(application);
         groupService.save(group);
-
-        Group group2 = new Group();
-        group2.setAccessCode(UUID.randomUUID().toString());
-        group2.setName("Test Group 2");
-        group2.setOrganization(organization);
-        group2.setGuestApplicationVersions(new ArrayList<ApplicationVersion>());
-        group2.getGuestApplicationVersions().add(applicationVersion);
-        groupService.save(group2);
-
+        application.setOwnedGroup(group);
 
         organization.getGroups().add(group);
-        organization.getGroups().add(group2);
 
         organizationService.getAll();
 

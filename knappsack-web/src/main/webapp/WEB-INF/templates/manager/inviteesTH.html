@@ -52,7 +52,7 @@
 
             invitationIdsToResend.push($(row).attr('data-invitation-id'));
 
-            tmpOptions = { invitationIds:invitationIdsToResend, domainId:domainId, domainType:domainType };
+            tmpOptions = { invitationIds:invitationIdsToResend, domainId:domainId };
             showConfirmationModal('Re-Send Invitation');
             $('#confirmationModalSubmit').on('click', function () {
                 ajaxResendInvitationSubmit($invitationsTable, function(data) {
@@ -93,13 +93,13 @@
                 tmpSelectedRows.push(this);
             });
 
-            tmpOptions = { invitationIds:invitationIdsToResend, domainId:domainId, domainType:domainType };
+            tmpOptions = { invitationIds:invitationIdsToResend, domainId:domainId };
             showConfirmationModal(resendText, notSentText);
             $('#confirmationModalSubmit').on('click', function () {
                 ajaxResendInvitationSubmit($invitationsTable, function(data) {
                     $(tmpSelectedRows).each(function() {
                         var row = this;
-                        $(row).removeClass('row_selected');
+//                        $(row).removeClass('row_selected');
                         $(row).removeClass('error');
                         $(data.ids).each(function(index, value) {
                             if (value == $(row).attr('data-invitation-id')) {
@@ -127,7 +127,7 @@
                             invitationIdsToRemove.push($(this).attr('data-invitation-id'));
                             tmpSelectedRows.push(this);
                         });
-                        tmpOptions = { domainId:domainId, domainType:domainType, invitationIds:invitationIdsToRemove };
+                        tmpOptions = { domainId:domainId, invitationIds:invitationIdsToRemove };
                     }
                 });
             });
@@ -148,7 +148,7 @@
                 tmpSelectedRows.push(this);
             });
 
-            tmpOptions = { domainId:domainId, domainType:domainType, invitationIds:invitationIdsToRemove };
+            tmpOptions = { domainId:domainId, invitationIds:invitationIdsToRemove };
             showConfirmationModal('Remove Invitation(s)');
             $('#confirmationModalSubmit').on('click', function () {
                 ajaxRemoveInvitationsSubmit($invitationsTable, function(data) {
@@ -179,7 +179,7 @@
                             invitationIdsToRemove.push($(this).attr('data-invitation-id'));
                             tmpSelectedRows.push(this);
                         });
-                        tmpOptions = { domainId:domainId, domainType:domainType, invitationIds:invitationIdsToRemove };
+                        tmpOptions = { domainId:domainId, invitationIds:invitationIdsToRemove };
                     }
                 });
             });
@@ -195,7 +195,7 @@
 
             invitationIdsToRemove.push($(row).attr('data-invitation-id'));
 
-            tmpOptions = { domainId:domainId, domainType:domainType, invitationIds:invitationIdsToRemove };
+            tmpOptions = { domainId:domainId, invitationIds:invitationIdsToRemove };
             showConfirmationModal('Remove Invitation');
             $('#confirmationModalSubmit').click(function () {
                 ajaxRemoveInvitationsSubmit($invitationsTable, function(data) {

@@ -1,5 +1,6 @@
 package com.sparc.knappsack.components.controllers;
 
+import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.ApplicationService;
 import com.sparc.knappsack.components.services.EventWatchService;
@@ -106,7 +107,11 @@ public class ProfileController extends AbstractController {
 
         User principal = userService.getUserFromSecurityContext();
         if (principal != null) {
-            result.setResult(eventWatchService.delete(principal, applicationService.get(applicationId)));
+            Application application = applicationService.get(applicationId);
+            boolean isSubscribed = eventWatchService.doesEventWatchExist(principal, application);
+            if(isSubscribed) {
+                result.setResult(eventWatchService.delete(principal, applicationService.get(applicationId)));
+            }
         } else {
             result.setResult(false);
         }
@@ -117,12 +122,17 @@ public class ProfileController extends AbstractController {
     @PreAuthorize("hasAccessToApplication(#applicationId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/subscribe/{applicationId}", method = RequestMethod.GET)
     public
-    @ResponseBody Result subscribe(@PathVariable Long applicationId) {
+    @ResponseBody
+    Result subscribe(@PathVariable Long applicationId) {
         Result result = new Result();
 
         User principal = userService.getUserFromSecurityContext();
         if (principal != null) {
-            result.setResult(eventWatchService.createEventWatch(principal, applicationService.get(applicationId), EventType.APPLICATION_VERSION_BECOMES_AVAILABLE));
+            Application application = applicationService.get(applicationId);
+            boolean isSubscribed = eventWatchService.doesEventWatchExist(principal, application);
+            if (!isSubscribed) {
+                result.setResult(eventWatchService.createEventWatch(principal, application, EventType.APPLICATION_VERSION_BECOMES_AVAILABLE));
+            }
         } else {
             result.setResult(false);
         }

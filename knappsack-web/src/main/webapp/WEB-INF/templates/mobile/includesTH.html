@@ -14,12 +14,12 @@
     <link rel="apple-touch-icon" sizes="114x114" href="../../../resources/img/apple_touch_icon_114x114.png" ks:href="@{/resources/img/apple_touch_icon_114x114.png}" />
     <link rel="apple-touch-icon" sizes="144x144" href="../../../resources/img/apple_touch_icon_144x144.png" ks:href="@{/resources/img/apple_touch_icon_144x144.png}" />
 
-    <link rel="stylesheet" href="../../../resources/jquery.mobile/jquery.mobile-1.2.0.min.css" ks:href="@{/resources/jquery.mobile/jquery.mobile-1.2.0.min.css}"/>
-    <link rel="stylesheet" href="../../../resources/css/custom-mobile.css" ks:href="@{/resources/css/custom-mobile.css}"/>
+    <link rel="stylesheet" href="../../../resources/css/jquery.mobile-1.2.0.min.css" ks:href="@{/resources/css/jquery.mobile-1.2.0.min.css}"/>
+    <link rel="stylesheet" href="../../../resources/css/custom-mobile_1.min.css" ks:href="@{/resources/css/custom-mobile_1.min.css}"/>
 
     <script src="../../../resources/js/jquery-1.7.1.min.js" ks:src="@{/resources/js/jquery-1.7.1.min.js}"></script>
-    <script src="../../../resources/js/knappsack_3.js" ks:src="@{/resources/js/knappsack_3.js}"></script>
-    <script type="text/javascript" src="../../../resources/js/openid.js" ks:src="@{/resources/js/openid.js}"></script>
+    <script src="../../../resources/js/knappsack_3.min.js" ks:src="@{/resources/js/knappsack_3.min.js}"></script>
+    <script type="text/javascript" src="../../../resources/js/openid.min.js" ks:src="@{/resources/js/openid.min.js}"></script>
     <script th:inline="javascript">
         /*<![CDATA[*/
         $(document).live("mobileinit", function() {
@@ -37,10 +37,10 @@
         /*]]>*/
     </script>
 
-    <link type="text/css" rel="stylesheet" href='../../../resources/css/login-mobile.css' ks:href="@{/resources/css/login-mobile.css}"/>
-    <link type="text/css" rel="stylesheet" href="../../../resources/css/add2home-2.0.4.css" ks:href="@{/resources/css/add2home-2.0.4.css}"/>
+    <link type="text/css" rel="stylesheet" href='../../../resources/css/login-mobile.min.css' ks:href="@{/resources/css/login-mobile.min.css}"/>
+    <link type="text/css" rel="stylesheet" href="../../../resources/css/add2home-2.0.5.min.css" ks:href="@{/resources/css/add2home-2.0.5.min.css}"/>
 
-    <script src="../../../resources/jquery.mobile/jquery.mobile-1.2.0.min.js" ks:src="@{/resources/jquery.mobile/jquery.mobile-1.2.0.min.js}"></script>
+    <script src="../../../resources/js/jquery.mobile-1.2.0.min.js" ks:src="@{/resources/js/jquery.mobile-1.2.0.min.js}"></script>
 
     <title th:text="${title}">Knappsack</title>
 
@@ -49,8 +49,7 @@
 <body>
 
 <div th:fragment="pageSpecificImports">
-    <link type="text/css" rel="stylesheet" href="../../../resources/flexslider/flexslider.css" ks:href="@{/resources/flexslider/flexslider.css}" th:if="${include_detail}"/>
-    <link type="text/css" rel="stylesheet" href="../../../resources/css/detail.css" ks:href="@{/resources/css/detail.css}" th:if="${include_detail}"/>
+    <link type="text/css" rel="stylesheet" href="../../../resources/css/flexslider.min.css" ks:href="@{/resources/css/flexslider.min.css}" th:if="${include_detail}"/>
 
     <script type="text/javascript" th:if="${include_home}">
         var addToHomeConfig = {
@@ -61,9 +60,9 @@
             lifespan:10000
         };
     </script>
-    <script type="text/javascript" src="../../../resources/js/add2home-2.0.4.js" ks:src="@{/resources/js/add2home-2.0.4.js}" th:if="${include_home}"></script>
-    <script type="text/javascript" src="../../../resources/flexslider/jquery.flexslider.js" ks:src="@{/resources/flexslider/jquery.flexslider.js}" th:if="${include_detail}"></script>
-    <script type="text/javascript" src="../../../resources/js/jquery.validate.js" ks:src="@{/resources/js/jquery.validate.js}"></script>
+    <script type="text/javascript" src="../../../resources/js/add2home-2.0.5.min.js" ks:src="@{/resources/js/add2home-2.0.5.min.js}" th:if="${include_home}"></script>
+    <script type="text/javascript" src="../../../resources/js/jquery.flexslider.min.js" ks:src="@{/resources/js/jquery.flexslider.min.js}" th:if="${include_detail}"></script>
+    <script type="text/javascript" src="../../../resources/js/jquery.validate.min.js" ks:src="@{/resources/js/jquery.validate.min.js}"></script>
 
 </div>
 

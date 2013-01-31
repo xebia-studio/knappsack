@@ -33,8 +33,8 @@ public interface GroupDao extends Dao<Group> {
     Group getOwnedGroup(Application application);
 
     /**
-     * @param accessCode String - UUID of the Group
+     * @param uuid String - UUID of the Group
      * @return Group with the given UUID
      */
-    Group getGroupByAccessCode(String accessCode);
+    Group getGroupByUUID(String uuid);
 }

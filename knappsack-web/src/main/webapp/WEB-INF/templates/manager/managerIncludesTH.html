@@ -70,8 +70,14 @@
             <li id="groupNav">
                 <a href="groupsTH.html" th:href="@{/manager/viewGroups}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.groups}]]</a>
             </li>
+            <li id="reportsNav" th:if="${user.systemAdmin}">
+                <a href="reportsTH.html" th:href="@{/manager/viewReports}" class="button" th:inline="text"><i class="icon-chevron-right"></i> Reports</a>
+            </li>
             <li id="systemNav" th:if="${user.systemAdmin}">
                 <a href="systemTH.html" th:href="@{/manager/system}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.nav.system}]]</a>
+            </li>
+            <li id="helpNav">
+                <a href="helpTH.html" th:href="@{/manager/help}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.nav.help}]]</a>
             </li>
         </ul>
     </div>

@@ -8,7 +8,9 @@ import org.springframework.security.openid.OpenIDAttribute;
 import org.springframework.security.openid.OpenIDAuthenticationToken;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -56,7 +58,7 @@ public class UserDetailsServiceIT extends AbstractServiceTests {
     public void loadUserDetailsByEmailTest() {
         User user = getUser();
         userService.add(user);
-        List<String> openIdIdentifiers = new ArrayList<String>();
+        Set<String> openIdIdentifiers = new HashSet<String>();
         openIdIdentifiers.add("oldOpenIdIdentifier");
         user.setOpenIdIdentifiers(openIdIdentifiers);
 

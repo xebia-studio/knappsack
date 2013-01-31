@@ -74,7 +74,9 @@ public class AppFileServiceImpl implements AppFileService {
     public String getImageUrl(AppFile appFile) {
         if (appFile != null) {
             StorageService storageService = storageServiceFactory.getStorageService(appFile.getStorageType());
-            if (storageService instanceof LocalStorageService) {
+            if (storageService instanceof RemoteStorageService) {
+                return ((RemoteStorageService) storageService).getUrl(appFile, 120);
+            } else if (storageService instanceof LocalStorageService) {
                 return WebRequest.getInstance().generateURL("/image/" + appFile.getId());
             }
         }

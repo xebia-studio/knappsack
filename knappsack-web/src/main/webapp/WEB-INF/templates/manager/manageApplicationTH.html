@@ -16,11 +16,17 @@
         $(this).tabState('#application');
 
         var tempUrl, selectedElement;
-
+        var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
         var successFunction;
+        var downloadSummaryTable;
+        var downloadDetailsTable;
 
         $("#provisioningFileDiv").hide();
         $("#propertiesListDiv").hide();
+        $("#downloadSummaryTableDiv").hide();
+        $("#downloadDetailsTableDiv").hide();
+        $("#viewDownloadSummary").hide();
+        $("#viewDownloadDetails").hide();
 
         $('#description').wysihtml5({
             "image": false,
@@ -48,7 +54,8 @@
             if (hasIcon) {
                 $("#addIconDiv").hide();
             }
-
+            $("#viewDownloadSummary").show();
+            $("#viewDownloadDetails").show();
             $('#applicationType').attr('readonly', 'readonly');
             $("#applicationType option").not(":selected").attr("disabled", "disabled");
         }
@@ -62,6 +69,118 @@
                 $('#addIconDiv').show();
             }
 
+        });
+
+        $("#viewDownloadSummary").live("click", function (e) {
+            e.preventDefault();
+            tempUrl = $(this).val();
+            $("#downloadSummaryTableDiv").show();
+            $("#downloadDetailsTableDiv").hide();
+
+            if (downloadSummaryTable !== undefined) {
+                downloadSummaryTable.fnClearTable(false);
+                downloadSummaryTable.fnReloadAjax(tempUrl);
+            } else {
+                downloadSummaryTable = $('#downloadSummaryTable').dataTable({
+                    "bProcessing": true,
+                    "sAjaxDataProp": "",
+                    "sAjaxSource": tempUrl,
+                    "sPaginationType": "bootstrap",
+                    "oLanguage": {
+                        "sLengthMenu": "_MENU_ " + recordsPerPageText
+                    },
+                    "aoColumns": [
+                        {
+                            "aTargets": [0],
+                            "mData": "applicationName",
+                            "sDefaultContent": "N/A"
+                        },
+                        {
+                            "aTargets": [1],
+                            "mData": "applicationVersionName",
+                            "sDefaultContent": "N/A"
+                        },
+                        {
+                            "aTargets": [2],
+                            "mData": "total",
+                            "sDefaultContent": "N/A"
+                        }
+                    ]
+                });
+            }
+        });
+
+        $("#viewDownloadDetails").live("click", function (e) {
+            e.preventDefault();
+            tempUrl = $(this).val();
+            var swfPath = /*[[@{/resources/DataTables/swf/copy_csv_xls_pdf.swf}]]*/ "../../resources/DataTables/swf/copy_csv_xls_pdf.swf";
+            $("#downloadSummaryTableDiv").hide();
+            $("#downloadDetailsTableDiv").show();
+
+            if (downloadDetailsTable !== undefined) {
+                downloadDetailsTable.fnClearTable(false);
+                downloadDetailsTable.fnReloadAjax(tempUrl);
+            } else {
+                downloadDetailsTable = $('#downloadDetailsTable').dataTable({
+                    "sDom": "<'row-fluid'<'floatright'T>><'clear'>lfrtip",
+                    "oTableTools":{
+                        "sSwfPath": swfPath,
+                        "aButtons": [
+                            "copy",
+                            "print",
+                            {
+                                "sExtends": "collection",
+                                "sButtonText": 'Save <span class="caret"/>',
+                                "aButtons": ["csv", "xls", "pdf"]
+                            }
+                        ]
+                    },
+                    "bProcessing": true,
+                    "sAjaxDataProp": "",
+                    "sAjaxSource": tempUrl,
+                    "sPaginationType": "bootstrap",
+                    "oLanguage": {
+                        "sLengthMenu": "_MENU_ " + recordsPerPageText
+                    },
+                    "aoColumns": [
+                        {
+                            "aTargets": [0],
+                            "mData": "applicationName",
+                            "sDefaultContent": "N/A"
+                        },
+                        {
+                            "aTargets": [1],
+                            "mData": "applicationVersionName",
+                            "sDefaultContent": "N/A"
+                        },
+                        {
+                            "aTargets": [2],
+                            "mData": "userName",
+                            "sDefaultContent": "N/A"
+                        },
+                        {
+                            "aTargets": [3],
+                            "mData": "userEmail",
+                            "sDefaultContent": "N/A"
+                        },
+                        {
+                            "aTargets": [4],
+                            "mData": "userAgent",
+                            "sDefaultContent": "N/A"
+                        },
+                        {
+                            "aTargets": [5],
+                            "mData": "remoteAddress",
+                            "sDefaultContent": "N/A"
+                        },
+                        {
+                            "aTargets": [6],
+                            "mData": "date",
+                            "sDefaultContent": "N/A"
+                        }
+                    ]
+                });
+            }
         });
 
         $("[id^=deleteScreenShotButton]").live("click", function (e) {
@@ -327,7 +446,7 @@
 
 
                                         <div class="form-actions">
-                                            <button type="submit" class="btn btn-primary" th:text="#{desktop.manageApplication.submit}">Submit</button>
+                                            <button id="submitBtn" type="submit" class="btn btn-primary" th:text="#{desktop.manageApplication.submit}">Submit</button>
                                         </div>
 
                                     </fieldset>
@@ -354,6 +473,47 @@
                                     <dd th:text="#{desktop.manageApplication.screenShots.help}">The screen shots must be less than 800 kilobytes.</dd>
                                 </dl>
                             </div>
+                        </div>
+                        <p>
+                            <button class="btn btn-primary"
+                                    th:value="@{'/manager/viewDownloadSummary/' + ${uploadApplication.id}}"
+                                    id="viewDownloadSummary">View Download Summary
+                            </button>
+
+                            <button class="btn btn-primary"
+                                    th:value="@{'/manager/viewDownloadDetails/' + ${uploadApplication.id}}"
+                                    id="viewDownloadDetails">View Download Details
+                            </button>
+                        </p>
+
+                        <div id="downloadSummaryTableDiv">
+                            <table id="downloadSummaryTable" class="table table-striped table-bordered">
+                                <thead>
+                                <tr>
+                                    <th id="applicationNameSummaryHeader">Application</th>
+                                    <th id="applicationVersionNameSummarHeader">Version</th>
+                                    <th id="totalSummaryHeader">Total Downloads</th>
+                                </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <div id="downloadDetailsTableDiv">
+                            <table id="downloadDetailsTable" class="table table-striped table-bordered">
+                                <thead>
+                                <tr>
+                                    <th id="applicationNameHeader">Application</th>
+                                    <th id="applicationVersionNameHeader">Version</th>
+                                    <th id="userNameHeader">User</th>
+                                    <th id="userEmailHeader">Email</th>
+                                    <th id="userAgentHeader">User Agent</th>
+                                    <th id="remoteAddressHeader">Remote Address</th>
+                                    <th id="dateHeader">Date</th>
+                                </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
                     </div>
                     <div id="versions" class="tab-pane">
@@ -397,7 +557,8 @@
 
 <section id="scripts">
     <section th:include="/includesTH :: required_scripts"/>
-    <section th:include="/includesTH :: table_scripts"/>
+    <!--<section th:include="/includesTH :: table_scripts"/>-->
+    <section th:include="/includesTH :: table_tools_scripts"/>
     <section th:include="/includesTH :: wysiwyg_scripts"/>
     <script th:substituteby="/includesTH :: cookie_script"></script>
 </section>

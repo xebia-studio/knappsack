@@ -11,7 +11,7 @@
     $(document).ready(function () {
         var tempUrl, successFunction;
 
-        $("#progressDiv").hide();
+//        $("#progressDiv").hide();
 
         var isEdit = /*[[${isEdit}]]*/ false;
         if (isEdit) {
@@ -80,45 +80,46 @@
             successFunction = '';
         });
 
-        $('#categoryForm').submit(function() {
-            return true;
-        });
+//        $('#categoryForm').submit(function() {
+//            return true;
+//        });
 
-        $("#submitButton").live("click", function () {
-            if(hasIcon) {
-                $("#categoryForm").submit();
-                return;
-            }
-            $("#progressDiv").show();
-            var url = /*[[@{/manager/categoryUploadProgress}]]*/ '/manager/categoryUploadProgress';
-            $("#categoryForm").find('progress').attr({value:0, max:100});
-            var formData = new FormData($("#formContainer").find('form')[0]);
-            $.ajax({
-                url:url,
-                type:'POST',
-                xhr:function () {
-                    progressXhr = $.ajaxSettings.xhr();
-                    if (progressXhr.upload) {
-                        progressXhr.upload.addEventListener('progress', function (evt) {
-                            if (evt.lengthComputable) {
-                                $("#categoryForm").find('progress').attr({value:evt.loaded, max:evt.total});
-                            }
-                        }, false);
-                    }
-                    return progressXhr;
-                },
-                success:function (data) {
-                    if (data.result) {
-                        $("#categoryForm").find('progress').attr({value:100, max:100});
-                        $("#categoryForm").submit();
-                    }
-                },
-                data:formData,
-                cache:false,
-                contentType:false,
-                processData:false
-            });
-        });
+//        $("#categoryForm").on('submit', function (e) {
+//            if(hasIcon) {
+//                return true;
+//            }
+//            $("#progressDiv").show();
+//            var url = /*[[@{/manager/categoryUploadProgress}]]*/ '/manager/categoryUploadProgress';
+//            $("#categoryForm").find('progress').attr({value:0, max:100});
+//            var formData = new FormData($("#formContainer").find('form')[0]);
+//            $.ajax({
+//                url:url,
+//                type:'POST',
+//                xhr:function () {
+//                    progressXhr = $.ajaxSettings.xhr();
+//                    if (progressXhr.upload) {
+//                        progressXhr.upload.addEventListener('progress', function (evt) {
+//                            if (evt.lengthComputable) {
+//                                $("#categoryForm").find('progress').attr({value:evt.loaded, max:evt.total});
+//                            }
+//                        }, false);
+//                    }
+//                    return progressXhr;
+//                },
+//                success:function (data) {
+//                    if (data.result) {
+//                        $("#categoryForm").find('progress').attr({value:100, max:100});
+//                        hasIcon = true;
+//                        $("#categoryForm").submit();
+//                    }
+//                },
+//                data:formData,
+//                cache:false,
+//                contentType:false,
+//                processData:false
+//            });
+//            return false;
+//        });
 
     });
     /*]]>*/
@@ -228,15 +229,15 @@
                                 </div>
                             </div>
 
-                            <div class="control-group" id="progressDiv">
-                                <label class="control-label" for="progressBar" th:inline="text"><span class="required"></span>[[#{desktop.manageCategory.progress}]]</label>
-                                <div class="controls">
-                                    <progress id="progressBar" value="0"></progress>
-                                </div>
-                            </div>
+                            <!--<div class="control-group" id="progressDiv">-->
+                                <!--<label class="control-label" for="progressBar" th:inline="text"><span class="required"></span>[[#{desktop.manageCategory.progress}]]</label>-->
+                                <!--<div class="controls">-->
+                                    <!--<progress id="progressBar" value="0"></progress>-->
+                                <!--</div>-->
+                            <!--</div>-->
 
                             <div class="form-actions">
-                                <button id="submitButton" type="button" class="btn btn-primary" th:text="#{desktop.manageCategory.submit}">Submit</button>
+                                <button id="submitButton" type="submit" class="btn btn-primary" th:text="#{desktop.manageCategory.submit}">Submit</button>
                             </div>
                         </fieldset>
 

@@ -48,6 +48,10 @@ public class ActivationController extends AbstractController {
 
         if (userService.activate(user.getId(), code)) {
             userService.updateSecurityContext(userService.get(user.getId()));
+            EventDelivery deliveryMechanism = eventDeliveryFactory.getEventDelivery(EventType.USER_ACCOUNT_ACTIVATION_SUCCESS);
+            if (deliveryMechanism != null) {
+                 deliveryMechanism.sendNotifications(user);
+            }
             return "redirect:/activate";
         } else {
             return "redirect:/activate?error=true";

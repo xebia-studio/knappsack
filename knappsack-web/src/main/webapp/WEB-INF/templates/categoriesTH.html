@@ -10,6 +10,13 @@
 
     <script type="text/javascript" th:inline="javascript">
         /*<![CDATA[*/
+        $(window).load(function() {
+            $('img.delay-image').each(function(index, value) {
+                var $elem = $(this);
+                $elem.attr('src', $elem.data('img-url'));
+            });
+        });
+
         $(document).ready(function () {
 
             $('.category').click(function() {
@@ -38,7 +45,7 @@
         <div class="row" style="margin: 0 auto;">
 
             <div th:each="category : ${categories}" th:attr="data-id=${category.id}" class="category" th:title="${category.name}">
-                <div class="icon"><img th:src="@{${category.icon.url}}"/></div>
+                <div class="icon"><img class="delay-image" th:attr="data-img-url=@{${category.icon.url}}"/></div>
                 <div style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"><span th:text="${category.name}"/></div>
             </div>
         </div>

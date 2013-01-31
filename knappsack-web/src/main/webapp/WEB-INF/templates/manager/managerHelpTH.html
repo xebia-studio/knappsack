@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="active='helpNav',title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body class="lightNav">
+
+<div th:substituteby="/includesTH :: header"/>
+
+<div class="container-fluid">
+
+    <div class="row-fluid">
+
+        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+
+        <div class="span10">
+
+            <header class="jumbotron subhead" id="overview">
+                <h1 th:text="#{desktop.manager.help.overview.header}">Help</h1>
+
+                <p class="lead" th:text="#{desktop.manager.help.overview.lead}">
+                    To guide you with Knappsack
+                </p>
+
+            </header>
+
+            <section class="well">
+                <p><span th:text="#{desktop.manager.help.line1}">The quick start guide for Knappsack can be found</span> <a href="https://docs.google.com/document/d/18J3Rb2rnNZdXxvDA3Riq2Zae456wyhzUOe2JctJQKlg/edit" th:text="#{desktop.manager.help.anchor}" rel="external">Here</a></p>
+                <p><span th:text="#{desktop.manager.help.line2}">For a list of frequently asked questions and their answers please go to our FAQ page</span> <a href="http://support.knappsack.com/forums/21434262-faqs" th:text="#{desktop.manager.help.anchor}" rel="external">Here</a></p>
+                <p><span th:text="#{desktop.manager.help.line3}">If you want to ask a question, give us an idea, or just post a comment, please visit our support forums</span> <a href="http://support.knappsack.com" th:text="#{desktop.manager.help.anchor}" rel="external">Here</a></p>
+            </section>
+
+        </div>
+
+    </div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<section id="scripts">
+    <section th:include="/includesTH :: required_scripts"/>
+</section>
+
+</body>
+</html>

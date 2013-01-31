@@ -5,46 +5,47 @@
              xmlns:tx="http://www.springframework.org/schema/tx"
              xmlns:p="http://www.springframework.org/schema/p"
              xmlns:util="http://www.springframework.org/schema/util"
-             xmlns:jdbc="http://www.springframework.org/schema/jdbc" xmlns:context="http://www.springframework.org/schema/context"
+             xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+             xmlns:context="http://www.springframework.org/schema/context"
              xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
                 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
                 http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd
                 http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
     <context:component-scan use-default-filters="false" base-package="com.sparc.knappsack.components">
-        <context:include-filter type="assignable" expression="com.sparc.knappsack.components.entities.StorageConfiguration"/>
+        <context:include-filter type="assignable"
+                                expression="com.sparc.knappsack.components.entities.StorageConfiguration"/>
     </context:component-scan>
     <context:component-scan base-package="com.sparc.knappsack.components.dao"/>
 
     <context:property-placeholder location="classpath:properties/jdbc.properties" ignore-unresolvable="true"/>
 
-    <beans:bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter"
+    <beans:bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"
                 p:showSql="false"/>
 
-    <beans:bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.EclipseLinkJpaDialect"/>
-
+    <beans:bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
 
     <!--DEV PROFILE-->
     <beans:beans profile="dev">
 
         <!--Uncomment this code in order to use flyway in the development environment-->
         <!--<beans:bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean" depends-on="flyway"-->
-                    <!--p:packagesToScan="com.sparc.knappsack.components.entities"-->
-                    <!--p:jpaDialect-ref="jpaDialect"-->
-                    <!--p:dataSource-ref="dataSource"-->
-                    <!--p:jpaVendorAdapter-ref="jpaVendorAdapter"-->
-                    <!--p:persistenceUnitName="ComposerJPA"-->
-                    <!--p:jpaPropertyMap-ref="jpaPropertyMap"/>-->
+            <!--p:packagesToScan="com.sparc.knappsack.components.entities"-->
+            <!--p:jpaDialect-ref="jpaDialect"-->
+            <!--p:dataSource-ref="dataSource"-->
+            <!--p:jpaVendorAdapter-ref="jpaVendorAdapter"-->
+            <!--p:persistenceUnitName="ComposerJPA"-->
+            <!--p:jpaPropertyMap-ref="jpaPropertyMap"/>-->
 
         <!--<beans:bean id="flyway" class="com.googlecode.flyway.core.Flyway" init-method="migrate">-->
             <!--<beans:property name="dataSource" ref="dataSource"/>-->
         <!--</beans:bean>-->
 
         <!--<util:map id="jpaPropertyMap">-->
-            <!--<beans:entry key="eclipselink.ddl-generation" value="NONE"/>-->
-            <!--<beans:entry key="eclipselink.ddl-generation.output-mode" value="both"/>-->
-            <!--<beans:entry key="eclipselink.weaving" value="false"/>-->
-            <!--<beans:entry key="eclipselink.logging.level" value="FINE"/>-->
+            <!--<beans:entry key="hibernate.hbm2ddl.auto" value="none"/>-->
+            <!--<beans:entry key="hibernate.dialect" value="${dev.jdbc.dialect}"/>-->
+            <!--<beans:entry key="hibernate.show_sql" value="false"/>-->
+            <!--<beans:entry key="hibernate.enable_lazy_load_no_trans" value="true"/>-->
         <!--</util:map>-->
 
         <beans:bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
@@ -55,15 +56,15 @@
                     p:persistenceUnitName="ComposerJPA"
                     p:jpaPropertyMap-ref="jpaPropertyMap"/>
 
+
         <util:map id="jpaPropertyMap">
-            <beans:entry key="eclipselink.deploy-on-startup" value="True"/>
-            <beans:entry key="eclipselink.ddl-generation" value="create-or-extend-tables"/>
-            <beans:entry key="eclipselink.ddl-generation.output-mode" value="database"/>
-            <beans:entry key="eclipselink.deploy-on-startup" value="True"/>
-            <beans:entry key="eclipselink.weaving" value="False"/>
-            <beans:entry key="eclipselink.logging.level" value="FINEST"/>
-            <beans:entry key="eclipselink.cache.shared.default" value="False"/>
-            <beans:entry key="eclipselink.inheritance.outer-join" value="True"/>
+            <beans:entry key="hibernate.hbm2ddl.auto" value="update"/>
+            <beans:entry key="hibernate.dialect" value="${dev.jdbc.dialect}"/>
+            <beans:entry key="hibernate.show_sql" value="true"/>
+            <beans:entry key="hibernate.enable_lazy_load_no_trans" value="true"/>
+            <!--<beans:entry key="hibernate.cache.use_second_level_cache" value="true"/>-->
+            <!--<beans:entry key="hibernate.cache.use_query_cache" value="true"/>-->
+            <!--<beans:entry key="hibernate.cache.region.factory_class" value="com.hazelcast.hibernate.HazelcastCacheRegionFactory"/>-->
         </util:map>
 
         <!-- Declare a datasource that has pooling capabilities-->
@@ -71,18 +72,24 @@
                     destroy-method="close"
                     p:driverClass="${dev.jdbc.driverClassName}"
                     p:jdbcUrl="${dev.jdbc.url}"
+                    p:maxIdleTime="1800"
+                    p:maxConnectionAge="3600"
+                    p:maxIdleTimeExcessConnections="1800"
                     p:acquireIncrement="5"
-                    p:idleConnectionTestPeriod="60"
-                    p:maxPoolSize="10"
-                    p:maxStatements="10"
-                    p:minPoolSize="5"/>
+                    p:idleConnectionTestPeriod="3600"
+                    p:maxPoolSize="120"
+                    p:maxStatementsPerConnection="15"
+                    p:minPoolSize="20"
+                    p:numHelperThreads="6"
+                    p:unreturnedConnectionTimeout="600"/>
 
         <jdbc:initialize-database data-source="dataSource" enabled="true" ignore-failures="DROPS">
             <jdbc:script location="${dev.jdbc.loggingStartupScript}"/>
         </jdbc:initialize-database>
 
         <!-- provides a H2 console to look into the db if necessary -->
-        <beans:bean id="dbWebServer" factory-method="createWebServer" class="com.sparc.knappsack.components.server.DBWebServer"
+        <beans:bean id="dbWebServer" factory-method="createWebServer"
+                    class="com.sparc.knappsack.components.server.DBWebServer"
                     depends-on="dataSource"
                     init-method="start" lazy-init="false">
             <beans:constructor-arg value="-web,-webPort,11111"/>

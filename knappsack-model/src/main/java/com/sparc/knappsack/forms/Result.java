@@ -10,6 +10,9 @@ public class Result {
     private boolean result;
 
     public List<Long> getIds() {
+        if (ids == null) {
+            ids = new ArrayList<Long>();
+        }
         return ids;
     }
 

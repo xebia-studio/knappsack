@@ -4,6 +4,7 @@ import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.enums.UserRole;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.encoding.MessageDigestPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,6 +29,9 @@ public abstract class AbstractServiceTests extends AbstractTransactionalJUnit4Sp
 
     @PersistenceContext
     EntityManager entityManager;
+
+    @Autowired(required = true)
+    private UserService userService;
 
     @Before
     public void setup() {
@@ -55,6 +59,8 @@ public abstract class AbstractServiceTests extends AbstractTransactionalJUnit4Sp
             user.setPassword(passwordEncoder.encodePassword("1234", user.getEmail()));
             user.setActivationCode(UUID.randomUUID().toString());
             user.getUuid();
+
+            userService.add(user);
         }
 
         return user;

@@ -13,7 +13,7 @@
 <script type="text/javascript" th:inline="javascript">
     /*<![CDATA[*/
     $(document).ready(function () {
-        $("#progressDiv").hide();
+//        $("#progressDiv").hide();
 
         $('#recentChanges').wysihtml5({
             "image": false,
@@ -30,45 +30,89 @@
             $('#versionName').attr('readonly', 'readonly');
         }
 
-        $("#submitButton").live("click", function () {
-            if(isEdit) {
-                $("#applicationsForm").submit();
-                return;
-            }
-            $("#progressDiv").show();
-            var url = /*[[@{/manager/applicationVersionUploadProgress}]]*/ '/manager/applicationVersionUploadProgress';
-            $("#applicationsForm").find('progress').attr({value:0, max:100});
-            var formData = new FormData($("#formContainer").find('form')[0]);
-            $.ajax({
-                url:url,
-                type:'POST',
-                xhr:function () {
-                    progressXhr = $.ajaxSettings.xhr();
-                    if (progressXhr.upload) {
-                        progressXhr.upload.addEventListener('progress', function (evt) {
-                            if (evt.lengthComputable) {
-                                $("#applicationsForm").find('progress').attr({value:evt.loaded, max:evt.total});
-                            }
-                        }, false);
-                    }
-                    return progressXhr;
-                },
-                success:function (data) {
-                    if (data.result) {
-                        $("#applicationsForm").find('progress').attr({value:100, max:100});
-                        $("#applicationsForm").submit();
-                    }
-                },
-                data:formData,
-                cache:false,
-                contentType:false,
-                processData:false
-            });
-        });
+//        $("#applicationsForm").on("submit", function (e) {
+//            if(hasInstallationFile) {
+//                $("#appState option:selected").removeAttr('disabled');
+//                return true;
+//            }
+//            $("#progressDiv").show();
+//            var url = /*[[@{/manager/applicationVersionUploadProgress}]]*/ '/manager/applicationVersionUploadProgress';
+//            $("#applicationsForm").find('progress').attr({value:0, max:100});
+//            var formData = new FormData($("#formContainer").find('form')[0]);
+//            $.ajax({
+//                url:url,
+//                type:'POST',
+//                xhr:function () {
+//                    progressXhr = $.ajaxSettings.xhr();
+//                    if (progressXhr.upload) {
+//                        progressXhr.upload.addEventListener('progress', function (evt) {
+//                            if (evt.lengthComputable) {
+//                                $("#applicationsForm").find('progress').attr({value:evt.loaded, max:evt.total});
+//                            }
+//                        }, false);
+//                    }
+//                    return progressXhr;
+//                },
+//                success:function (data) {
+//                    if (data.result) {
+//                        $("#applicationsForm").find('progress').attr({value:100, max:100});
+//                        hasInstallationFile = true;
+//                        $("#applicationsForm").submit();
+//                    }
+//                },
+//                data:formData,
+//                cache:false,
+//                contentType:false,
+//                processData:false
+//            });
+//            return false;
+//        });
 
-        $("#applicationsForm").submit(function() {
-            $("#appState option:selected").removeAttr('disabled');
-            return true;
+        if ($('#keyVaultEntries').val()) {
+            showKeyVaultEntries();
+        } else {
+            hideKeyVaultEntries();
+        }
+
+        function showKeyVaultEntries() {
+            $('#btnGrpVisibility > .btn').each(function() {
+                var $this = $(this);
+                if ($this.data('value')) {
+                    $this.addClass("btn-info").addClass('active');
+                    $this.siblings().removeClass("btn-info").removeClass('active');
+
+                    $('#keyVaultEntries').attr('required', 'required');
+                    $('#keyVaultEntriesDiv').show();
+
+                    return;
+                }
+            });
+        }
+
+        function hideKeyVaultEntries() {
+            $('#btnGrpVisibility > .btn').each(function() {
+                var $this = $(this);
+                if (!$this.data('value')) {
+                    $this.addClass("btn-info").addClass('active');
+                    $this.siblings().removeClass("btn-info").removeClass('active');
+
+                    $('#keyVaultEntries').removeAttr('required');
+                    $('#keyVaultEntries').val('');
+                    $('#keyVaultEntriesDiv').hide();
+
+                    return;
+                }
+            });
+        }
+
+        $("[data-switch='true']").on("click", ".btn", function() {
+            var $this = $(this);
+
+            if ($this.data('value')) {
+                showKeyVaultEntries();
+            } else {
+                hideKeyVaultEntries();
+            }
         });
 
     });
@@ -114,110 +158,123 @@
         <div class="row-fluid">
             <div id="formContainer" class="span7 well">
 
-            <form id="applicationsForm" th:object="${version}" th:action="@{'/manager/uploadVersion'}" method="POST"
-                  enctype="multipart/form-data" class="form-horizontal">
-                <legend th:if="${#bools.isTrue(isEdit)}" style="text-align: left" th:text="#{desktop.manageApplicationVersion.updateVersion}">Update Version</legend>
-                <legend th:if="${#bools.isFalse(isEdit)}" style="text-align: left" th:text="#{desktop.manageApplicationVersion.addVersion}">Add Version</legend>
-                <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
-                    <h1 th:text="#{errors.header}"/>
-                    <ul>
-                        <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
-                    </ul>
-                </div>
-                <fieldset>
-                    <input type="hidden" id="id" name="id" th:value="*{id}"/>
-                    <input type="hidden" id="parentId" name="parentId" th:value="*{parentId}"/>
-                    <input type="hidden" id="groupId" name="groupId" th:value="${parentGroupId}"/>
-                    <input type="hidden" id="editing" name="editing" th:value="${isEdit}"/>
-                    <input type="hidden" id="storageConfigurationId" name="storageConfigurationId" th:value="*{storageConfigurationId}"/>
-
-                    <div class="control-group">
-                        <label class="control-label" for="versionName" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.version}]]</label>
-                        <div class="controls">
-                            <input id="versionName" name="versionName" th:value="*{versionName}" autofocus="autofocus" required="required" type="text"/>
-                        </div>
+                <form id="applicationsForm" th:object="${version}" th:action="@{'/manager/uploadVersion'}" method="POST"
+                      enctype="multipart/form-data" class="form-horizontal">
+                    <legend th:if="${#bools.isTrue(isEdit)}" style="text-align: left" th:text="#{desktop.manageApplicationVersion.updateVersion}">Update Version</legend>
+                    <legend th:if="${#bools.isFalse(isEdit)}" style="text-align: left" th:text="#{desktop.manageApplicationVersion.addVersion}">Add Version</legend>
+                    <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                        <h1 th:text="#{errors.header}"/>
+                        <ul>
+                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                        </ul>
                     </div>
+                    <fieldset>
+                        <input type="hidden" id="id" name="id" th:value="*{id}"/>
+                        <input type="hidden" id="parentId" name="parentId" th:value="*{parentId}"/>
+                        <input type="hidden" id="groupId" name="groupId" th:value="${parentGroupId}"/>
+                        <input type="hidden" id="editing" name="editing" th:value="${isEdit}"/>
+                        <input type="hidden" id="storageConfigurationId" name="storageConfigurationId" th:value="*{storageConfigurationId}"/>
 
-                    <div class="control-group">
-                        <label class="control-label" for="recentChanges" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.recentChanges}]]</label>
-                        <div class="controls">
-                            <textarea id="recentChanges" name="recentChanges" th:text="*{recentChanges}" required="required" placeholder="Enter changes for this version of the application." style="width: 98%; height:200px;"/>
-                        </div>
-                    </div>
-
-                    <div class="control-group" id="installationFileDiv" th:if="${#bools.isFalse(isEdit)}">
-                        <label class="control-label" for="appFile" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.installationFile}]]</label>
-                        <div class="controls">
-                            <input class="button" type="file" id="appFile" name="appFile" required="required"/>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label" for="appState" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.selectState}]]</label>
-
-                        <div class="controls" th:if="${not #lists.isEmpty(appStates)}">
-                            <select id="appState" name="appState" required="required">
-                                <option value="" th:text="#{select.option.default}">--Please Select--</option>
-                                <option th:each="appStateIter : ${appStates}"
-                                        th:selected="*{appState} == ${appStateIter}"
-                                        th:disabled="${#bools.isFalse(appStateIter.availableToGroup)}"
-                                        th:value="${appStateIter}" th:text="#{${appStateIter.messageKey}}"></option>
-                            </select>
+                        <div class="control-group">
+                            <label class="control-label" for="versionName" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.version}]]</label>
+                            <div class="controls">
+                                <input id="versionName" name="versionName" th:value="*{versionName}" autofocus="autofocus" required="required" type="text"/>
+                            </div>
                         </div>
 
-                    </div>
-
-                    <div class="control-group" th:if="${not #lists.isEmpty(groups)}">
-                        <label class="control-label" for="guestGroupIds" th:text="#{desktop.manageApplicationVersion.selectGroups}">Select Groups</label>
-
-                        <div class="controls">
-                            <select multiple="multiple" id="guestGroupIds" name="guestGroupIds">
-                                <option th:each="group : ${groups}"
-                                        th:selected="${#lists.contains(currentGuestGroupIds, group.id)}"
-                                        th:value="${group.id}" th:text="${group.name}"></option>
-                            </select>
+                        <div class="control-group">
+                            <label class="control-label" for="recentChanges" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.recentChanges}]]</label>
+                            <div class="controls">
+                                <textarea id="recentChanges" name="recentChanges" th:text="*{recentChanges}" placeholder="Enter changes for this version of the application." style="width: 98%; height:200px;"/>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="control-group" id="progressDiv" th:if="${#bools.isFalse(isEdit)}">
-                        <label class="control-label" for="progressBar" th:inline="text"><span class="required"></span>[[#{desktop.manageApplicationVersion.progress}]]</label>
-                        <div class="controls">
-                            <progress id="progressBar" value="0"></progress>
+                        <div class="control-group" id="installationFileDiv" th:if="${#bools.isFalse(isEdit)}">
+                            <label class="control-label" for="appFile" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.installationFile}]]</label>
+                            <div class="controls">
+                                <input class="button" type="file" id="appFile" name="appFile" required="required"/>
+                            </div>
                         </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="appState" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageApplicationVersion.selectState}]]</label>
+
+                            <div class="controls" th:if="${not #lists.isEmpty(appStates)}">
+                                <select id="appState" name="appState" required="required">
+                                    <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                    <option th:each="appStateIter : ${appStates}"
+                                            th:selected="*{appState} == ${appStateIter}"
+                                            th:disabled="${#bools.isFalse(appStateIter.availableToGroup)}"
+                                            th:value="${appStateIter}" th:text="#{${appStateIter.messageKey}}" th:if="(${#bools.isTrue(appStateIter.userSelectable)} and ${#bools.isTrue(appStateIter.availableToGroup)}) or (*{appState} == ${appStateIter})"></option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <div class="control-group" th:if="${not #lists.isEmpty(groups)}">
+                            <label class="control-label" for="guestGroupIds" th:text="#{desktop.manageApplicationVersion.selectGroups}">Select Groups</label>
+
+                            <div class="controls">
+                                <select multiple="multiple" id="guestGroupIds" name="guestGroupIds">
+                                    <option th:each="group : ${groups}"
+                                            th:selected="${#lists.contains(currentGuestGroupIds, group.id)}"
+                                            th:value="${group.id}" th:text="${group.name}"></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <section th:if="${not #lists.isEmpty(keyVaultEntries)}">
+                            <div id="keyVaultEntriesDiv" class="control-group" style="display: none;">
+                                <label class="control-label" for="keyVaultEntries"><span class="required" th:text="#{desktop.required.field}">*</span> Keys</label>
+                                <div class="controls">
+                                    <select id="keyVaultEntries" th:field="*{keyVaultEntryId}">
+                                        <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                        <option th:each="keyVaultEntry : ${keyVaultEntries}"
+                                                th:value="${keyVaultEntry.id}" th:text="${keyVaultEntry.name}"></option>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!--<div class="control-group" id="progressDiv" th:if="${#bools.isFalse(isEdit)}">-->
+                            <!--<label class="control-label" for="progressBar" th:inline="text"><span class="required"></span>[[#{desktop.manageApplicationVersion.progress}]]</label>-->
+                            <!--<div class="controls">-->
+                                <!--<progress id="progressBar" value="0"></progress>-->
+                            <!--</div>-->
+                        <!--</div>-->
+
+                        <div class="form-actions">
+                            <button id="submitButton" type="submit" class="btn btn-primary" th:text="#{desktop.manageApplicationVersion.submit}">Submit</button>
+                        </div>
+
+                    </fieldset>
+
+                    <div class="alert alert-info">
+                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
                     </div>
+                </form>
 
-                    <div class="form-actions">
-                        <button id="submitButton" type="button" class="btn btn-primary" th:text="#{desktop.manageApplicationVersion.submit}">Submit</button>
-                    </div>
-
-                </fieldset>
-
-                <div class="alert alert-info">
-                    <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
-                </div>
-            </form>
-
-        </div>
+            </div>
             <div class="span5">
-            <dl>
-                <dt th:text="#{desktop.manageApplicationVersion.versionName}">Version Name</dt>
-                <dd th:text="#{desktop.manageApplicationVersion.versionName.help}">The specific version of this application.  It's not possible to have multiple versions of the same type.  It must have the format of "numerals.numerals.numerals"  (example: 1.0.0)</dd>
-                <dt th:text="#{desktop.manageApplicationVersion.recentChanges}">Recent Changes</dt>
-                <dd th:text="#{desktop.manageApplicationVersion.recentChanges.help}">A list of changes specific to this new version that weren't in the previous version of the application.</dd>
-                <dt th:text="#{desktop.manageApplicationVersion.installationFile}">Installation File</dt>
-                <dd th:text="#{desktop.manageApplicationVersion.installationFile.help}">This is the application installation file for the target platform of the application.  For instance, if you were adding a version for an Android application, the installation file would be APK for the application.</dd>
-                <dt th:text="#{desktop.manageApplicationVersion.optionsAvailable}">The state options available are:</dt>
-                <dd></dd>
-                <dt th:text="#{desktop.manageApplicationVersion.publishGroup}">Publish to Group</dt>
-                <dd th:text="#{desktop.manageApplicationVersion.publishGroup.help}">This version is only available to the group that created it.</dd>
-                <dt th:text="#{desktop.manageApplicationVersion.publishOrg}">Publish to Organization</dt>
-                <dd th:text="#{desktop.manageApplicationVersion.publishOrg.help}">This version is available to all users of the organization.</dd>
-                <dt th:text="#{desktop.manageApplicationVersion.disabled}">Disabled</dt>
-                <dd th:text="#{desktop.manageApplicationVersion.disabled.help}">This version is not available to any users.</dd>
-                <dt th:text="#{desktop.manageApplicationVersion.publishOrgRequest}">Request Publish to Organization</dt>
-                <dd th:text="#{desktop.manageApplicationVersion.publishOrgRequest.help}">Requests that this version be available to all users belonging to the organization.  Requires approval from an organization administrator.</dd>
-            </dl>
-        </div>
+                <dl>
+                    <dt th:text="#{desktop.manageApplicationVersion.versionName}">Version Name</dt>
+                    <dd th:text="#{desktop.manageApplicationVersion.versionName.help}">The specific version of this application.  It's not possible to have multiple versions of the same type.  It must have the format of "numerals.numerals.numerals"  (example: 1.0.0)</dd>
+                    <dt th:text="#{desktop.manageApplicationVersion.recentChanges}">Recent Changes</dt>
+                    <dd th:text="#{desktop.manageApplicationVersion.recentChanges.help}">A list of changes specific to this new version that weren't in the previous version of the application.</dd>
+                    <dt th:text="#{desktop.manageApplicationVersion.installationFile}">Installation File</dt>
+                    <dd th:text="#{desktop.manageApplicationVersion.installationFile.help}">This is the application installation file for the target platform of the application.  For instance, if you were adding a version for an Android application, the installation file would be APK for the application.</dd>
+                    <dt th:text="#{desktop.manageApplicationVersion.optionsAvailable}">The state options available are:</dt>
+                    <dd></dd>
+                    <dt th:text="#{desktop.manageApplicationVersion.publishGroup}">Publish to Group</dt>
+                    <dd th:text="#{desktop.manageApplicationVersion.publishGroup.help}">This version is only available to the group that created it.</dd>
+                    <dt th:text="#{desktop.manageApplicationVersion.publishOrg}">Publish to Organization</dt>
+                    <dd th:text="#{desktop.manageApplicationVersion.publishOrg.help}">This version is available to all users of the organization.</dd>
+                    <dt th:text="#{desktop.manageApplicationVersion.disabled}">Disabled</dt>
+                    <dd th:text="#{desktop.manageApplicationVersion.disabled.help}">This version is not available to any users.</dd>
+                    <dt th:text="#{desktop.manageApplicationVersion.publishOrgRequest}">Request Publish to Organization</dt>
+                    <dd th:text="#{desktop.manageApplicationVersion.publishOrgRequest.help}">Requests that this version be available to all users belonging to the organization.  Requires approval from an organization administrator.</dd>
+                </dl>
+            </div>
         </div>
     </div>
 

@@ -1,9 +1,9 @@
 package com.sparc.knappsack.components.entities;
 
+import com.sparc.knappsack.enums.StorableType;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 import javax.persistence.*;
-import java.util.UUID;
 
 /**
  * A Storable entity is one that has one or many AppFile entities associated with it.  The purpose of this is to keep track of the files for
@@ -11,8 +11,8 @@ import java.util.UUID;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name="DISCRIMINATOR", discriminatorType=DiscriminatorType.STRING)
 @Table(name = "STORABLE")
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public abstract class Storable extends BaseEntity {
 
     private static final long serialVersionUID = 131232227317295130L;
@@ -26,6 +26,10 @@ public abstract class Storable extends BaseEntity {
     @JsonIgnore
     @JoinColumn(name = "STORAGE_CONFIGURATION_ID")
     private StorageConfiguration storageConfiguration;
+
+    @Column(name = "STORABLE_TYPE", unique = false, nullable = false)
+    @Enumerated(EnumType.STRING)
+    private StorableType storableType;
 
     public Long getId() {
         return id;
@@ -41,5 +45,15 @@ public abstract class Storable extends BaseEntity {
 
     public void setStorageConfiguration(StorageConfiguration storageConfiguration) {
         this.storageConfiguration = storageConfiguration;
+    }
+
+    public abstract StorableType getStorableType();
+
+    @SuppressWarnings("all")
+    @PrePersist
+    protected void prePersist() {
+        if (storableType == null) {
+            storableType = getStorableType();
+        }
     }
 }

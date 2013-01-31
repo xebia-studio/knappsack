@@ -113,9 +113,10 @@ public class EventWatchServiceImpl implements EventWatchService {
     @Override
     public boolean deleteAllEventWatchForNotifiable(Notifiable notifiable) {
         if (notifiable != null) {
-            if (eventWatchDao.batchDeleteEventWatch(notifiable.getId(), notifiable.getNotifiableType()) != null) {
-                return true;
+            for (EventWatch eventWatch : getAll(notifiable)) {
+                eventWatchDao.delete(eventWatch);
             }
+            return true;
         }
         return false;
     }
@@ -126,6 +127,16 @@ public class EventWatchServiceImpl implements EventWatchService {
             EventDelivery eventDelivery = eventDeliveryFactory.getEventDelivery(eventType);
             eventDelivery.sendNotifications(notifiable);
         }
+    }
+
+    @Override
+    public List<EventWatch> getAll(Notifiable notifiable) {
+        List<EventWatch> eventWatches = new ArrayList<EventWatch>();
+        if (notifiable != null) {
+            eventWatches = eventWatchDao.getAll(notifiable);
+        }
+
+        return eventWatches;
     }
 
     @Override

@@ -2,7 +2,7 @@ package com.sparc.knappsack.components.controllers;
 
 import com.sparc.knappsack.components.entities.AppFile;
 import com.sparc.knappsack.components.services.AppFileService;
-import com.sparc.knappsack.components.services.LocalStorageService;
+import com.sparc.knappsack.components.services.RemoteStorageService;
 import com.sparc.knappsack.components.services.StorageService;
 import com.sparc.knappsack.components.services.StorageServiceFactory;
 import com.sparc.knappsack.enums.ContentType;
@@ -21,9 +21,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 @Controller
 public class ImageController extends AbstractController {
@@ -49,13 +54,15 @@ public class ImageController extends AbstractController {
 
         StorageService storageService = storageServiceFactory.getStorageService(appFile.getStorageType());
 
-        if (storageService instanceof LocalStorageService) {
+        if (storageService instanceof RemoteStorageService) {
+            byte[] bytes = readImageFromUrl(appFile, (RemoteStorageService) storageService);
+
+            return new ResponseEntity<byte[]>(bytes, headers, HttpStatus.CREATED);
+        } else {
             byte[] bytes = readImageFromFile(appFile);
 
             return new ResponseEntity<byte[]>(bytes, headers, HttpStatus.CREATED);
         }
-
-        return null;
     }
 
     private byte[] readImageFromFile(AppFile appFile) {
@@ -68,5 +75,49 @@ public class ImageController extends AbstractController {
             log.error("Error reading image from file for image: " + appFile.getRelativePath(), e);
         }
         return new byte[0];
+    }
+
+    private byte[] readImageFromUrl(AppFile appFile, RemoteStorageService storageService) {
+        String urlString = storageService.getUrl(appFile, 60);
+        URL url;
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            log.error("Error instantiating URL from String: " + urlString, e);
+            return new byte[0];
+        }
+
+        BufferedImage image;
+        try {
+            image = ImageIO.read(url);
+        } catch (IOException e) {
+            log.error("Error reading image from URL for image: " + urlString, e);
+            return new byte[0];
+        }
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, "PNG", byteArrayOutputStream);
+        } catch (IOException e) {
+            log.error("Error writing image to byte stream: " + appFile.getRelativePath(), e);
+            return new byte[0];
+        }
+
+        try {
+            byteArrayOutputStream.flush();
+        } catch (IOException e) {
+            log.error("Error flushing byte stream for image: " + appFile.getRelativePath(), e);
+            return new byte[0];
+        }
+
+        byte[] imageInByte = byteArrayOutputStream.toByteArray();
+        try {
+            byteArrayOutputStream.close();
+        } catch (IOException e) {
+            log.error("Error closing byte stream for image: " + appFile.getRelativePath(), e);
+            return new byte[0];
+        }
+
+        return imageInByte;
     }
 }

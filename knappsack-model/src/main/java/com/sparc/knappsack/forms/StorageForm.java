@@ -8,6 +8,7 @@ public class StorageForm {
     private String baseLocation;
     private StorageType storageType;
     private String prefix = "";
+    private boolean registrationDefault;
     private boolean editing;
 
     public Long getId() {
@@ -48,6 +49,14 @@ public class StorageForm {
 
     public void setPrefix(String prefix) {
         this.prefix = prefix;
+    }
+
+    public boolean isRegistrationDefault() {
+        return registrationDefault;
+    }
+
+    public void setRegistrationDefault(boolean registrationDefault) {
+        this.registrationDefault = registrationDefault;
     }
 
     public boolean isEditing() {

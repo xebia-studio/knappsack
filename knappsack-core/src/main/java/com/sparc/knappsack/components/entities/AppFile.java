@@ -10,6 +10,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "APP_FILE")
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class AppFile extends BaseEntity {
 
     private static final long serialVersionUID = -922503072652756916L;
@@ -28,15 +29,15 @@ public class AppFile extends BaseEntity {
     @Column(name = "TYPE")
     private String type;
 
-    @Column(name = "SIZE")
-    private double size;
+    @Column(name = "SIZE", nullable = true)
+    private Double size = 0.0;
 
     @Column(name = "STORAGE_TYPE")
     @Enumerated(EnumType.STRING)
     private StorageType storageType;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
-    @JoinColumn(name = "STORABLE_ID")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "STORABLE_ID", nullable = false)
     @JsonBackReference
     private Storable storable;
 
@@ -92,14 +93,14 @@ public class AppFile extends BaseEntity {
     /**
      * @return double - the size of the file in megabytes
      */
-    public double getSize() {
-        return size;
+    public Double getSize() {
+        return size == null ? 0.0 : size;
     }
 
     /**
      * @param size - the size of the file in megabytes
      */
-    public void setSize(double size) {
+    public void setSize(Double size) {
         this.size = size;
     }
 

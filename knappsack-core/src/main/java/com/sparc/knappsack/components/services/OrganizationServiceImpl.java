@@ -3,11 +3,15 @@ package com.sparc.knappsack.components.services;
 import com.googlecode.flyway.core.util.StringUtils;
 import com.sparc.knappsack.components.dao.OrganizationDao;
 import com.sparc.knappsack.components.entities.*;
+import com.sparc.knappsack.components.events.EventDelivery;
+import com.sparc.knappsack.components.events.EventDeliveryFactory;
 import com.sparc.knappsack.enums.DomainType;
+import com.sparc.knappsack.enums.EventType;
+import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.models.DomainModel;
 import com.sparc.knappsack.models.OrganizationModel;
 import com.sparc.knappsack.models.UserDomainModel;
-import com.sparc.knappsack.models.UserModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,13 +53,17 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Autowired(required = true)
     private InvitationService invitationService;
 
+    @Qualifier("storageServiceFactory")
+    @Autowired
+    private StorageServiceFactory storageServiceFactory;
+
     @Qualifier("userService")
     @Autowired(required = true)
     private UserService userService;
 
-    @Qualifier("applicationVersionService")
+    @Qualifier("eventDeliveryFactory")
     @Autowired(required = true)
-    private ApplicationVersionService applicationVersionService;
+    private EventDeliveryFactory eventDeliveryFactory;
 
     @Qualifier("applicationService")
     @Autowired(required = true)
@@ -99,16 +107,18 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     private void delete(Organization organization) {
         if (organization != null) {
-            userDomainService.removeAllFromDomain(organization.getId(), DomainType.ORGANIZATION);
-            invitationService.deleteAll(organization.getId(), DomainType.ORGANIZATION);
+            userDomainService.removeAllFromDomain(organization.getId());
+            invitationService.deleteAll(organization.getId());
 
             //Delete Applications
-            Set<Long> applicationIds = new HashSet<Long>();
-            for (Application application : getAllOrganizationApplications(organization.getId())) {
-                applicationIds.add(application.getId());
+            List<Application> applications = new ArrayList<Application>();
+            for (Group group : organization.getGroups()) {
+                applications.addAll(group.getOwnedApplications());
+                group.setGuestApplicationVersions(null);
             }
-            for (Long id : applicationIds) {
-                applicationService.delete(id);
+            for (Application application : applications) {
+                applicationService.deleteApplicationFilesAndVersions(application);
+                application.getOwnedGroup().getOwnedApplications().remove(application);
             }
 
             //Delete Categories
@@ -119,6 +129,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             for (Long id : categoryIds) {
                 categoryService.delete(id);
             }
+
             organizationDao.delete(organization);
         }
     }
@@ -126,6 +137,11 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public void add(Organization organization) {
         organizationDao.add(organization);
+    }
+
+    @Override
+    public List<Organization> getOrganizations(List<Long> organizationIds) {
+        return organizationDao.get(organizationIds);
     }
 
     @Override
@@ -162,9 +178,19 @@ public class OrganizationServiceImpl implements OrganizationService {
         Organization organization = null;
         if (organizationModel != null) {
             organization = new Organization();
-            organization.setAccessCode(UUID.randomUUID().toString());
 
-            StorageConfiguration storageConfiguration = storageConfigurationService.get(organizationModel.getStorageConfigurationId());
+            organization.setDomainConfiguration(new DomainConfiguration());
+
+            mapOrgModelToOrg(organizationModel, organization);
+
+            save(organization);
+
+            StorageConfiguration storageConfiguration;
+            if (organizationModel.getStorageConfigurationId() == null || organizationModel.getStorageConfigurationId() <= 0) {
+                storageConfiguration = storageConfigurationService.getRegistrationDefault();
+            } else {
+                storageConfiguration = storageConfigurationService.get(organizationModel.getStorageConfigurationId());
+            }
             if (storageConfiguration == null) {
                 log.error("Attempted to create organization without a StorageConfiguration");
                 return null;
@@ -180,11 +206,7 @@ public class OrganizationServiceImpl implements OrganizationService {
             orgStorageConfig.setOrganization(organization);
             organization.setOrgStorageConfig(orgStorageConfig);
 
-            organization.setDomainConfiguration(new DomainConfiguration());
-
-            mapOrgModelToOrg(organizationModel, organization);
-
-            save(organization);
+            update(organization);
         }
 
         return organization;
@@ -214,21 +236,44 @@ public class OrganizationServiceImpl implements OrganizationService {
                 }
 
                 //Remove user from the specified organization
-                userDomainService.removeUserDomainFromDomain(organization.getId(), DomainType.ORGANIZATION, userId);
+                userDomainService.removeUserDomainFromDomain(organization.getId(), userId);
             }
         }
     }
 
     @Override
+    public List<User> getAllUsersForRole(Organization organization, UserRole userRole) {
+        List<User> users = new ArrayList<User>();
+        if (organization != null && organization.getId() != null && organization.getId() > 0 && userRole != null) {
+            List<UserDomain> userDomains = userDomainService.getAll(organization.getId(), userRole);
+            users.addAll(getUsersFromUserDomains(userDomains));
+        }
+        return users;
+    }
+
+
+    private List<User> getUsersFromUserDomains(List<UserDomain> userDomains) {
+        List<User> users = new ArrayList<User>();
+        if (userDomains != null) {
+            for (UserDomain userDomain : userDomains) {
+                if (!users.contains(userDomain.getUser())) {
+                    users.add(userDomain.getUser());
+                }
+            }
+        }
+        return users;
+    }
+
+    @Override
     public int getTotalUsers(Organization organization) {
         Set<User> users = new HashSet<User>();
-        List<UserDomain> orgUserDomains = userDomainService.getAll(organization.getId(), organization.getDomainType());
+        List<UserDomain> orgUserDomains = userDomainService.getAll(organization.getId());
         for (UserDomain orgUserDomain : orgUserDomains) {
             users.add(orgUserDomain.getUser());
         }
 
         for (Group group : organization.getGroups()) {
-            List<UserDomain> groupUserDomains = userDomainService.getAll(group.getId(), group.getDomainType());
+            List<UserDomain> groupUserDomains = userDomainService.getAll(group.getId());
             for (UserDomain groupUserDomain : groupUserDomains) {
                 users.add(groupUserDomain.getUser());
             }
@@ -271,8 +316,8 @@ public class OrganizationServiceImpl implements OrganizationService {
         Organization organization = get(organizationId);
 
         if (organization != null) {
-            for (UserDomain userDomain : userDomainService.getAll(organizationId, DomainType.ORGANIZATION)) {
-                UserDomainModel model = createUserDomainModel(userDomain);
+            for (UserDomain userDomain : userDomainService.getAll(organizationId)) {
+                UserDomainModel model = userDomainService.createUserDomainModel(userDomain);
                 userDomainModels.put(userDomain.getUser().getId(), model);
             }
 
@@ -295,9 +340,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         if (organization != null) {
             for (Group group : organization.getGroups()) {
-                for (UserDomain userDomain : userDomainService.getAll(group.getId(), DomainType.GROUP)) {
-                    if (!userDomainsModels.containsKey(userDomain.getUser().getId()) && !userService.isUserInDomain(userDomain.getUser(), organization.getId(), DomainType.ORGANIZATION)) {
-                        UserDomainModel model = createUserDomainModel(userDomain);
+                for (UserDomain userDomain : userDomainService.getAll(group.getId())) {
+                    if (!userDomainsModels.containsKey(userDomain.getUser().getId()) && !userService.isUserInDomain(userDomain.getUser(), organization.getId())) {
+                        UserDomainModel model = userDomainService.createUserDomainModel(userDomain);
                         userDomainsModels.put(userDomain.getUser().getId(), model);
                     }
                 }
@@ -305,28 +350,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
 
         return new ArrayList<UserDomainModel>(userDomainsModels.values());
-    }
-
-    private UserDomainModel createUserDomainModel(UserDomain userDomain) {
-        UserDomainModel model = null;
-        if (userDomain != null) {
-            model = new UserDomainModel();
-            model.setId(userDomain.getId());
-            model.setUserRole(userDomain.getRole().getUserRole());
-            model.setDomainId(userDomain.getDomainId());
-            model.setDomainType(userDomain.getDomainType());
-
-            UserModel userModel = new UserModel();
-            userModel.setEmail(userDomain.getUser().getEmail());
-            userModel.setFirstName(userDomain.getUser().getFirstName());
-            userModel.setLastName(userDomain.getUser().getLastName());
-            userModel.setUserName(userDomain.getUser().getUsername());
-            userModel.setId(userDomain.getUser().getId());
-
-            model.setUser(userModel);
-        }
-
-        return model;
     }
 
     @Override
@@ -340,29 +363,110 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public OrganizationModel createOrganizationModel(Long organizationId) {
-        OrganizationModel model = null;
-        Organization organization = get(organizationId);
-        if (organization != null) {
-            model = createOrganizationModel(organization);
+    public boolean isBandwidthLimit(Organization organization, StorageType storageType, Date startDate, Date endDate) {
+        boolean bandwidthLimitReached = false;
+        StorageService storageService = storageServiceFactory.getStorageService(storageType);
+        if (storageService instanceof RemoteStorageService) {
+            DomainConfiguration domainConfiguration = organization.getDomainConfiguration();
+            boolean checkingLimitValidations = !domainConfiguration.isDisableLimitValidations();
+            boolean monitoringBandwidth = domainConfiguration.isMonitorBandwidth();
+            long bandwidthLimitMB = domainConfiguration.getMegabyteBandwidthLimit();
+            if (checkingLimitValidations && monitoringBandwidth) {
+                double bandwidthUsed = ((RemoteStorageService) storageService).getMegabyteBandwidthUsed(organization.getOrgStorageConfig(), startDate, endDate);
+                if (bandwidthUsed >= bandwidthLimitMB) {
+                    bandwidthLimitReached = true;
+                }
+            }
+
+            if(!domainConfiguration.isBandwidthLimitReached() && bandwidthLimitReached) {
+                domainConfiguration.setBandwidthLimitReached(true);
+                sendBandwidthNotification(organization);
+            } else if(domainConfiguration.isBandwidthLimitReached() && !bandwidthLimitReached) {
+                domainConfiguration.setBandwidthLimitReached(false);
+            }
+            update(organization);
         }
-        return model;
+
+        return bandwidthLimitReached;
     }
 
-    private OrganizationModel createOrganizationModel(Organization organization) {
+    private boolean sendBandwidthNotification(Organization organization) {
+        boolean success = false;
+        EventDelivery deliveryMechanism = eventDeliveryFactory.getEventDelivery(EventType.BANDWIDTH_LIMIT_REACHED);
+        if (deliveryMechanism != null) {
+            success = deliveryMechanism.sendNotifications(organization);
+        }
+        return success;
+    }
+
+    public List<OrganizationModel> createOrganizationModels(List<Organization> organizations, boolean includeExternalData) {
+        List<OrganizationModel> organizationModels = new ArrayList<OrganizationModel>();
+        for (Organization organization : organizations) {
+            organizationModels.add(createOrganizationModel(organization, includeExternalData));
+        }
+
+        return organizationModels;
+    }
+
+    @Override
+    public List<OrganizationModel> createOrganizationModelsWithoutStorageConfiguration(List<Organization> organizations, boolean includeExternalData) {
+        List<OrganizationModel> organizationModels = new ArrayList<OrganizationModel>();
+        for (Organization organization : organizations) {
+            organizationModels.add(createOrganizationModelWithoutStorageConfiguration(organization, includeExternalData));
+        }
+
+        return organizationModels;
+    }
+
+    @Override
+    public OrganizationModel createOrganizationModelWithoutStorageConfiguration(Organization organization, boolean includeExternalData) {
         OrganizationModel model = null;
         if (organization != null) {
             model = new OrganizationModel();
             model.setId(organization.getId());
             model.setName(organization.getName());
-            model.setCreateDate(organization.getCreateDate());
-            OrgStorageConfig orgStorageConfig = organization.getOrgStorageConfig();
-            if (orgStorageConfig != null && orgStorageConfig.getStorageConfigurations() != null) {
-                model.setStorageConfigurationId(orgStorageConfig.getStorageConfigurations().get(0).getId());
-                model.setStoragePrefix(orgStorageConfig.getPrefix());
+            if (organization.getCreateDate() != null) {
+                model.setCreateDate(new Date(organization.getCreateDate().getTime()));
             }
         }
         return model;
+    }
+
+    @Override
+    public OrganizationModel createOrganizationModel(Long organizationId, boolean includeExternalData) {
+        return createOrganizationModel(get(organizationId), includeExternalData);
+    }
+
+    @Override
+    public OrganizationModel createOrganizationModel(Organization organization, boolean includeExternalData) {
+        OrganizationModel model = createOrganizationModelWithoutStorageConfiguration(organization, includeExternalData);
+
+        OrgStorageConfig orgStorageConfig = organization.getOrgStorageConfig();
+        if (orgStorageConfig != null && orgStorageConfig.getStorageConfigurations() != null) {
+            model.setStorageConfigurationId(orgStorageConfig.getStorageConfigurations().get(0).getId());
+            model.setStoragePrefix(orgStorageConfig.getPrefix());
+        }
+        return model;
+    }
+
+    @Override
+    public DomainModel createDomainModel(Organization domain) {
+        DomainModel model = null;
+        if (domain != null) {
+            model = createOrganizationModel(domain, false);
+        }
+        return model;
+    }
+
+    @Override
+    public List<DomainModel> getAssignableDomainModelsForDomainRequest(Organization organization) {
+        List<DomainModel> domainModels = new ArrayList<DomainModel>();
+        domainModels.add(createOrganizationModel(organization, false));
+        for(Group group : organization.getGroups()) {
+            domainModels.add(groupService.createDomainModel(group));
+        }
+
+        return domainModels;
     }
 
     @Override
@@ -409,7 +513,7 @@ public class OrganizationServiceImpl implements OrganizationService {
                 Callable<OrganizationModel> callable = new Callable<OrganizationModel>() {
                     @Override
                     public OrganizationModel call() throws Exception {
-                        return createOrganizationModel(organization);
+                        return createOrganizationModel(organization, true);
                     }
                 };
 
@@ -431,9 +535,71 @@ public class OrganizationServiceImpl implements OrganizationService {
     public List<UserDomainModel> getAllOrganizationAdmins(Long organizationId) {
         List<UserDomainModel> models = new ArrayList<UserDomainModel>();
         for(UserDomain userDomain : userDomainService.getAll(organizationId, DomainType.ORGANIZATION, UserRole.ROLE_ORG_ADMIN)) {
-            models.add(createUserDomainModel(userDomain));
+            models.add(userDomainService.createUserDomainModel(userDomain));
         }
 
         return models;
+    }
+
+    @Override
+    public long countOrganizationUsers(Long organizationId) {
+        return organizationDao.countOrganizationUsers(organizationId);
+    }
+
+    @Override
+    public long countOrganizationApps(Long organizationId) {
+        return organizationDao.countOrganizationApps(organizationId);
+    }
+
+    @Override
+    public long countOrganizationAppVersions(Long organizationId) {
+        return organizationDao.countOrganizationAppVersions(organizationId);
+    }
+
+    @Override
+    public long countOrganizationGroups(Long organizationId) {
+        return organizationDao.countOrganizationGroups(organizationId);
+    }
+
+    @Override
+    public boolean isDomainAdmin(Organization organization, User user) {
+        for(UserDomain userDomain : user.getUserDomains()) {
+            if(userDomain.getDomain().equals(organization) && UserRole.ROLE_ORG_ADMIN.name().equals(userDomain.getRole().getAuthority())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Set<User> getDomainRequestUsersForNotification(Organization organization) {
+        Set<User> users = new HashSet<User>();
+        for(UserDomain userDomain : organization.getUserDomains()) {
+            if(isDomainAdmin(organization, userDomain.getUser())) {
+                users.add(userDomain.getUser());
+            }
+        }
+
+        return users;
+    }
+
+    @Override
+    public Set<User> getAllAdmins(Organization organization, boolean includeParentDomainAdminsIfEmpty) {
+        Set<User> users = new HashSet<User>();
+        if (organization != null) {
+            List<UserDomain> organizationAdmins = userDomainService.getAll(organization.getId(), UserRole.ROLE_ORG_ADMIN);
+
+            if (organizationAdmins != null) {
+                for (UserDomain organizationAdmin : organizationAdmins) {
+                    User user = organizationAdmin.getUser();
+                    if (user != null) {
+                        users.add(user);
+                    }
+                }
+            }
+
+        }
+
+        return users;
     }
 }

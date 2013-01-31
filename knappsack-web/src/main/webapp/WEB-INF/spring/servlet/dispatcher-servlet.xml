@@ -62,11 +62,12 @@
     </beans:bean>
 
     <!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
-    <resources mapping="/resources/**" location="/resources/"/>
-    <resources mapping="/favicon.png" location="/resources/img/favicon.png"/>
-    <resources mapping="/favicon.ico" location="/resources/img/favicon.ico"/>
+    <resources mapping="/resources/**" location="/resources/" cache-period="86400"/>
+    <resources mapping="/favicon.png" location="/resources/img/favicon.png" cache-period="604800"/>
+    <resources mapping="/favicon.ico" location="/resources/img/favicon.ico" cache-period="604800"/>
 
     <beans:bean id="marshaller" class="org.springframework.oxm.xstream.XStreamMarshaller"/>
+    <!--<beans:bean id="filterMultipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>-->
 
     <beans:bean class="com.sparc.knappsack.web.MobileViewInterceptor">
         <beans:property name="mobileDirectoryPrefix" value="mobile/"/>

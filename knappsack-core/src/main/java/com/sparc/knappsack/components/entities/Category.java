@@ -1,16 +1,19 @@
 package com.sparc.knappsack.components.entities;
 
+import com.sparc.knappsack.enums.StorableType;
 import org.codehaus.jackson.annotate.JsonManagedReference;
-import org.eclipse.persistence.annotations.CascadeOnDelete;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 /**
  * A category is a division of applications with a specific purpose.
  */
 @Entity
 @Table(name = "CATEGORY")
-@DiscriminatorValue("CATEGORY")
 public class Category extends Storable {
 
     private static final long serialVersionUID = -6859847730817266053L;
@@ -24,10 +27,10 @@ public class Category extends Storable {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     @JoinColumn(name = "ICON_ID")
-    @CascadeOnDelete
+    @Fetch(FetchMode.JOIN)
     private AppFile icon;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
+    @ManyToOne(optional = false)
     @JoinColumn(name = "ORGANIZATION_ID")
     private Organization organization;
 
@@ -61,5 +64,9 @@ public class Category extends Storable {
 
     public void setOrganization(Organization organization) {
         this.organization = organization;
+    }
+
+    public StorableType getStorableType() {
+        return StorableType.CATEGORY;
     }
 }

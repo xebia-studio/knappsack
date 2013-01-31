@@ -1,5 +1,8 @@
 package com.sparc.knappsack.components.entities;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +15,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "ORG_STORAGE_CONFIG")
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class OrgStorageConfig extends BaseEntity {
 
     private static final long serialVersionUID = 7160416296577678618L;
@@ -28,8 +32,9 @@ public class OrgStorageConfig extends BaseEntity {
     @JoinTable(name = "ORG_STORAGE_CONFIG_STORAGE_CONFIGURATION", joinColumns = @JoinColumn(name = "ORG_STORAGE_CONFIG_ID"), inverseJoinColumns = @JoinColumn(name = "STORAGE_CONFIGURATION_ID"))
     private List<StorageConfiguration> storageConfigurations = new ArrayList<StorageConfiguration>();
 
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, optional = false)
     @JoinColumn(name = "ORGANIZATION_ID")
+    @Fetch(FetchMode.JOIN)
     private Organization organization;
 
     public Long getId() {
@@ -49,6 +54,9 @@ public class OrgStorageConfig extends BaseEntity {
     }
 
     public List<StorageConfiguration> getStorageConfigurations() {
+        if (storageConfigurations == null) {
+            storageConfigurations = new ArrayList<StorageConfiguration>();
+        }
         return storageConfigurations;
     }
 

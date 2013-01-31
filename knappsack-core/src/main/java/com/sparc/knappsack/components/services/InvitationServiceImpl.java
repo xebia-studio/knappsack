@@ -2,14 +2,16 @@ package com.sparc.knappsack.components.services;
 
 import com.csvreader.CsvReader;
 import com.sparc.knappsack.components.dao.InvitationDao;
+import com.sparc.knappsack.components.entities.Domain;
 import com.sparc.knappsack.components.entities.Invitation;
 import com.sparc.knappsack.components.entities.Role;
-import com.sparc.knappsack.enums.DomainType;
+import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.forms.InviteeForm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,11 +31,21 @@ public class InvitationServiceImpl implements InvitationService {
 
     private static Logger LOG = LoggerFactory.getLogger(InvitationServiceImpl.class);
 
+    @Qualifier("invitationDao")
     @Autowired(required = true)
     private InvitationDao invitationDao;
 
+    @Qualifier("roleService")
     @Autowired(required = true)
     private RoleService roleService;
+
+    @Qualifier("domainService")
+    @Autowired(required = true)
+    private DomainService domainService;
+
+    @Qualifier("userService")
+    @Autowired(required = true)
+    private UserService userService;
 
     @Override
     public Invitation get(Long id) {
@@ -56,33 +68,43 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     @Override
+    public Invitation get(String email, Domain domain, Role role) {
+        return invitationDao.get(email, domain, role);
+    }
+
+    @Override
     public void delete(Long id) {
         invitationDao.delete(get(id));
     }
 
     @Override
-    public List<Invitation> getAll(Long domainId, DomainType domainType) {
+    public List<Invitation> getAll(Long domainId) {
         List<Invitation> invitations = new ArrayList<Invitation>();
 
-        invitations.addAll(invitationDao.get(domainId, domainType));
+        invitations.addAll(invitationDao.getAllForDomain(domainId));
 
         return invitations;
     }
 
     @Override
-    public List<Invitation> getAll(String email, Long domainId, DomainType domainType) {
+    public long countAll(Long domainId) {
+        return invitationDao.countAll(domainId);
+    }
+    
+    @Override
+    public List<Invitation> getAll(String email, Long domainId) {
         List<Invitation> invitations = new ArrayList<Invitation>();
 
-        invitations.addAll(invitationDao.get(email, domainId, domainType));
+        invitations.addAll(invitationDao.getAllForEmailAndDomain(email, domainId));
 
         return invitations;
     }
 
     @Override
-    public Invitation createInvitation(InviteeForm inviteeForm, Long domainID, DomainType domainType) {
+    public Invitation createInvitation(InviteeForm inviteeForm, Long domainID) {
         Invitation invitation = null;
         if(inviteeForm.getEmail() != null && !inviteeForm.getEmail().isEmpty() && !inviteeForm.isDelete()) {
-            invitation = setupUserInvites(inviteeForm.getEmail(), inviteeForm.getUserRole(), domainType, domainID);
+            invitation = setupUserInvites(inviteeForm.getEmail(), inviteeForm.getUserRole(), domainID);
 
             add(invitation);
         }
@@ -90,10 +112,10 @@ public class InvitationServiceImpl implements InvitationService {
     }
 
     @Override
-    public Invitation createInvitation(String inviteeEmail, UserRole userRole, Long domainId, DomainType domainType) {
+    public Invitation createInvitation(String inviteeEmail, UserRole userRole, Long domainId) {
         Invitation invitation = null;
-        if (StringUtils.hasText(inviteeEmail) && userRole != null && domainId != null && domainId > 0 && domainType != null) {
-            invitation = setupUserInvites(inviteeEmail.trim(), userRole, domainType, domainId);
+        if (StringUtils.hasText(inviteeEmail) && userRole != null && domainId != null && domainId > 0) {
+            invitation = setupUserInvites(inviteeEmail.trim(), userRole, domainId);
 
             add(invitation);
         }
@@ -102,17 +124,42 @@ public class InvitationServiceImpl implements InvitationService {
 
 
     @Override
-    public long deleteAll(Long domainId, DomainType domainType) {
-        return invitationDao.deleteAll(domainId, domainType);
+    public long deleteAll(Long domainId) {
+        long numDeleted = 0;
+        Domain domain = domainService.get(domainId);
+        if (domain != null) {
+            numDeleted = deleteAll(domain);
+        }
+        return numDeleted;
     }
 
-    private Invitation setupUserInvites(String email, UserRole userRole, DomainType domainType, Long domainId) {
+    @Override
+    public long deleteAll(Domain domain) {
+        long numDeleted = 0;
+        if (domain != null) {
+            numDeleted = invitationDao.deleteAllForDomain(domain);
+        }
+        return numDeleted;
+    }
+
+    @Override
+    public void deleteInvitation(Long invitationId) {
+        //Only delete invitation if a user already exists.
+        Invitation invitation = get(invitationId);
+        if (invitation != null) {
+            User user = userService.getByEmail(invitation.getEmail());
+            if (user != null) {
+                invitationDao.delete(invitation);
+            }
+        }
+    }
+
+    private Invitation setupUserInvites(String email, UserRole userRole, Long domainId) {
 
         Role role = roleService.getRoleByAuthority(userRole.name());
 
         Invitation invitation = new Invitation();
-        invitation.setDomainId(domainId);
-        invitation.setDomainType(domainType);
+        invitation.setDomain(domainService.get(domainId));
         invitation.setEmail(email);
         invitation.setRole(role);
 

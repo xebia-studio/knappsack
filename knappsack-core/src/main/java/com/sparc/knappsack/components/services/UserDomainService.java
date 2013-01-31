@@ -4,26 +4,44 @@ import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.entities.UserDomain;
 import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.models.UserDomainModel;
 
 import java.util.List;
 
 public interface UserDomainService extends EntityService<UserDomain> {
 
-    UserDomain get(User user, Long domainId, DomainType domainType, UserRole userRole);
+    UserDomain get(User user, Long domainId, UserRole userRole);
 
-    UserDomain get(User user, Long domainId, DomainType domainType);
+    UserDomain get(User user, Long domainId);
 
     List<UserDomain> getAll(User user, DomainType domainType);
 
+    List<UserDomain> getAll(User user, DomainType... domainTypes);
+
     List<UserDomain> getAll(User user, DomainType domainType, UserRole userRole);
 
-    List<UserDomain> getAll(Long domainId, DomainType domainType);
+    List<UserDomain> getAll(Long domainId);
 
-    List<UserDomain> getAll(Long domainId, DomainType domainType, UserRole userRole);
+    List<UserDomain> getAll(Long domainId, UserRole... userRoles);
 
-    void removeUserDomainFromDomain(Long domainId, DomainType domainType, Long userId);
+    List<UserDomain> getAll(Long domainId, DomainType domainType, UserRole... userRoles);
 
-    void updateUserDomainRole(Long userId, Long domainId, DomainType domainType, UserRole userRole);
+    void removeUserDomainFromDomain(Long domainId, Long userId);
 
-    void removeAllFromDomain(Long domainId, DomainType domainType);
+    void updateUserDomainRole(Long userId, Long domainId, UserRole userRole);
+
+    void removeAllFromDomain(Long domainId);
+
+    UserDomainModel createUserDomainModel(UserDomain userDomain);
+
+
+    /**
+     * @param user User
+     * @param domainType DomainType
+     * @param userRole UserRole
+     * @return long - total amount of UserDomains of a specific type and role tied to this user
+     */
+    long countDomains(User user, DomainType domainType, UserRole userRole);
+
+    void delete(UserDomain userDomain);
 }

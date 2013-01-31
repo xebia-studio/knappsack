@@ -75,6 +75,16 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
         return category;
     }
 
+    private void save(Category category) {
+        if (category != null) {
+            if (category.getId() == null || category.getId() <= 0) {
+                categoryDao.add(category);
+            } else {
+                categoryDao.update(category);
+            }
+        }
+    }
+
     @Override
     public void add(Category category) {
         categoryDao.add(category);
@@ -108,7 +118,7 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
 
         Category savedCategory = get(categoryForm.getId());
         mapCategoryFields(categoryForm, savedCategory);
-        update(savedCategory);
+//        update(savedCategory);
 
         return savedCategory;
     }
@@ -117,7 +127,7 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
     public Category saveCategory(CategoryForm categoryForm) {
         Category savedCategory = new Category();
         mapCategoryFields(categoryForm, savedCategory);
-        add(savedCategory);
+//        add(savedCategory);
 
         return savedCategory;
     }
@@ -126,21 +136,29 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
         category.setDescription(categoryForm.getDescription());
         category.setName(categoryForm.getName());
 
+        Organization organization = organizationService.get(categoryForm.getOrganizationId());
+        category.setOrganization(organization);
+        if (!organization.getCategories().contains(category)) {
+            organization.getCategories().add(category);
+        }
+
+        save(category);
+
         Long storageConfigurationId = categoryForm.getStorageConfigurationId();
         Long orgStorageConfigId = categoryForm.getOrgStorageConfigId();
         //If null we are editing a category
         if (storageConfigurationId == null) {
             storageConfigurationId = category.getStorageConfiguration().getId();
         }
-        Organization organization = organizationService.get(categoryForm.getOrganizationId());
-        category.setOrganization(organization);
-        organization.getCategories().add(category);
+
         category.setStorageConfiguration(storageConfigurationService.get(storageConfigurationId));
         AppFile icon = createIcon(categoryForm.getIcon(), orgStorageConfigId, storageConfigurationId, category.getUuid());
         if (icon != null) {
             icon.setStorable(category);
             category.setIcon(icon);
         }
+
+        save(category);
     }
 
     private AppFile createIcon(MultipartFile icon, Long orgStorageConfigId, Long storageConfigurationId, String uuid) {
@@ -191,14 +209,15 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
         entertainmentCategory.setName("Entertainment");
         entertainmentCategory.setDescription("Applications featuring a bit of levity.");
         entertainmentCategory.setStorageConfiguration(storageConfiguration);
+        entertainmentCategory.setOrganization(organization);
+        organization.getCategories().add(entertainmentCategory);
+        add(entertainmentCategory);
+
         AppFile icon = createIcon(entertainmentIcon, orgStorageConfigId, storageConfigId, entertainmentCategory.getUuid());
         if (icon != null) {
             icon.setStorable(entertainmentCategory);
             entertainmentCategory.setIcon(icon);
         }
-        entertainmentCategory.setOrganization(organization);
-        organization.getCategories().add(entertainmentCategory);
-        add(entertainmentCategory);
         defaultCategories.add(entertainmentCategory);
 
         /**
@@ -208,15 +227,15 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
         productivityCategory.setName("Productivity");
         productivityCategory.setDescription("Applications to make your day to day more efficient.");
         productivityCategory.setStorageConfiguration(storageConfiguration);
+        productivityCategory.setOrganization(organization);
+        organization.getCategories().add(productivityCategory);
+        add(productivityCategory);
 
         icon = createIcon(productivityIcon, orgStorageConfigId, storageConfigId, productivityCategory.getUuid());
         if (icon != null) {
             icon.setStorable(productivityCategory);
             productivityCategory.setIcon(icon);
         }
-        productivityCategory.setOrganization(organization);
-        organization.getCategories().add(productivityCategory);
-        add(productivityCategory);
         defaultCategories.add(productivityCategory);
 
         /**
@@ -226,15 +245,15 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
         utilitiesCategory.setName("Utilities");
         utilitiesCategory.setDescription("Applications with a specific skill set.");
         utilitiesCategory.setStorageConfiguration(storageConfiguration);
+        utilitiesCategory.setOrganization(organization);
+        organization.getCategories().add(utilitiesCategory);
+        add(utilitiesCategory);
 
         icon = createIcon(utilitiesIcon, orgStorageConfigId, storageConfigId, utilitiesCategory.getUuid());
         if (icon != null) {
             icon.setStorable(utilitiesCategory);
             utilitiesCategory.setIcon(icon);
         }
-        utilitiesCategory.setOrganization(organization);
-        organization.getCategories().add(utilitiesCategory);
-        add(utilitiesCategory);
         defaultCategories.add(utilitiesCategory);
 
         return defaultCategories;
@@ -259,21 +278,21 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
             InputStream inputStream = ctx.getResource("resources/img/icon_entertainment.png").getInputStream();
             entertainmentIcon = new MockMultipartFile("defaultCategory1", "icon_entertainment.png", "image/png", IOUtils.toByteArray(inputStream));
         } catch (IOException e) {
-            log.error("Error loading entertainment icon for default categories", e);
+            log.warn("Error loading entertainment icon for default categories", e);
         }
 
         try {
             InputStream inputStream = ctx.getResource("resources/img/icon_productivity.png").getInputStream();
             productivityIcon = new MockMultipartFile("defaultCategory2", "icon_productivity.png", "image/png", IOUtils.toByteArray(inputStream));
         } catch (IOException e) {
-            log.error("Error loading productivity icon for default categories", e);
+            log.warn("Error loading productivity icon for default categories", e);
         }
 
         try {
             InputStream inputStream = ctx.getResource("resources/img/icon_utilities.png").getInputStream();
             utilitiesIcon = new MockMultipartFile("defaultCategory3", "icon_utilities.png", "image/png", IOUtils.toByteArray(inputStream));
         } catch (IOException e) {
-            log.error("Error loading utilities icon for default categories", e);
+            log.warn("Error loading utilities icon for default categories", e);
         }
     }
 }

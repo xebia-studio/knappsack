@@ -1,21 +1,53 @@
 package com.sparc.knappsack.components.dao;
 
-import com.sparc.knappsack.components.entities.Domain;
-import com.sparc.knappsack.components.entities.Group;
-import com.sparc.knappsack.components.entities.Organization;
+import com.mysema.query.jpa.impl.JPAQuery;
+import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.DomainType;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository("domainDao")
 public class DomainDaoImpl extends BaseDao implements DomainDao {
 
-    public Domain get(Long id, DomainType domainType) {
-        if (DomainType.GROUP.equals(domainType)) {
-            return getEntityManager().find(Group.class, id);
-        } else if (DomainType.ORGANIZATION.equals(domainType)) {
-            return getEntityManager().find(Organization.class, id);
-        }
+    QDomain domain = QDomain.domain;
+    QUserDomain userDomain = QUserDomain.userDomain;
+    QRegion region = QRegion.region;
+    QUser user = QUser.user;
 
-        return null;
+    public Domain get(Long id) {
+//        return getEntityManager().find(Domain.class, id);
+        return query().from(domain).where(domain.id.eq(id)).uniqueResult(domain);
+    }
+
+    @Override
+    public List<Domain> get(Long... ids) {
+        JPAQuery query = query().from(domain).where(domain.id.in(ids));
+        List<Domain> list = query.list(domain);
+        return list;
+    }
+
+    @Override
+    public Domain getByUUID(String uuid) {
+        return query().from(domain).where(domain.uuid.eq(uuid)).uniqueResult(domain);
+    }
+
+    @Override
+    public Domain getByRegion(long regionId) {
+        return query().from(domain).where(domain.regions.contains(subQuery().from(region).where(region.id.eq(regionId)).unique(region))).uniqueResult(domain);
+    }
+
+    @Override
+    public Domain getByRegion(Region region) {
+        return query().from(domain).where(domain.regions.contains(region)).uniqueResult(domain);
+    }
+
+    @Override
+    public boolean doesDomainContainRegionWithName(long domainId, String regionName) {
+        return query().from(region).where(region.name.equalsIgnoreCase(regionName), region.in(subQuery().from(domain).where(domain.id.eq(domainId), domain.regions.contains(region)).list(region))).exists();
+    }
+
+    public List<Domain> getAll(User aUser, DomainType... domainTypes) {
+        return query().from(domain).join(domain.userDomains, userDomain).where(domain.domainType.in(domainTypes).and(userDomain.user.eq(aUser))).list(domain);
     }
 }

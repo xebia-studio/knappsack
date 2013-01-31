@@ -11,6 +11,7 @@ import javax.persistence.*;
 @Inheritance
 @DiscriminatorColumn(name = "DISCRIMINATOR", discriminatorType = DiscriminatorType.STRING)
 @Table(name = "STORAGE_CONFIGURATION")
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public abstract class StorageConfiguration extends BaseEntity {
 
     private static final long serialVersionUID = -7395421937578331187L;
@@ -29,6 +30,9 @@ public abstract class StorageConfiguration extends BaseEntity {
     @Column(name = "STORAGE_TYPE")
     @Enumerated(EnumType.STRING)
     private StorageType storageType;
+
+    @Column(name = "REGISTRATION_DEFAULT")
+    private boolean registrationDefault;
 
     public Long getId() {
         return id;
@@ -60,5 +64,13 @@ public abstract class StorageConfiguration extends BaseEntity {
 
     public void setStorageType(StorageType storageType) {
         this.storageType = storageType;
+    }
+
+    public boolean isRegistrationDefault() {
+        return registrationDefault;
+    }
+
+    public void setRegistrationDefault(boolean registrationDefault) {
+        this.registrationDefault = registrationDefault;
     }
 }

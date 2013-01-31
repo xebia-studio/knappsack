@@ -1,6 +1,7 @@
 package com.sparc.knappsack.components.dao;
 
 import com.sparc.knappsack.components.entities.EventWatch;
+import com.sparc.knappsack.components.entities.Notifiable;
 import com.sparc.knappsack.components.entities.QEventWatch;
 import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.enums.EventType;
@@ -46,11 +47,12 @@ public class EventWatchDaoImpl extends BaseDao implements EventWatchDao {
 
     @Override
     public List<EventWatch> getAll(Long notifiableId, EventType eventType) {
-        return query().from(eventWatch).where(eventWatch.notifiableId.eq(notifiableId), eventWatch.eventTypes.contains(eventType)).list(eventWatch);
+        return getEntityManager().createQuery("select ew from EventWatch ew, IN(ew.eventTypes) et where et = :eType and ew.notifiableId = :notifiableId").setParameter("eType", eventType).setParameter("notifiableId", notifiableId).getResultList();
     }
 
     @Override
-    public Long batchDeleteEventWatch(Long notifiableId, NotifiableType notifiableType) {
-        return deleteClause(eventWatch).where(eventWatch.notifiableId.eq(notifiableId), eventWatch.notifiableType.eq(notifiableType)).execute();
+    public List<EventWatch> getAll(Notifiable notifiable) {
+        return query().from(eventWatch).where(eventWatch.notifiableId.eq(notifiable.getId()), eventWatch.notifiableType.eq(notifiable.getNotifiableType())).list(eventWatch);
     }
+
 }

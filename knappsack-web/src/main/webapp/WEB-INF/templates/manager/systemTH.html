@@ -298,7 +298,6 @@ $(document).ready(function () {
                     $systemNotificationsTable.fnReloadAjax(systemNotificationsUrl, function() {
                         $systemNotificationsTable.fnDisplayRow($systemNotificationsTable.$('tr.row_selected').get(0));
                     });
-                    displaySystemNotifications();
                     hideModal(500);
                 } else {
                     $('#confirmationModal .modal-body .alert-error').show();

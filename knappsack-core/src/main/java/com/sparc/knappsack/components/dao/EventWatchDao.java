@@ -1,6 +1,7 @@
 package com.sparc.knappsack.components.dao;
 
 import com.sparc.knappsack.components.entities.EventWatch;
+import com.sparc.knappsack.components.entities.Notifiable;
 import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.enums.EventType;
 import com.sparc.knappsack.enums.NotifiableType;
@@ -34,10 +35,9 @@ public interface EventWatchDao extends Dao<EventWatch> {
     public List<EventWatch> getAll(Long notifiableId, EventType eventType);
 
     /**
-     * @param notifiableId Long id to search on
-     * @param notifiableType NotifiableType to search on
-     *
-     * @return number of EventWatch objects deleted
+     * @param notifiable Notifiable to search on
+     * @return List of all EventWatch objects for a given Notifiable
      */
-    public Long batchDeleteEventWatch(Long notifiableId, NotifiableType notifiableType);
+    public List<EventWatch> getAll(Notifiable notifiable);
+
 }

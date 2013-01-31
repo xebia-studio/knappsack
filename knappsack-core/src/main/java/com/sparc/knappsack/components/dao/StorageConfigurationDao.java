@@ -17,4 +17,5 @@ public interface StorageConfigurationDao extends Dao<StorageConfiguration> {
      */
     StorageConfiguration get(String name);
 
+    StorageConfiguration getRegistrationDefault();
 }

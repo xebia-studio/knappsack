@@ -11,7 +11,7 @@ import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"classpath:**/spring/test-jpa-context.xml"})
+@ContextConfiguration(locations={"classpath:**/spring/test-jpa-context.xml", })
 @TransactionConfiguration(transactionManager="txManager", defaultRollback=true)
 @Transactional
 public abstract class AbstractDaoIntegrationTests extends AbstractTransactionalJUnit4SpringContextTests {

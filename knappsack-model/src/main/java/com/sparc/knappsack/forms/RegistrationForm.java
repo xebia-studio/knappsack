@@ -47,5 +47,4 @@ public class RegistrationForm {
     public void setSecondPassword(String secondPassword) {
         this.secondPassword = secondPassword;
     }
-
 }

@@ -27,10 +27,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,8 +73,15 @@ public class CategoryController extends AbstractController {
 
         User user = userService.getUserFromSecurityContext();
         List<Application> applications = userService.getApplicationsForUser(user, userAgentInfo.getApplicationType(), category.getId(), AppState.GROUP_PUBLISH, AppState.ORGANIZATION_PUBLISH, AppState.ORG_PUBLISH_REQUEST);
-        List<ApplicationModel> applicationModels = applicationService.createApplicationModels(applications);
+        List<ApplicationModel> applicationModels = new ArrayList<ApplicationModel>();
+        for (Application application : applications) {
+            ApplicationModel applicationModel = applicationService.createApplicationModel(application);
+            if (applicationModel != null) {
+                applicationModel.setCanUserEdit(userService.canUserEditApplication(user, application));
+            }
 
+            applicationModels.add(applicationModel);
+        }
         model.addAttribute("applications", applicationModels);
 
         return "category_resultsTH";
@@ -130,31 +134,31 @@ public class CategoryController extends AbstractController {
         return "manager/manageCategoryTH";
     }
 
-    @RequestMapping(value = "/manager/categoryUploadProgress", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Result categoryUploadProgress(HttpServletResponse response, @ModelAttribute("category") CategoryForm category) {
-        MultipartFile file = category.getIcon();
-        Result result = new Result();
-
-        try {
-            if (file != null && !file.isEmpty()) {
-                file.getBytes();
-                result.setResult(true);
-            } else {
-                result.setResult(false);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            result.setResult(false);
-        }
-
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Cache-Control", "no-cache");
-        response.setDateHeader("Expires", 0);
-
-        return result;
-    }
+//    @RequestMapping(value = "/manager/categoryUploadProgress", method = RequestMethod.POST)
+//    public
+//    @ResponseBody
+//    Result categoryUploadProgress(HttpServletResponse response, @ModelAttribute("category") CategoryForm category) {
+//        MultipartFile file = category.getIcon();
+//        Result result = new Result();
+//
+//        try {
+//            if (file != null && !file.isEmpty()) {
+//                file.getBytes();
+//                result.setResult(true);
+//            } else {
+//                result.setResult(false);
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            result.setResult(false);
+//        }
+//
+//        response.setHeader("Pragma", "no-cache");
+//        response.setHeader("Cache-Control", "no-cache");
+//        response.setDateHeader("Expires", 0);
+//
+//        return result;
+//    }
 
     @PreAuthorize("isOrganizationAdmin(#category.organizationId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/saveCategory", method = RequestMethod.POST)

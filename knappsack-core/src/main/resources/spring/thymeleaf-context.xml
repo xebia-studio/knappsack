@@ -44,13 +44,15 @@
         <beans:property name="messageSource" ref="messageSource"/>
     </beans:bean>
 
-    <beans:bean id="webTemplateResolver"
-                class="org.thymeleaf.templateresolver.ServletContextTemplateResolver">
-        <beans:property name="prefix" value="${views.root.directory}"/>
-        <beans:property name="suffix" value="${views.suffix}"/>
-        <beans:property name="templateMode" value="HTML5"/>
-        <beans:property name="cacheable" value="false"/>
-        <beans:property name="order" value="2"/>
-    </beans:bean>
+    <beans:beans profile="dev">
+        <beans:bean id="webTemplateResolver"
+                    class="org.thymeleaf.templateresolver.ServletContextTemplateResolver">
+            <beans:property name="prefix" value="${views.root.directory}"/>
+            <beans:property name="suffix" value="${views.suffix}"/>
+            <beans:property name="templateMode" value="HTML5"/>
+            <beans:property name="cacheable" value="false"/>
+            <beans:property name="order" value="2"/>
+        </beans:bean>
+    </beans:beans>
 
 </beans:beans>

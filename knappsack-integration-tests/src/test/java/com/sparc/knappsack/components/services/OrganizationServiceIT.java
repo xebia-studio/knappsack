@@ -6,25 +6,23 @@ import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.models.OrganizationModel;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
 public class OrganizationServiceIT extends AbstractServiceTests {
-
-    private static final Logger log = LoggerFactory.getLogger(OrganizationServiceIT.class);
 
     @Autowired(required = true)
     private OrganizationService organizationService;
 
     @Autowired
     private StorageConfigurationService storageConfigurationService;
+
+    @Autowired(required = true)
+    private CategoryService categoryService;
 
     @Autowired
     private GroupService groupService;
@@ -34,7 +32,6 @@ public class OrganizationServiceIT extends AbstractServiceTests {
 
     @Autowired
     private UserService userService;
-
 
     @Test
     public void updateTest() {
@@ -84,7 +81,6 @@ public class OrganizationServiceIT extends AbstractServiceTests {
         storageConfigurations.add(getStorageConfiguration());
         orgStorageConfig.setStorageConfigurations(storageConfigurations);
         organization.setOrgStorageConfig(orgStorageConfig);
-        organization.setAccessCode(UUID.randomUUID().toString());
         organizationService.add(organization);
         organizationService.getAll();
         Organization retrievedOrganization = organizationService.getByName("Test Organization Add");
@@ -94,62 +90,58 @@ public class OrganizationServiceIT extends AbstractServiceTests {
         assertTrue(retrievedOrganization.getDomainConfiguration().getApplicationVersionLimit() == 5);
         assertTrue(retrievedOrganization.getDomainConfiguration().getUserLimit() == 10);
         assertTrue(retrievedOrganization.getDomainConfiguration().getMegabyteStorageLimit() == 500);
+        assertTrue(retrievedOrganization.getDomainConfiguration().getMegabyteBandwidthLimit() == 2048);
         assertFalse(retrievedOrganization.getDomainConfiguration().isDisabledDomain());
     }
 
     @Test
     public void deleteOrganization() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization Add");
-        OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
-        orgStorageConfig.setOrganization(organization);
-        orgStorageConfig.setPrefix("add_test");
-        List<StorageConfiguration> storageConfigurations = new ArrayList<StorageConfiguration>();
-        storageConfigurations.add(getStorageConfiguration());
-        orgStorageConfig.setStorageConfigurations(storageConfigurations);
-        organization.setOrgStorageConfig(orgStorageConfig);
-        organization.setAccessCode(UUID.randomUUID().toString());
-        organizationService.add(organization);
+        Organization organization = getOrganization();
 
         Category category = new Category();
         category.setOrganization(organization);
         category.setDescription("Test Category");
         category.setName("Test Category");
         category.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
+
+        categoryService.add(category);
+
         AppFile categoryIcon = new AppFile();
         categoryIcon.setName("Category Icon");
         categoryIcon.setRelativePath("relativePath");
         categoryIcon.setStorable(category);
         category.setIcon(categoryIcon);
 
-
         organization.getCategories().add(category);
+
+        categoryService.update(category);
 
         Group group = new Group();
         group.setName("Test Group");
         group.setOrganization(organization);
-        group.setAccessCode(UUID.randomUUID().toString());
+
+        organization.getGroups().add(group);
+
+        groupService.add(group);
 
         Application application = new Application();
         application.setApplicationType(ApplicationType.CHROME);
         application.setCategory(category);
         application.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
+        application.setOwnedGroup(group);
         List<Application> applications = new ArrayList<Application>();
         applications.add(application);
 
         group.setOwnedApplications(applications);
 
-        List<Group> groups = new ArrayList<Group>();
-        groups.add(group);
-        organization.setGroups(groups);
+        applicationService.add(application);
 
-        organizationService.getAll();
-        Organization retrievedOrganization = organizationService.getByName("Test Organization Add");
+        Organization retrievedOrganization = organizationService.getByName("Test Organization");
         assertNotNull(applicationService.get(application.getId()));
         assertNotNull(retrievedOrganization);
         assertNotNull(retrievedOrganization.getId());
         organizationService.delete(retrievedOrganization.getId());
-        retrievedOrganization = organizationService.getByName("Test Organization Add");
+        retrievedOrganization = organizationService.getByName("Test Organization");
         assertNull(retrievedOrganization);
         assertTrue(groupService.getAll().isEmpty());
         assertNull(applicationService.get(application.getId()));
@@ -206,6 +198,26 @@ public class OrganizationServiceIT extends AbstractServiceTests {
         storageConfigurationService.add(storageConfiguration);
         List<StorageConfiguration> storageConfigurations = storageConfigurationService.getAll();
         return storageConfigurations.get(0);
+    }
+
+    private Organization getOrganization() {
+        Organization organization = new Organization();
+        organization.setName("Test Organization");
+
+        LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
+        localStorageConfiguration.setBaseLocation("/path");
+        localStorageConfiguration.setName("Local Storage Configuration");
+        localStorageConfiguration.setStorageType(StorageType.LOCAL);
+
+        OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
+        orgStorageConfig.getStorageConfigurations().add(localStorageConfiguration);
+        orgStorageConfig.setPrefix("testPrefix");
+        orgStorageConfig.setOrganization(organization);
+        organization.setOrgStorageConfig(orgStorageConfig);
+
+        organizationService.add(organization);
+
+        return organization;
     }
 
 }

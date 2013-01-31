@@ -33,6 +33,9 @@ public class WebRequest {
         if (StringUtils.endsWithIgnoreCase(contextPath, "/")) {
             this.contextPath = this.contextPath.substring(0, this.contextPath.length() - 1);
         }
+        if (!StringUtils.startsWithIgnoreCase(contextPath, "/")) {
+            this.contextPath = "/" + (StringUtils.hasText(this.contextPath) ? this.contextPath : "");
+        }
     }
 
     //Get WebRequest and init if needed.

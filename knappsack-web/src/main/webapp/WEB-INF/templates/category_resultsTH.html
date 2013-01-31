@@ -10,6 +10,14 @@
 
     <script type="text/javascript" th:inline="javascript">
         /*<![CDATA[*/
+
+        $(window).load(function() {
+            $('img.delay-image').each(function(index, value) {
+                var $elem = $(this);
+                $elem.attr('src', $elem.data('img-url'));
+            });
+        });
+
         $(document).ready(function () {
 
             var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
@@ -72,11 +80,11 @@
             <tr th:each="application : ${applications}" style="max-height: 72px; overflow-y: hidden; cursor: pointer;" th:attr="data-id=${application.id}" th:title="${application.name} + ' - ' + #{${application.applicationType.messageKey}}">
                 <td style="vertical-align: middle;">
                     <div class="icon" style="float: left; margin-right: 8px;">
-                        <img th:src="@{${application.icon.url}}" th:if="${#bools.isTrue(application.icon)}" style="height: 72px; width: 72px;"/>
+                        <img class="delay-image" th:attr="data-img-url=@{${application.icon.url}}" th:if="${#bools.isTrue(application.icon)}" style="height: 72px; width: 72px;"/>
                         <img src="" ks:src="@{/resources/img/default_icon.png}" style="height: 72px; width: 72px;" th:if="${#bools.isFalse(application.icon)}"/>
                     </div>
                     <div class="overflow-outer">
-                        <h3 style="margin: 0; display: inline;"><span th:text="${application.name} + ' - ' + #{${application.applicationType.messageKey}}">Application Name</span></h3> <a style="display: inline;" th:href="@{'/manager/editApplication/' + ${application.id}}" ks:canEditApplication="${application.id}">Edit</a>
+                        <h3 style="margin: 0; display: inline;"><span th:text="${application.name} + ' - ' + #{${application.applicationType.messageKey}}">Application Name</span></h3> <a style="display: inline;" th:href="@{'/manager/editApplication/' + ${application.id}}" th:if="${#bools.isTrue(application.canUserEdit)}">Edit</a>
                         <div class="overflow-inner app-description">
                             <span class="lead striphtml" th:text="${application.description}">description text</span>
                         </div>

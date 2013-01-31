@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<div th:fragment="manager-checklist">
+
+    <script type="text/javascript" th:inline="javascript">
+
+        /*<![CDATA[*/
+        $(document).ready(function () {
+
+            $('#managerChecklistDiv').hide();
+            var orgId = /*[[${orgId}]]*/ '1';
+            var contextPath = /*[[${#httpServletRequest.contextPath}]]*/ "";
+            var checklistUrl = /*[[@{/manager/checklist/}]]*/ '/manager/checklist/';
+            $.ajax({url:checklistUrl, success:managerChecklist});
+
+            function managerChecklist(managerChecklist) {
+                if (managerChecklist.notComplete && managerChecklist.organizationId != null) {
+                    $('#managerChecklistDiv').show();
+                    if (!managerChecklist.groupNeeded) {
+                        $('#createGroupDiv').hide();
+                        $('#completedGroupDiv').show();
+                    }
+                    var createGroupLink = contextPath + managerChecklist.createGroupURL;
+                    $('#createGroupLink').attr('href', createGroupLink);
+                    if (!managerChecklist.appNeeded) {
+                        $('#createApplicationDiv').hide();
+                    }
+                    if (managerChecklist.hasApps) {
+                        $('#completedApplicationDiv').show();
+                    }
+                    var createApplicationLink = contextPath + managerChecklist.createApplicationURL;
+                    $('#createApplicationLink').attr('href', createApplicationLink);
+                    if (!managerChecklist.appVersionNeeded) {
+                        $('#createAppVersionDiv').hide();
+                    }
+                    if (managerChecklist.hasAppVersions) {
+                        $('#completedAppVersionDiv').show();
+                    }
+                    var createAppVersionLink = contextPath + managerChecklist.createApplicationVersionURL;
+                    $('#createAppVersionLink').attr('href', createAppVersionLink);
+                    if (!managerChecklist.organizationUserNeeded) {
+                        $('#inviteOrganizationUserDiv').hide();
+                        $('#completedInviteOrganizationUserDiv').show();
+                    }
+                    var inviteOrganizationUserLink = contextPath + managerChecklist.inviteOrganizationUsersURL;
+                    $('#inviteOrganizationUserLink').attr('href', inviteOrganizationUserLink);
+                    $('#managerChecklistSuccessProgress').width(managerChecklist.percentComplete + "%");
+                    $('#managerChecklistIncompleteProgress').width((100 - managerChecklist.percentComplete) + "%");
+                }
+            }
+
+            /*]]>*/
+        });
+
+    </script>
+
+    <div id="managerChecklistDiv" class="well" style="display: none;">
+        <h4>Steps to create an application and invite users:</h4>
+
+        <div id="completedGroupDiv" style="display: none;"><span class="badge badge-success"
+                                                                 style="margin-right: .5em"></span><span>Created a group</span>
+        </div>
+        <div id="createGroupDiv"><span class="badge badge-important" style="margin-right: .5em"></span><a
+                id="createGroupLink" href="" class="btn">Create a group</a></div>
+
+        <div id="completedApplicationDiv" style="display: none;"><span class="badge badge-success"
+                                                                       style="margin-right: .5em"></span><span>Created an application</span>
+        </div>
+        <div id="createApplicationDiv"><span class="badge badge-important" style="margin-right: .5em"></span><a
+                id="createApplicationLink" href="" class="btn">Create an application</a></div>
+
+        <div id="completedAppVersionDiv" style="display: none;"><span class="badge badge-success"
+                                                                      style="margin-right: .5em"></span><span>Created an application version</span>
+        </div>
+        <div id="createAppVersionDiv"><span class="badge badge-important" style="margin-right: .5em"></span><a
+                id="createAppVersionLink" href="" class="btn">Add an application version</a></div>
+
+        <div id="completedInviteOrganizationUserDiv" style="display: none;"><span class="badge badge-success"
+                                                                                  style="margin-right: .5em"></span><span>Added an organization user</span>
+        </div>
+        <div id="inviteOrganizationUserDiv"><span class="badge badge-important" style="margin-right: .5em"></span><a
+                id="inviteOrganizationUserLink" href="" class="btn">Add a user to your organization</a></div>
+        <br/>
+
+        <div class="progress">
+            <div id="managerChecklistSuccessProgress" class="bar bar-success">Complete</div>
+            <div id="managerChecklistIncompleteProgress" class="bar bar-danger">Incomplete</div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

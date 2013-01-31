@@ -47,8 +47,10 @@ public class ApplicationVersionValidator implements Validator {
     public void validate(Object target, Errors errors) {
         UploadApplicationVersion version = (UploadApplicationVersion) target;
 
+        Application application = applicationService.get(version.getParentId());
+
         if(!version.isEditing()) {
-            validateApplicationVersionLimit(version, errors);
+            validateApplicationVersionLimit(version, application, errors);
             Group group = groupService.get(version.getGroupId());
             validateGroupStorageLimit(group, version.getAppFile().getSize(), errors);
             validateOrganizationStorageLimit(group.getOrganization(), version.getAppFile().getSize(), errors);
@@ -73,13 +75,13 @@ public class ApplicationVersionValidator implements Validator {
             }
 
             if (version.getAppFile() != null && !version.getAppFile().isEmpty()) {
-                validateExtension(version, errors);
+                validateExtension(version, application, errors);
             }
         } else {
             if (version.getAppFile() == null || version.getAppFile().isEmpty()) {
                 errors.rejectValue(APP_FILE_FIELD, "applicationVersionValidator.emptyInstallFile");
             } else {
-                validateExtension(version, errors);
+                validateExtension(version, application, errors);
             }
 
             if(AppState.ORGANIZATION_PUBLISH.equals(version.getAppState())) {
@@ -88,14 +90,13 @@ public class ApplicationVersionValidator implements Validator {
         }
     }
 
-    private void validateApplicationVersionLimit(UploadApplicationVersion uploadApplicationVersion, Errors errors) {
-        Application application = applicationService.get(uploadApplicationVersion.getParentId());
+    private void validateApplicationVersionLimit(UploadApplicationVersion uploadApplicationVersion, Application parentApplication, Errors errors) {
         Group group = groupService.get(uploadApplicationVersion.getGroupId());
         if(group.getDomainConfiguration().isDisabledDomain()) {
             errors.reject("applicationVersionValidator.group.disabled");
         }
 
-        if(!group.getDomainConfiguration().isDisableLimitValidations() && applicationService.isApplicationVersionLimit(application, group)) {
+        if(!group.getDomainConfiguration().isDisableLimitValidations() && applicationService.isApplicationVersionLimit(parentApplication, group)) {
             errors.reject("applicationVersionValidator.group.limit");
         }
 
@@ -104,7 +105,7 @@ public class ApplicationVersionValidator implements Validator {
             errors.reject("applicationVersionValidator.organization.disabled");
         }
 
-        if(!organization.getDomainConfiguration().isDisableLimitValidations() && applicationService.isApplicationVersionLimit(application, organization)) {
+        if(!organization.getDomainConfiguration().isDisableLimitValidations() && applicationService.isApplicationVersionLimit(parentApplication, organization)) {
             errors.reject("applicationVersionValidator.organization.limit");
         }
     }
@@ -134,12 +135,11 @@ public class ApplicationVersionValidator implements Validator {
         }
     }
 
-    private void validateExtension(UploadApplicationVersion appVersion, Errors errors) {
-        Application application = applicationService.get(appVersion.getParentId());
+    private void validateExtension(UploadApplicationVersion appVersion, Application parentApplication, Errors errors) {
         String fileName = appVersion.getAppFile().getOriginalFilename();
         boolean isValid = false;
 
-        ApplicationType type = application.getApplicationType();
+        ApplicationType type = parentApplication.getApplicationType();
         if (type.equals(ApplicationType.ANDROID)) {
             isValid = fileName.toLowerCase().endsWith(".apk");
         } else if (type.equals(ApplicationType.IOS) || type.equals(ApplicationType.IPAD) || type.equals(ApplicationType.IPHONE)) {
@@ -149,7 +149,8 @@ public class ApplicationVersionValidator implements Validator {
         } else if (type.equals(ApplicationType.FIREFOX)) {
             isValid = fileName.toLowerCase().endsWith(".xpi");
         } else if (type.equals(ApplicationType.BLACKBERRY)) {
-            isValid = fileName.toLowerCase().endsWith(".alx");
+            isValid = fileName.toLowerCase().endsWith(".jar") || fileName.toLowerCase().endsWith(".alx") ||
+                      fileName.toLowerCase().endsWith(".zip") || fileName.toLowerCase().endsWith(".jad");
         } else if (type.equals(ApplicationType.WINDOWSPHONE7)) {
             isValid = fileName.toLowerCase().endsWith(".xap");
         }

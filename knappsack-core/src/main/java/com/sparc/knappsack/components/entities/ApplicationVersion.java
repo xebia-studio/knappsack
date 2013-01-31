@@ -3,22 +3,28 @@ package com.sparc.knappsack.components.entities;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.EntityState;
 import com.sparc.knappsack.enums.NotifiableType;
+import com.sparc.knappsack.enums.StorableType;
 import org.codehaus.jackson.annotate.JsonManagedReference;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An ApplicationVersion is the specific version of an application.  This entity refers to the specific installation file of the Application.
  */
 @Entity
 @Table(name = "APPLICATION_VERSION")
-@DiscriminatorValue("APPLICATION_VERSION")
 public class ApplicationVersion extends Storable implements Notifiable {
 
     private static final long serialVersionUID = 903961092354093124L;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
+    @ManyToOne(optional = false)
     @JoinColumn(name = "APPLICATION_ID")
+    @Fetch(FetchMode.JOIN)
     private Application application;
 
     @Column(name = "VERSION_NAME")
@@ -34,6 +40,7 @@ public class ApplicationVersion extends Storable implements Notifiable {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "INSTALLATION_FILE_ID")
     @JsonManagedReference
+    @Fetch(FetchMode.JOIN)
     private AppFile installationFile;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
@@ -49,6 +56,11 @@ public class ApplicationVersion extends Storable implements Notifiable {
 
     @Column(name = "CF_BUNDLE_NAME")
     private String cfBundleName;
+
+    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.REFRESH}, targetEntity = Group.class)
+    @JoinTable(name = "ORG_GROUP_GUEST_APPLICATION_VERSION", joinColumns = @JoinColumn(name = "APPLICATION_VERSION_ID"), inverseJoinColumns = @JoinColumn(name = "ORG_GROUP_ID"))
+    @BatchSize(size=5)
+    private List<Group> guestGroups;
 
     @Transient
     private EntityState state;
@@ -123,6 +135,21 @@ public class ApplicationVersion extends Storable implements Notifiable {
 
     public void setCfBundleName(String cfBundleName) {
         this.cfBundleName = cfBundleName;
+    }
+
+    public StorableType getStorableType() {
+        return StorableType.APPLICATION_VERSION;
+    }
+
+    public List<Group> getGuestGroups() {
+        if (guestGroups == null) {
+            guestGroups = new ArrayList<Group>();
+        }
+        return guestGroups;
+    }
+
+    public void setGuestGroups(List<Group> guestGroups) {
+        this.guestGroups = guestGroups;
     }
 
     @Transient

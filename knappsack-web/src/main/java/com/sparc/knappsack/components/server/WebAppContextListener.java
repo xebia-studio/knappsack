@@ -2,6 +2,7 @@ package com.sparc.knappsack.components.server;
 
 
 import ch.qos.logback.classic.LoggerContext;
+import com.hazelcast.core.Hazelcast;
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.PooledDataSource;
 import org.slf4j.ILoggerFactory;
@@ -39,11 +40,13 @@ public class WebAppContextListener implements ServletContextListener {
 
             Thread.sleep(1000);
             deregisterDrivers();
+
+            log.info("Shutting down Hazelcast");
+            Hazelcast.shutdownAll();
         } catch (InterruptedException e) {
-            log.error("InterruptedException while deregistering drivers.", e);
+            log.error("InterruptedException while de-registering drivers.", e);
         }
     }
-
 
     private void shutDownLogger() {
         ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();

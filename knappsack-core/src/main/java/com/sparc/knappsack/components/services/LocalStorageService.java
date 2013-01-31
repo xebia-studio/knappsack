@@ -13,11 +13,11 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -37,15 +37,8 @@ public class LocalStorageService extends AbstractStorageService implements Stora
     private boolean saveMultipartFile(MultipartFile multipartFile, File file) {
         InputStream inputStream = null;
         try {
-            if (multipartFile != null && multipartFile.getSize() > 0) {
-                try {
-                    inputStream = multipartFile.getInputStream();
-                } catch (IOException e) {
-                    log.error("IOException getting input stream for file: " + multipartFile.getOriginalFilename(), e);
-                    return false;
-                }
-
-                return writeToLocal(inputStream, file, multipartFile.getSize(), multipartFile.getOriginalFilename());
+            if (multipartFile != null && multipartFile.getSize() > 0 && file != null) {
+                return writeToLocal(multipartFile, file);
             }
             return true;
         } finally {
@@ -53,6 +46,17 @@ public class LocalStorageService extends AbstractStorageService implements Stora
                 closeInputStream(inputStream);
             }
         }
+    }
+
+    private boolean writeToLocal(MultipartFile multipartFile, File file) {
+        try {
+            multipartFile.transferTo(file);
+        } catch (IOException e) {
+            log.error("IOException writing to file.", e);
+            return false;
+        }
+
+        return true;
     }
 
     private boolean writeToLocal(InputStream inputStream, File file, long fileSize, String originalFilename) {
@@ -116,6 +120,8 @@ public class LocalStorageService extends AbstractStorageService implements Stora
         String path = appFile.getAbsolutePath();
         deletePath(path);
 
+        String basePath = path.replace(appFile.getRelativePath(), "");
+
         //Get the directory names for the app file
         StringTokenizer st = new StringTokenizer(appFile.getRelativePath(), PATH_SEPARATOR);
         List<String> relativeDirectories = new ArrayList<String>();
@@ -124,9 +130,8 @@ public class LocalStorageService extends AbstractStorageService implements Stora
         }
 
         //Loop through parent directories and deletePath any that are empty.
-        Collections.reverse(relativeDirectories);
-        for (String relativeDirectory : relativeDirectories) {
-            path = path.replaceAll(relativeDirectory, "");
+        for (int x = 0; x < relativeDirectories.size(); x++) {
+            path = basePath + getPathSeparator() + StringUtils.arrayToDelimitedString(relativeDirectories.subList(0, relativeDirectories.size() - x).toArray(), getPathSeparator());
             if(path.equals(appFile.getStorable().getStorageConfiguration().getBaseLocation())) {
                 break;
             }
@@ -231,6 +236,7 @@ public class LocalStorageService extends AbstractStorageService implements Stora
         localStorageConfiguration.setName(storageForm.getName());
         localStorageConfiguration.setBaseLocation(storageForm.getBaseLocation());
         localStorageConfiguration.setStorageType(StorageType.LOCAL);
+        localStorageConfiguration.setRegistrationDefault(storageForm.isRegistrationDefault());
         return localStorageConfiguration;
     }
 
@@ -238,6 +244,7 @@ public class LocalStorageService extends AbstractStorageService implements Stora
     public void mapFormToEntity(StorageForm form, StorageConfiguration entity) {
         if (form != null && entity != null) {
             entity.setName(form.getName().trim());
+            entity.setRegistrationDefault(form.isRegistrationDefault());
         }
     }
 }

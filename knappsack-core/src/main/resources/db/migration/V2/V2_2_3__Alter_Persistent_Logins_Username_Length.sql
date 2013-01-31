@@ -1,0 +1,1 @@
+ALTER TABLE `persistent_logins` modify `username` VARCHAR(255) NOT NULL;

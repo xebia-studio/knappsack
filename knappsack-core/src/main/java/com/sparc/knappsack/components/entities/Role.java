@@ -11,6 +11,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "ROLE")
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class Role extends BaseEntity implements GrantedAuthority {
 
     private static final long serialVersionUID = -117212611936641518L;

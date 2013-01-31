@@ -295,41 +295,42 @@
                 <ul id="tab" class="nav nav-tabs">
                     <li class="active dropdown tab">
                         <a href="#" th:text="#{desktop.manageGroup.group}" th:if="${#bools.isFalse(isEdit)}">Group</a>
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" th:if="${#bools.isTrue(isEdit)}">
+                        <a id="groupsTab" href="#" class="dropdown-toggle" data-toggle="dropdown" th:if="${#bools.isTrue(isEdit)}">
                             <span th:text="#{desktop.manageGroup.group}">Group</span>
                             <b class="caret"/>
                         </a>
                         <ul class="dropdown-menu" th:if="${#bools.isTrue(isEdit)}">
-                            <li><a href="#group" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
+                            <li><a id="viewGroup" href="#group" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
                             <li class="divider" th:if="${user.systemOrOrganizationAdmin}"></li>
-                            <li th:if="${user.systemOrOrganizationAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${group.id} + '/GROUP'" th:if="${isEdit}" th:text="#{desktop.manageGroup.preferences}">Preferences</a></li>
+                            <li th:if="${user.systemOrOrganizationAdmin}"><a href="domainConfigurationTH.html" th:href="@{/manager/domainConfiguration/}  + ${group.id}" th:if="${isEdit}" th:text="#{desktop.manageGroup.preferences}">Preferences</a></li>
                         </ul>
                     </li>
                     <li th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
-                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        <a id="applicationsTab" class="dropdown-toggle" data-toggle="dropdown" href="#">
                             <span th:text="#{desktop.manageGroup.applications}">Applications</span>
                             <b class="caret"/>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="#applications" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
+                            <li><a id="viewApplication" href="#applications" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
                             <li class="divider"></li>
-                            <li><a th:href="@{/manager/addApplication/} + ${group.id}" th:text="#{desktop.manageGroup.createNew}">Create New</a></li>
+                            <li><a id="addApplication" th:href="@{/manager/addApplication/} + ${group.id}" th:text="#{desktop.manageGroup.createNew}">Create New</a></li>
                         </ul>
 
                     </li>
-                    <li id="membersTab" th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <li th:if="${#bools.isTrue(isEdit)}" class="dropdown tab">
+                        <a id="membersTab" href="#" class="dropdown-toggle" data-toggle="dropdown">
                             <span th:text="#{desktop.manageGroup.members}">Members</span>
                             <i id="membersTabAlertIcon" class="icon-exclamation-sign icon-black" th:if="${#bools.isTrue(hasPendingRequests)}"/>
                             <b class="caret"/>
                         </a>
 
                         <ul class="dropdown-menu">
-                            <li><a href="#members" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
+                            <li><a id="viewMembers" href="#members" data-toggle="tab" th:text="#{desktop.manageGroup.view}">View</a></li>
                             <li class="divider"></li>
-                            <li><a href="inviteUserTH.html.html" th:href="@{/manager/inviteUser/}  + ${group.id} + '/GROUP'" th:if="${isEdit}" th:text="#{desktop.manageGroup.inviteMember}">Invite
+                            <li><a id="inviteMember" href="inviteUserTH.html.html" th:href="@{/manager/inviteUser/}  + ${group.id}" th:if="${isEdit}" th:text="#{desktop.manageGroup.inviteMember}">Invite
                                 Member</a></li>
-                            <li><a href="inviteesTH.html" th:href="@{/manager/invitesPending/}  + ${group.id} + '/GROUP'" th:if="${isEdit}" th:text="#{desktop.manageGroup.invitesPending}">Invites Pending</a></li>
+                            <li><a id="invitesPending" href="inviteesTH.html" th:href="@{/manager/invitesPending/}  + ${group.id}" th:if="${isEdit}" th:text="#{desktop.manageGroup.invitesPending}">Invites Pending</a></li>
+                            <li><a href="requestsTH.html" th:href="@{/manager/requestsPending/}  + ${group.id}" th:if="${isEdit}" th:text="#{desktop.manageGroup.requestsPending}">Requests Pending</a></li>
                         </ul>
 
                     </li>
@@ -340,8 +341,7 @@
                         <div class="row-fluid">
                             <div class="span7">
                                 <div class="row well">
-                                    <form id="groupForm" th:object="${group}" th:action="@{'/manager/uploadGroup'}" method="POST"
-                                          enctype="multipart/form-data" class="form-horizontal">
+                                    <form id="groupForm" th:object="${group}" th:action="@{'/manager/uploadGroup'}" method="POST" class="form-horizontal">
                                         <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
                                             <h1 th:text="#{errors.header}"/>
                                             <ul>
@@ -381,7 +381,7 @@
                                             </div>
 
                                             <div class="form-actions">
-                                                <button type="submit" class="btn btn-primary" th:text="#{desktop.manageGroup.submit}">Submit</button>
+                                                <button id="submitBtn" type="submit" class="btn btn-primary" th:text="#{desktop.manageGroup.submit}">Submit</button>
                                             </div>
 
                                         </fieldset>

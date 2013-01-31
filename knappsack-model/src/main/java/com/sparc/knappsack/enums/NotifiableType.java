@@ -7,5 +7,7 @@ public enum NotifiableType {
     ORGANIZATION,
     INVITATION,
     USER,
-    GROUP_USER_REQUEST
+    GROUP_USER_REQUEST,
+    DOMAIN_USER_REQUEST,
+    DOMAIN_REQUEST
 }

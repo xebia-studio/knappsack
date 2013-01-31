@@ -6,12 +6,12 @@ import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.forms.InvitationForm;
 import com.sparc.knappsack.forms.InviteeForm;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 
 import javax.annotation.Resource;
@@ -31,6 +31,7 @@ public class InvitationValidator implements Validator {
     @Autowired(required = true)
     private UserService userService;
 
+    @Qualifier("domainService")
     @Autowired(required = true)
     private DomainService domainService;
 
@@ -52,7 +53,7 @@ public class InvitationValidator implements Validator {
     public void validate(Object target, Errors errors) {
         InvitationForm invitationForm = (InvitationForm) target;
 
-        Domain domain = domainService.get(invitationForm.getDomainId(), invitationForm.getDomainType());
+        Domain domain = domainService.get(invitationForm.getDomainId());
         DomainConfiguration domainConfiguration = domain.getDomainConfiguration();
         String domainTypeMessage = messageSource.getMessage(domain.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale());
 
@@ -102,7 +103,7 @@ public class InvitationValidator implements Validator {
         }
 
 
-        List<Invitation> invitations = invitationService.getAll(inviteeForm.getEmail(), domainId, domainType);
+        List<Invitation> invitations = invitationService.getAll(inviteeForm.getEmail(), domainId);
         if (invitations != null && invitations.size() > 0) {
             errors.reject("invitationValidator.invitationExists", new Object[]{inviteeForm.getEmail()}, "");
             isValid = false;
@@ -110,7 +111,7 @@ public class InvitationValidator implements Validator {
 
         User invitee = userService.getByEmail(inviteeForm.getEmail());
         if (invitee != null) {
-            boolean isUserInDomain = userService.isUserInDomain(invitee, domainId, domainType);
+            boolean isUserInDomain = userService.isUserInDomain(invitee, domainId);
             if (isUserInDomain) {
                 errors.reject("invitationValidator.userExists", new Object[]{invitee.getEmail()}, "");
                 isValid = false;

@@ -2,7 +2,11 @@ package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.NotifiableType;
+import com.sparc.knappsack.enums.StorableType;
 import org.codehaus.jackson.annotate.JsonManagedReference;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -13,7 +17,6 @@ import java.util.List;
  */
 @Entity
 @Table(name = "APPLICATION")
-@DiscriminatorValue("APPLICATION")
 public class Application extends Storable implements Notifiable {
 
     private static final long serialVersionUID = 1265568333226947048L;
@@ -31,19 +34,27 @@ public class Application extends Storable implements Notifiable {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "ICON_ID")
     @JsonManagedReference
+    @Fetch(FetchMode.JOIN)
     private AppFile icon;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinTable(name = "APPLICATION_SCREENSHOT", joinColumns = @JoinColumn(name = "APPLICATION_ID"), inverseJoinColumns = @JoinColumn(name = "SCREENSHOT_ID"))
     @JsonManagedReference
+    @BatchSize(size=30)
     private List<AppFile> screenShots = new ArrayList<AppFile>();
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
+    @ManyToOne(optional = false)
     @JoinColumn(name = "CATEGORY_ID")
     private Category category;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "GROUP_ID")
+    @Fetch(FetchMode.JOIN)
+    private Group ownedGroup;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "application", orphanRemoval = true)
     @JsonManagedReference
+    @BatchSize(size=5)
     private List<ApplicationVersion> applicationVersions = new ArrayList<ApplicationVersion>();
 
     public String getName() {
@@ -82,6 +93,10 @@ public class Application extends Storable implements Notifiable {
         return screenShots;
     }
 
+    public void setScreenShots(List<AppFile> screenShots) {
+        this.screenShots = screenShots;
+    }
+
     public Category getCategory() {
         return category;
     }
@@ -90,8 +105,24 @@ public class Application extends Storable implements Notifiable {
         this.category = category;
     }
 
+    public Group getOwnedGroup() {
+        return ownedGroup;
+    }
+
+    public void setOwnedGroup(Group ownedGroup) {
+        this.ownedGroup = ownedGroup;
+    }
+
     public List<ApplicationVersion> getApplicationVersions() {
         return applicationVersions;
+    }
+
+    public void setApplicationVersions(List<ApplicationVersion> applicationVersions) {
+        this.applicationVersions = applicationVersions;
+    }
+
+    public StorableType getStorableType() {
+        return StorableType.APPLICATION;
     }
 
     @Transient

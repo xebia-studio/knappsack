@@ -54,7 +54,8 @@ public class GroupDaoImpl extends BaseDao implements GroupDao {
     }
 
     @Override
-    public Group getGroupByAccessCode(String accessCode) {
-        return query().from(group).where(group.accessCode.eq(accessCode)).uniqueResult(group);
+    public Group getGroupByUUID(String accessCode) {
+        return query().from(group).where(group.uuid.eq(accessCode)).uniqueResult(group);
     }
+
 }

@@ -1,7 +1,5 @@
 package com.sparc.knappsack.components.entities;
 
-import com.sparc.knappsack.enums.DomainType;
-
 import javax.persistence.*;
 
 /**
@@ -13,8 +11,9 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "USER_DOMAIN",
-       uniqueConstraints = {@UniqueConstraint(columnNames={"DOMAIN_TYPE", "DOMAIN_ID", "ROLE_ID", "USER_ID"})}
+        uniqueConstraints = {@UniqueConstraint(columnNames={"DOMAIN_ID", "ROLE_ID", "USER_ID"})}
 )
+// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class UserDomain extends BaseEntity {
 
     private static final long serialVersionUID = 71727224831146511L;
@@ -24,19 +23,16 @@ public class UserDomain extends BaseEntity {
     @Column(name = "ID")
     private Long id;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
-    @JoinColumn(name = "USER_ID")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "USER_ID", nullable = false)
     private User user;
 
-    @Column(name = "DOMAIN_TYPE")
-    @Enumerated(EnumType.STRING)
-    private DomainType domainType;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "DOMAIN_ID", nullable = false)
+    private Domain domain;
 
-    @Column(name = "DOMAIN_ID")
-    private Long domainId;
-
-    @OneToOne(cascade = CascadeType.REFRESH)
-    @JoinColumn(name = "ROLE_ID")
+    @ManyToOne(cascade = CascadeType.REFRESH, optional = false)
+    @JoinColumn(name = "ROLE_ID", nullable = false)
     private Role role;
 
     public Long getId() {
@@ -47,21 +43,29 @@ public class UserDomain extends BaseEntity {
         this.id = id;
     }
 
-    public DomainType getDomainType() {
-        return domainType;
+    public Domain getDomain() {
+        return initializeAndUnproxy(domain);
     }
 
-    public void setDomainType(DomainType domainType) {
-        this.domainType = domainType;
+    public void setDomain(Domain domain) {
+        this.domain = domain;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
-    }
+//    public DomainType getDomainType() {
+//        return domainType;
+//    }
+//
+//    public void setDomainType(DomainType domainType) {
+//        this.domainType = domainType;
+//    }
+//
+//    public Long getDomainId() {
+//        return domainId;
+//    }
+//
+//    public void setDomainId(Long domainId) {
+//        this.domainId = domainId;
+//    }
 
     public Role getRole() {
         return role;

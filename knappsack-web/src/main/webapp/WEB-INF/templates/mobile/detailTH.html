@@ -13,20 +13,25 @@
     var selectedVersionId = /*[[${initialVersionId}]]*/ '';
 
     $('#detailPage').live('pageinit', function(event) {
-        var slider;
 
-        $("#detailPage").live('pageshow', function(event) {
+        $('#detailPage').live('pageshow', function() {
+            var slider;
+
             var screenShots = /*[[${selectedApplication.screenShots}]]*/ '';
             if (screenShots.length <= 0) {
                 $('.image-container').hide();
             } else {
-                slider = $('.flexslider').flexslider({
-                    animation: "slide",
-                    controlsContainer: ".controls-container",
-                    smoothHeight: true,
-                    directionNav: false,
-                    startAt: 0
-                });
+                var sliderDiv = $('#mySlider');
+
+                if (sliderDiv) {
+                    slider = sliderDiv.flexslider({
+                        animation: "slide",
+                        controlsContainer: ".controls-container",
+                        smoothHeight: true,
+                        directionNav: false,
+                        startAt: 0
+                    });
+                }
             }
         });
 
@@ -35,6 +40,12 @@
             $('.tab').hide();
             $('#installContent').hide();
             $('#tab1Div').show();
+
+            var bandwidthExceeded = /*[[${bandwidthExceeded}]]*/ false;
+            if(bandwidthExceeded) {
+                $("#installBtn").addClass('ui-disabled');
+                $("#download").addClass('ui-disabled');
+            }
 
             var description = /*[[${selectedApplication.description}]]*/ '';
             $('#description').addHtml(description);
@@ -158,6 +169,9 @@
 
 <!--<div class="content">-->
 <div data-role="content">
+    <div id="bandwidth-error" class="alert alert-error" th:if="${bandwidthExceeded}">
+        <p th:text="#{detail.bandwidth.exceeded}"/>
+    </div>
 
     <div id="tab1Div" class="tab default-tab">
         <p id="description" class="html"></p>

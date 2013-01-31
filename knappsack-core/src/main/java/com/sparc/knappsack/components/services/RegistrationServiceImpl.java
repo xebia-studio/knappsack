@@ -67,10 +67,10 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         List<Invitation> invitations = invitationService.getByEmail(email);
         for (Invitation invitation : invitations) {
-            if(DomainType.GROUP.equals(invitation.getDomainType())) {
-                userService.addUserToGroup(user, invitation.getDomainId(), UserRole.valueOf(invitation.getRole().getAuthority()));
-            } else if(DomainType.ORGANIZATION.equals(invitation.getDomainType())) {
-                userService.addUserToOrganization(user, invitation.getDomainId(), UserRole.valueOf(invitation.getRole().getAuthority()));
+            if(DomainType.GROUP.equals(invitation.getDomain().getDomainType())) {
+                userService.addUserToGroup(user, invitation.getDomain().getId(), UserRole.valueOf(invitation.getRole().getAuthority()));
+            } else if(DomainType.ORGANIZATION.equals(invitation.getDomain().getDomainType())) {
+                userService.addUserToOrganization(user, invitation.getDomain().getId(), UserRole.valueOf(invitation.getRole().getAuthority()));
             }
         }
 

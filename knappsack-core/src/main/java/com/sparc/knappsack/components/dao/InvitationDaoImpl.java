@@ -1,8 +1,9 @@
 package com.sparc.knappsack.components.dao;
 
+import com.sparc.knappsack.components.entities.Domain;
 import com.sparc.knappsack.components.entities.Invitation;
 import com.sparc.knappsack.components.entities.QInvitation;
-import com.sparc.knappsack.enums.DomainType;
+import com.sparc.knappsack.components.entities.Role;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -38,17 +39,27 @@ public class InvitationDaoImpl extends BaseDao implements InvitationDao {
     }
 
     @Override
-    public List<Invitation> get(Long domainId, DomainType domainType) {
-        return query().from(invitation).where(invitation.domainId.eq(domainId), invitation.domainType.eq(domainType)).listDistinct(invitation);
+    public List<Invitation> getAllForDomain(Long domainId) {
+        return query().from(invitation).where(invitation.domain.id.eq(domainId)).listDistinct(invitation);
+    }
+    
+    @Override
+    public long countAll(Long domainId) {
+        return query().from(invitation).where(invitation.domain.id.eq(domainId)).countDistinct();
     }
 
     @Override
-    public List<Invitation> get(String email, Long domainId, DomainType domainType) {
-        return query().from(invitation).where(invitation.email.eq(email).and(invitation.domainId.eq(domainId).and(invitation.domainType.eq(domainType)))).listDistinct(invitation);
+    public List<Invitation> getAllForEmailAndDomain(String email, Long domainId) {
+        return query().from(invitation).where(invitation.email.eq(email).and(invitation.domain.id.eq(domainId))).listDistinct(invitation);
     }
 
     @Override
-    public long deleteAll(Long domainId, DomainType domainType) {
-        return deleteClause(invitation).where(invitation.domainId.eq(domainId), invitation.domainType.eq(domainType)).execute();
+    public long deleteAllForDomain(Domain domain) {
+        return deleteClause(invitation).where(invitation.domain.eq(domain)).execute();
+    }
+
+    @Override
+    public Invitation get(String email, Domain domain, Role role) {
+        return query().from(invitation).where(invitation.email.eq(email).and(invitation.domain.eq(domain).and(invitation.role.eq(role)))).uniqueResult(invitation);
     }
 }

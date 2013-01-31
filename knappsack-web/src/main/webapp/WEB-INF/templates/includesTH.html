@@ -15,34 +15,34 @@
     <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
-    <!--<link href="../../resources/bootstrap/css/bootstrap.css"-->
-    <!--ks:href="@{/resources/bootstrap/css/bootstrap.css}" rel="stylesheet"/>-->
-    <link href="../../resources/bootstrap/css/bootstrap.css"
-          ks:href="@{/resources/bootstrap/css/bootstrap.css}" rel="stylesheet"/>
-    <link href="../../resources/bootstrap/css/bootstrap-responsive.css"
-          ks:href="@{/resources/bootstrap/css/bootstrap-responsive.css}" rel="stylesheet"/>
-    <link href="../../resources/bootstrap/css/docs.css" ks:href="@{/resources/bootstrap/css/docs.css}"
+    <link href="../../resources/css/bootstrap-2.2.1.min.css"
+          ks:href="@{/resources/css/bootstrap-2.2.1.min.css}" rel="stylesheet"/>
+    <link href="../../resources/css/bootstrap-responsive-2.2.1.min.css"
+          ks:href="@{/resources/css/bootstrap-responsive-2.2.1.min.css}" rel="stylesheet"/>
+    <link href="../../resources/css/docs_2.min.css" ks:href="@{/resources/css/docs_2.min.css}"
           rel="stylesheet"/>
-    <link href="../../resources/bootstrap/css/custom_4.css"
-          ks:href="@{/resources/bootstrap/css/custom_4.css}" rel="stylesheet"/>
+    <link href="../../resources/css/custom_7.min.css"
+          ks:href="@{/resources/css/custom_7.min.css}" rel="stylesheet"/>
 
-    <link href="../../resources/css/login.css" ks:href="@{/resources/css/login.css}"
+    <link href="../../resources/css/login.min.css" ks:href="@{/resources/css/login.min.css}"
           rel="stylesheet" th:if="${include_login}"/>
 
-    <link href="../../resources/DataTables/css/DT_bootstrap.css"
-          ks:href="@{/resources/DataTables/css/DT_bootstrap.css}" rel="stylesheet"/>
-    <link href="../../resources/css/prettify.css"
-          ks:href="@{/resources/css/prettify.css}" rel="stylesheet"/>
+    <link href="../../resources/css/DT_bootstrap.min.css"
+          ks:href="@{/resources/css/DT_bootstrap.min.css}" rel="stylesheet"/>
+    <link href="../../resources/css/prettify.min.css"
+          ks:href="@{/resources/css/prettify.min.css}" rel="stylesheet"/>
+    <link href="../../resources/css/multi-select_1.css"
+          ks:href="@{/resources/css/multi-select_1.css}" rel="stylesheet"/>
 
     <link rel="shortcut icon" href="../../resources/img/favicon.png" ks:href="@{/resources/img/favicon.png}"/>
 
     <script src="../../resources/js/jquery-1.7.1.min.js" ks:src="@{/resources/js/jquery-1.7.1.min.js}"
             type="text/javascript"></script>
 
-    <script src="../../resources/js/knappsack_3.js" ks:src="@{/resources/js/knappsack_3.js}"
+    <script src="../../resources/js/knappsack_3.min.js" ks:src="@{/resources/js/knappsack_3.min.js}"
             type="text/javascript"></script>
 
-    <script src="../../resources/js/openid.js" ks:src="@{/resources/js/openid.js}"
+    <script src="../../resources/js/openid.min.js" ks:src="@{/resources/js/openid.min.js}"
             type="text/javascript" th:if="${include_login}"></script>
 
     <script type="text/javascript" th:inline="javascript" th:if="${#bools.isFalse(exclude_systemNotifications)}">
@@ -89,7 +89,6 @@
 
     <script type="text/javascript" th:inline="javascript">
         /*<![CDATA[*/
-
         $(document).ready(function() {
 
             $('a[rel*=external]').click(function(){
@@ -104,6 +103,35 @@
                 displaySystemNotifications();
             }
 
+        });
+        /*]]>*/
+    </script>
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function () {
+            var contactsURL = /*[[@{/contacts}]]*/ '/contacts';
+            $("#supportFooter").live("click", function (e) {
+                e.preventDefault();
+                $.ajax({
+                    type: 'GET',
+                    url: contactsURL,
+                    cache: false
+                }).done(function (data) {
+                            $('.generated-contact').remove();
+                            data.forEach(function (contacts) {
+                                for (contact in contacts.contacts) {
+                                    console.log(contacts.contacts[contact].name);
+                                    var mailTo = '<a class="generated-contact" id="knappsackSupport" href="mailto:' + contacts.contacts[contact].email + '" rel="external">' + contacts.contacts[contact].name + '</a>';
+                                    $("<div class='generated-contact'>" + mailTo + "</div>").prependTo("#contactsModalDiv");
+                                }
+                                $("<p class='generated-contact' style='padding-top:.5em;'><b>" + contacts.domainName + " Administrators</b></p>").prependTo("#contactsModalDiv");
+                            });
+                            $('#contactsModal').modal({
+                                show: true
+                            });
+                        });
+            });
         });
         /*]]>*/
     </script>
@@ -130,7 +158,7 @@
                         <li><a href="#" th:href="@{/home}" th:unless="${include_activate}" th:title="#{desktop.includes.header.home.title}" title="Home" th:text="#{desktop.includes.header.home}">Home</a></li>
                         <li><a href="categoriesTH.html" th:href="@{/categories}" th:unless="${include_activate}" th:title="#{desktop.includes.header.categories.title}" title="Categories" th:text="#{desktop.includes.header.categories}">Categories</a></li>
                         <!--<li><a href="searchTH.html" th:href="@{/search}" th:unless="${include_activate}" th:title="#{desktop.includes.header.search.title}" title="Search" th:text="#{desktop.includes.header.search}">Search</a></li>-->
-                        <li><a href="group_accessTH.html" th:href="@{/group/requestAccess}" th:unless="${include_activate}" th:title="#{desktop.includes.header.request.group.access.title}" title="Request Group Access" th:text="#{desktop.includes.header.request.group.access}">Request Group Access</a></li>
+                        <li><a href="domain_accessTH.html" th:href="@{/domain/requestAccess}" th:unless="${include_activate}" th:title="#{desktop.includes.header.request.group.access.title}" title="Request Group Access" th:text="#{desktop.includes.header.request.group.access}">Request Group Access</a></li>
                         <li><a href="manager/managerHomeTH.html" th:href="@{/manager/}" th:if="${user.anyAdmin}" th:unless="${include_activate}" th:title="#{desktop.includes.header.manage.title}" title="Manage Application" th:text="#{desktop.includes.header.manage}">Manage Application</a></li>
                     </ul>
                     <!--<div class="logoutNav">-->
@@ -167,20 +195,39 @@
 <footer class="footer" th:fragment="footer">
     <div class="container-fluid">
         <hr/>
-            <div class="span8">
-                <a href="http://www.sparcedge.com/"><strong>&copy; 2012 Sparc LLC</strong></a>
-                <br />
-                All rights reserved.
-            </div>
+        <!--<div class="row-fluid">-->
+        <div class="span8">
+            <strong>&copy; 2013 Sparc LLC</strong>
+            <br />
+            All rights reserved.
+            <a id="supportFooter" href="#" th:title="#{desktop.includes.footer.support.title}" title="Contacts" th:text="#{desktop.includes.footer.support}">Contact Us</a>
+            |
+            <a id="faqFooter" th:href="@{http://support.knappsack.com/forums/21434262-faqs}" rel="external" th:text="#{desktop.includes.footer.faqs}" th:title="#{desktop.includes.footer.faqs.title}" title="Frequently Asked Questions">FAQs</a>
+        </div>
 
-            <div class="icons span4">
-                <ul class="pull-right">
-                    <li><a id = "facebookFooter" href="https://www.facebook.com/knappsackapp" class="facebook" rel="external" target="_blank" th:title="#{desktop.includes.footer.facebook.title}" title="Facebook" th:text="#{desktop.includes.footer.facebook}">Facebook</a>
-                    </li>
-                    <li><a id = "twitterFooter" href="https://twitter.com/knappsackapp" class="twitter" rel="external" target="_blank" th:title="#{desktop.includes.footer.twitter.title}" title="Twitter" th:text="#{desktop.includes.footer.twitter}">Twitter</a>
-                    </li>
-                </ul>
-            </div>
+        <div class="icons span4">
+            <ul class="pull-right">
+                <li><a id = "facebookFooter" href="https://www.facebook.com/knappsackapp" class="facebook" rel="external" target="_blank" th:title="#{desktop.includes.footer.facebook.title}" title="Facebook" th:text="#{desktop.includes.footer.facebook}">Facebook</a>
+                </li>
+                <li><a id = "twitterFooter" href="https://twitter.com/knappsackapp" class="twitter" rel="external" target="_blank" th:title="#{desktop.includes.footer.twitter.title}" title="Twitter" th:text="#{desktop.includes.footer.twitter}">Twitter</a>
+                </li>
+            </ul>
+        </div>
+        <!--</div>-->
+    </div>
+
+    <div id="contactsModal" class="modal hide fade">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h3>Contacts</h3>
+        </div>
+        <div id="contactsModalDiv" class="modal-body">
+            <p style='padding-top:1em;'><b>Knappsack Support</b></p>
+            <a id="knappsackSupport" th:href="'mailto:' + #{knappsack.support}" href="mailto:support@knappsack.com" th:title="#{knappsack.support}" title="Knappsack Support" th:text="#{knappsack.support}" rel="external">Knappsack Support</a>
+        </div>
+        <div class="modal-footer">
+            <a href="#" class="btn" data-dismiss="modal">Close</a>
+        </div>
     </div>
 </footer>
 
@@ -188,63 +235,85 @@
 
 <section id="scripts">
     <section th:fragment="required_scripts">
-        <script src="../../resources/js/prettify.js"
-                ks:src="@{/resources/js/prettify.js}" type="text/javascript"></script>
-        <script src="../../resources/bootstrap/js/bootstrap.min.js"
-                ks:src="@{/resources/bootstrap/js/bootstrap.min.js}"></script>
+        <script src="../../resources/js/prettify.min.js"
+                ks:src="@{/resources/js/prettify.min.js}" type="text/javascript"></script>
+        <script src="../../resources/js/bootstrap-2.2.1.min.js"
+                ks:src="@{/resources/js/bootstrap-2.2.1.min.js}"></script>
         <section th:if="${#bools.isFalse(exclude_systemNotifications)}">
-            <script src="../../resources/noty/jquery.noty.js"
-                    ks:src="@{/resources/noty/jquery.noty.js}"></script>
-            <script src="../../resources/noty/layouts/top.js"
-                    ks:src="@{/resources/noty/layouts/top.js}"></script>
-            <script src="../../resources/noty/layouts/inline.js"
-                    ks:src="@{/resources/noty/layouts/inline.js}"></script>
-            <script src="../../resources/noty/themes/default.js"
-                    ks:src="@{/resources/noty/themes/default.js}"></script>
+            <script src="../../resources/js/jquery.noty.min.js"
+                    ks:src="@{/resources/js/jquery.noty.min.js}"></script>
+            <script src="../../resources/js/top.min.js"
+                    ks:src="@{/resources/js/top.min.js}"></script>
+            <script src="../../resources/js/inline.min.js"
+                    ks:src="@{/resources/js/inline.min.js}"></script>
+            <script src="../../resources/js/default.min.js"
+                    ks:src="@{/resources/js/default.min.js}"></script>
         </section>
     </section>
 
+    <section th:fragment="table_tools_scripts">
+        <script src="../../resources/js/jquery.dataTables-1.9.4.min.js"
+                ks:src="@{/resources/js/jquery.dataTables-1.9.4.min.js}"></script>
+        <script src="../../resources/DataTables/js/TableTools.min.js"
+                ks:src="@{/resources/js/TableTools.min.js}"></script>
+        <script src="../../resources/DataTables/js/ZeroClipboard.js"
+                ks:src="@{/resources/js/ZeroClipboard.min.js}"></script>
+        <script src="../../resources/js/DT_bootstrap_4.min.js"
+                ks:src="@{/resources/js/DT_bootstrap_4.min.js}"></script>
+        <script src="../../resources/js/TT_bootstrap_1.min.js"
+                ks:src="@{/resources/js/TT_bootstrap_1.min.js}"></script>
+    </section>
+
     <section th:fragment="table_scripts">
-        <script src="../../resources/DataTables/js/jquery.dataTables-1.9.4.min.js"
-                ks:src="@{/resources/DataTables/js/jquery.dataTables-1.9.4.min.js}"></script>
-        <script src="../../resources/DataTables/js/DT_bootstrap_2.js"
-                ks:src="@{/resources/DataTables/js/DT_bootstrap_2.js}"></script>
+        <script src="../../resources/js/jquery.dataTables-1.9.4.min.js"
+                ks:src="@{/resources/js/jquery.dataTables-1.9.4.min.js}"></script>
+        <script src="../../resources/js/DT_bootstrap_4.min.js"
+                ks:src="@{/resources/js/DT_bootstrap_4.min.js}"></script>
+    </section>
+
+    <section th:fragment="table_tools_scripts">
+        <script src="../../resources/DataTables/js/TableTools.min.js"
+                ks:src="@{/resources/js/TableTools.min.js}"></script>
+        <script src="../../resources/DataTables/js/ZeroClipboard.js"
+                ks:src="@{/resources/js/ZeroClipboard.min.js}"></script>
     </section>
 
     <section th:fragment="wysiwyg_scripts">
-        <link href="../../resources/bootstrap-wysihtml5/css/bootstrap-wysihtml5-0.0.2.css"
-              ks:href="@{/resources/bootstrap-wysihtml5/css/bootstrap-wysihtml5-0.0.2.css}"
+        <link href="../../resources/css/bootstrap-wysihtml5-0.0.2.min.css"
+              ks:href="@{/resources/css/bootstrap-wysihtml5-0.0.2.min.css}"
               rel="stylesheet"/>
-        <script src="../../resources/bootstrap-wysihtml5/js/wysihtml5-0.3.0.min.js"
-                ks:src="@{/resources/bootstrap-wysihtml5/js/wysihtml5-0.3.0.min.js}" type="text/javascript"></script>
-        <script src="../../resources/bootstrap-wysihtml5/js/bootstrap-wysihtml5-0.0.2.min.js"
-                ks:src="@{/resources/bootstrap-wysihtml5/js/bootstrap-wysihtml5-0.0.2.min.js}" type="text/javascript"></script>
+        <script src="../../resources/js/wysihtml5-0.3.0.min.js"
+                ks:src="@{/resources/js/wysihtml5-0.3.0.min.js}" type="text/javascript"></script>
+        <script src="../../resources/js/bootstrap-wysihtml5-0.0.2.min.js"
+                ks:src="@{/resources/js/bootstrap-wysihtml5-0.0.2.min.js}" type="text/javascript"></script>
     </section>
 
     <section id="individual_scripts">
-        <script src="../../resources/bootstrap/js/bootstrap-inputmask.js"
-                ks:src="@{/resources/bootstrap/js/bootstrap-inputmask.js}" th:fragment="inputmask_script"></script>
-        <script src="../../resources/js/jquery.cookie-1.3.js"
-                ks:src="@{/resources/js/jquery.cookie-1.3.js}" th:fragment="cookie_script"></script>
+        <script src="../../resources/js/bootstrap-inputmask.min.js"
+                ks:src="@{/resources/js/bootstrap-inputmask.min.js}" th:fragment="inputmask_script"></script>
+        <script src="../../resources/js/jquery.cookie-1.3.min.js"
+                ks:src="@{/resources/js/jquery.cookie-1.3.min.js}" th:fragment="cookie_script"></script>
+        <script src="../../resources/js/jquery.multi-select.js"
+                ks:src="@{/resources/js/jquery.multi-select.js}" th:fragment="multiselect_script"></script>
     </section>
 
     <section th:fragment="inputmask_scripts">
-        <script src="../../resources/jquery.inputmask/jquery.inputmask.js"
-                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.js}"></script>
-        <script src="../../resources/jquery.inputmask/jquery.inputmask.extensions.js"
-                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.extensions.js}"></script>
-        <script src="../../resources/jquery.inputmask/jquery.inputmask.date.extensions.js"
-                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.date.extensions.js}"></script>
-        <script src="../../resources/jquery.inputmask/jquery.inputmask.numeric.extensions.js"
-                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.numeric.extensions.js}"></script>
-        <script src="../../resources/jquery.inputmask/jquery.inputmask.date.custom.extensions.js"
-                ks:src="@{/resources/jquery.inputmask/jquery.inputmask.date.custom.extensions.js}"></script>
+        <script src="../../resources/js/jquery.inputmask.min.js"
+                ks:src="@{/resources/js/jquery.inputmask.min.js}"></script>
+        <script src="../../resources/js/jquery.inputmask.extensions.min.js"
+                ks:src="@{/resources/js/jquery.inputmask.extensions.min.js}"></script>
+        <script src="../../resources/js/jquery.inputmask.date.extensions.min.js"
+                ks:src="@{/resources/js/jquery.inputmask.date.extensions.min.js}"></script>
+        <script src="../../resources/js/jquery.inputmask.numeric.extensions.min.js"
+                ks:src="@{/resources/js/jquery.inputmask.numeric.extensions.min.js}"></script>
+        <script src="../../resources/js/jquery.inputmask.date.custom.extensions.min.js"
+                ks:src="@{/resources/js/jquery.inputmask.date.custom.extensions.min.js}"></script>
     </section>
 </section>
 
 <!--</div>-->
 
-<div id="confirmationModal" class="modal hide fade" style="display: none;" th:fragment="confirmation_modal">
+<div id="confirmationModal" class="modal hide fade" th:fragment="confirmation_modal">
     <div class="modal-header">
         <a class="close" data-dismiss="modal" th:text="#{desktop.alert.close}">x</a>
         <h3 th:text="#{desktop.includes.confirmation.modal.title}">Title</h3>

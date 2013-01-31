@@ -10,7 +10,7 @@ public class InvitationForm {
     private List<InviteeForm> inviteeForms = new ArrayList<InviteeForm>();
     private DomainType domainType;
     private Long domainId;
-    private MultipartFile contactsGoogle;
+    private MultipartFile contactsGmail;
     private MultipartFile contactsOutlook;
 
     public List<InviteeForm> getInviteeForms() {
@@ -37,12 +37,12 @@ public class InvitationForm {
         this.domainId = domainId;
     }
 
-    public MultipartFile getContactsGoogle() {
-        return contactsGoogle;
+    public MultipartFile getContactsGmail() {
+        return contactsGmail;
     }
 
-    public void setContactsGoogle(MultipartFile contactsGoogle) {
-        this.contactsGoogle = contactsGoogle;
+    public void setContactsGmail(MultipartFile contactsGmail) {
+        this.contactsGmail = contactsGmail;
     }
 
     public MultipartFile getContactsOutlook() {

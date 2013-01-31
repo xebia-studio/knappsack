@@ -7,8 +7,6 @@ import com.sparc.knappsack.forms.StorageForm;
 import com.sparc.knappsack.models.OrganizationModel;
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -17,9 +15,6 @@ import static junit.framework.Assert.*;
 import static org.junit.Assert.assertNull;
 
 public class StorageConfigurationServiceIT extends AbstractServiceTests {
-
-    private static final Logger log = LoggerFactory.getLogger(StorageConfigurationServiceIT.class);
-
 
     private static final String STORAGE_CONFIG_NAME = "Local Storage Config";
 

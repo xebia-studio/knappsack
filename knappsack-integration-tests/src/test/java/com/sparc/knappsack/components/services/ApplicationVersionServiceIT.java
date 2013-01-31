@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -31,18 +30,17 @@ public class ApplicationVersionServiceIT extends AbstractServiceTests {
     @Autowired(required = true)
     private StorageConfigurationService storageConfigurationService;
 
+    @Autowired(required = true)
+    private ApplicationVersionUserStatisticService applicationVersionUserStatisticService;
+
     @Test
     public void addTest() {
         ApplicationVersion applicationVersion = getApplicationVersion();
-        ApplicationVersion newApplicationVersion = new ApplicationVersion();
-        newApplicationVersion.setAppState(AppState.DISABLED);
-        newApplicationVersion.setVersionName("1.0.1");
-        newApplicationVersion.setApplication(applicationVersion.getApplication());
-        newApplicationVersion.setStorageConfiguration(newApplicationVersion.getStorageConfiguration());
-        applicationVersion.getApplication().getApplicationVersions().add(newApplicationVersion);
-        applicationVersionService.add(newApplicationVersion);
+        applicationVersion.setAppState(AppState.DISABLED);
+        applicationVersionService.update(applicationVersion);
         List<ApplicationVersion> applicationVersionList = applicationVersionService.getAll(applicationVersion.getApplication(), AppState.DISABLED);
         assertTrue(applicationVersionList.size() == 1);
+        assertEquals(applicationVersion, applicationVersionList.get(0));
     }
 
     @Test
@@ -89,28 +87,27 @@ public class ApplicationVersionServiceIT extends AbstractServiceTests {
     @Test
     public void getAllTest() {
         ApplicationVersion applicationVersion = getApplicationVersion();
+        applicationVersionService.add(applicationVersion);
         List<ApplicationVersion> applicationVersions = applicationVersionService.getAll(applicationVersion.getApplication().getCategory().getOrganization().getId());
         assertTrue(applicationVersions.size() == 1);
     }
 
     private ApplicationVersion getApplicationVersion() {
         Organization organization = new Organization();
-        organization.setAccessCode(UUID.randomUUID().toString());
         organization.setName("Test Organization");
-        organizationService.add(organization);
 
         LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
         localStorageConfiguration.setBaseLocation("/path");
         localStorageConfiguration.setName("Local Storage Configuration");
         localStorageConfiguration.setStorageType(StorageType.LOCAL);
 
-        storageConfigurationService.add(localStorageConfiguration);
-
         OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
-        orgStorageConfig.setOrganization(organization);
-        orgStorageConfig.setPrefix("test_org");
         orgStorageConfig.getStorageConfigurations().add(localStorageConfiguration);
+        orgStorageConfig.setPrefix("testPrefix");
+        orgStorageConfig.setOrganization(organization);
         organization.setOrgStorageConfig(orgStorageConfig);
+
+        organizationService.add(organization);
 
         Category category = new Category();
         category.setName("Test Category");
@@ -119,32 +116,42 @@ public class ApplicationVersionServiceIT extends AbstractServiceTests {
 
         organizationService.getAll();
 
+
+        Group group = new Group();
+        group.setName("Test Group");
+        group.setOrganization(organization);
+        groupService.add(group);
+
         Application application = new Application();
         application.setName("Test Application");
         application.setDescription("This is a description.");
         application.setApplicationType(ApplicationType.ANDROID);
         application.setCategory(category);
         application.setStorageConfiguration(localStorageConfiguration);
+        application.setOwnedGroup(group);
 
         ApplicationVersion applicationVersion = new ApplicationVersion();
         applicationVersion.setVersionName("1.0.0");
         applicationVersion.setApplication(application);
         applicationVersion.setAppState(AppState.GROUP_PUBLISH);
-        applicationVersion.setStorageConfiguration(localStorageConfiguration);
+        applicationVersion.setStorageConfiguration(application.getStorageConfiguration());
 
         application.getApplicationVersions().add(applicationVersion);
         applicationService.add(application);
 
-        Group group = new Group();
-        group.setAccessCode(UUID.randomUUID().toString());
-        group.setName("Test Group");
-        group.setOrganization(organization);
-        group.setOwnedApplications(new ArrayList<Application>());
+        ApplicationVersionUserStatistic statistic = new ApplicationVersionUserStatistic();
+        statistic.setApplicationVersion(applicationVersion);
+        statistic.setRemoteAddress("127.0.0.1");
+        statistic.setUser(getUser());
+        statistic.setUserAgent("UserAgent");
+
+        applicationVersionUserStatisticService.add(statistic);
+
         group.getOwnedApplications().add(application);
         groupService.save(group);
+        application.setOwnedGroup(group);
 
         Group group2 = new Group();
-        group2.setAccessCode(UUID.randomUUID().toString());
         group2.setName("Test Group 2");
         group2.setOrganization(organization);
         group2.setGuestApplicationVersions(new ArrayList<ApplicationVersion>());

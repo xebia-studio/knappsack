@@ -1,9 +1,6 @@
 package com.sparc.knappsack.components.services;
 
-import com.sparc.knappsack.components.entities.AppFile;
-import com.sparc.knappsack.components.entities.Category;
-import com.sparc.knappsack.components.entities.LocalStorageConfiguration;
-import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.forms.CategoryForm;
 import com.sparc.knappsack.models.CategoryModel;
@@ -12,7 +9,9 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class CategoryServiceIT extends AbstractServiceTests {
@@ -31,29 +30,19 @@ public class CategoryServiceIT extends AbstractServiceTests {
 
     @Test
     public void addTest() {
-        Category category = new Category();
-        category.setName("Test Category");
-        category.setDescription("Test Description");
-        categoryService.add(category);
+
+        Category category = getCategory();
         List<Category> categories = categoryService.getAll();
         assertTrue(categories.size() == 1);
-        assertTrue(categories.get(0).getName().equals("Test Category"));
+        assertEquals(categories.get(0), category);
     }
     @Test
     public void deleteTest() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-        organizationService.add(organization);
-
-        Category category = new Category();
-        category.setName("Test Category");
-        category.setDescription("Test Description");
-        category.setOrganization(organization);
-        categoryService.add(category);
+        Category category = getCategory();
 
         List<Category> categories = categoryService.getAll();
         assertTrue(categories.size() == 1);
-        assertTrue(categories.get(0).getName().equals("Test Category"));
+        assertEquals(categories.get(0), category);
         categoryService.delete(category.getId());
         categories = categoryService.getAll();
         assertTrue(categories.size() == 0);
@@ -61,10 +50,7 @@ public class CategoryServiceIT extends AbstractServiceTests {
 
     @Test
     public void updateTest() {
-        Category category = new Category();
-        category.setName("Test Category");
-        category.setDescription("Test Description");
-        categoryService.add(category);
+        Category category = getCategory();
         List<Category> categories = categoryService.getAll();
         assertTrue(categories.size() == 1);
         category.setName("Test Category 2");
@@ -75,14 +61,7 @@ public class CategoryServiceIT extends AbstractServiceTests {
 
     @Test
     public void saveCategoryTest() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-        organizationService.add(organization);
-
-        LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
-        localStorageConfiguration.setName("Local Storage Configuration");
-        localStorageConfiguration.setStorageType(StorageType.LOCAL);
-        storageConfigurationService.add(localStorageConfiguration);
+        Organization organization = getOrganization();
 
         List<Category> categories = categoryService.getAll();
         assertTrue(categories.size() == 0);
@@ -92,7 +71,7 @@ public class CategoryServiceIT extends AbstractServiceTests {
         categoryForm.setDescription("Test Description");
         categoryForm.setEditing(false);
         categoryForm.setOrganizationId(organization.getId());
-        categoryForm.setStorageConfigurationId(localStorageConfiguration.getId());
+        categoryForm.setStorageConfigurationId(organization.getStorageConfigurations().get(0).getId());
         Category category = categoryService.saveCategory(categoryForm);
         categories = categoryService.getAll();
         assertTrue(categories.size() == 1);
@@ -101,14 +80,7 @@ public class CategoryServiceIT extends AbstractServiceTests {
 
     @Test
     public void updateCategoryFromFormTest() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-        organizationService.add(organization);
-
-        LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
-        localStorageConfiguration.setName("Local Storage Configuration");
-        localStorageConfiguration.setStorageType(StorageType.LOCAL);
-        storageConfigurationService.add(localStorageConfiguration);
+        Organization organization = getOrganization();
 
         List<Category> categories = categoryService.getAll();
         assertTrue(categories.size() == 0);
@@ -118,7 +90,7 @@ public class CategoryServiceIT extends AbstractServiceTests {
         categoryForm.setDescription("Test Description");
         categoryForm.setEditing(false);
         categoryForm.setOrganizationId(organization.getId());
-        categoryForm.setStorageConfigurationId(localStorageConfiguration.getId());
+        categoryForm.setStorageConfigurationId(organization.getStorageConfigurations().get(0).getId());
         Category category = categoryService.saveCategory(categoryForm);
         categories = categoryService.getAll();
         assertTrue(categories.size() == 1);
@@ -136,14 +108,7 @@ public class CategoryServiceIT extends AbstractServiceTests {
     public void createModelTest() {
         WebRequest.getInstance("http", "serverName", 80, "/knappsack");
 
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-        organizationService.add(organization);
-
-        LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
-        localStorageConfiguration.setName("Local Storage Configuration");
-        localStorageConfiguration.setStorageType(StorageType.LOCAL);
-        storageConfigurationService.add(localStorageConfiguration);
+        Organization organization = getOrganization();
 
         AppFile icon = new AppFile();
         icon.setName("icon");
@@ -157,11 +122,44 @@ public class CategoryServiceIT extends AbstractServiceTests {
         category.setName("Test Category");
         category.setDescription("Test Description");
         category.setOrganization(organization);
-        category.setStorageConfiguration(localStorageConfiguration);
+        category.setStorageConfiguration(organization.getStorageConfigurations().get(0));
         category.setIcon(icon);
         CategoryModel categoryModel = categoryService.createCategoryModel(category);
         assertTrue(categoryModel.getDescription().equals("Test Description"));
         assertTrue(categoryModel.getName().equals("Test Category"));
         assertTrue(categoryModel.getIcon() != null);
+    }
+
+    private Category getCategory() {
+        Organization organization = getOrganization();
+
+        Category category = new Category();
+        category.setName("Test Category");
+        category.setOrganization(organization);
+        organization.getCategories().add(category);
+
+        categoryService.add(category);
+
+        return category;
+    }
+
+    private Organization getOrganization() {
+        Organization organization = new Organization();
+        organization.setName("Test Organization");
+
+        LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
+        localStorageConfiguration.setBaseLocation("/path");
+        localStorageConfiguration.setName("Local Storage Configuration");
+        localStorageConfiguration.setStorageType(StorageType.LOCAL);
+
+        OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
+        orgStorageConfig.getStorageConfigurations().add(localStorageConfiguration);
+        orgStorageConfig.setPrefix("testPrefix");
+        orgStorageConfig.setOrganization(organization);
+        organization.setOrgStorageConfig(orgStorageConfig);
+
+        organizationService.add(organization);
+
+        return organization;
     }
 }

@@ -13,7 +13,7 @@ public interface Dao<Entity> {
      * @return Entity with the given id
      * @see Entity
      */
-    Entity get(Long id);
+    <T extends Entity> T get(Long id);
 
     /**
      * @param entity Entity - removes this entity from the cache and database

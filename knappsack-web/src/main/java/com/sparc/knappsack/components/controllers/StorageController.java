@@ -105,6 +105,7 @@ public class StorageController extends AbstractController {
                 storageForm.setBaseLocation(storageConfiguration.getBaseLocation());
                 storageForm.setName(storageConfiguration.getName());
                 storageForm.setStorageType(storageConfiguration.getStorageType());
+                storageForm.setRegistrationDefault(storageConfiguration.isRegistrationDefault());
                 storageForm.setEditing(true);
 
                 model.addAttribute("storageForm", storageForm);

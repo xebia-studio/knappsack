@@ -34,13 +34,20 @@ public class IOSServiceImpl implements IOSService {
 
         NSDictionary nsDictionary = createIOSPlistNSDictionary(applicationVersion.getCfBundleIdentifier(), applicationVersion.getCfBundleVersion(), applicationVersion.getCfBundleName(), downloadUrl);
 
-        return nsDictionary.toXMLPropertyList();
+        String xmlPlist = null;
+        if (nsDictionary != null) {
+            xmlPlist = nsDictionary.toXMLPropertyList();
+        }
+        return xmlPlist;
     }
 
     private String createIOSDownloadIPAUrl(ApplicationVersion version, WebRequest request, String token) {
         AppFile appFile = version.getInstallationFile();
 
         StorageService storageService = storageServiceFactory.getStorageService(appFile.getStorageType());
+        if (storageService instanceof RemoteStorageService) {
+            return ((RemoteStorageService) storageService).getUrl(appFile, 10);
+        }
 
         NameValuePair tokenParam = new BasicNameValuePair("token", token);
         return request.generateURL("/ios/downloadApplication/" + version.getId(), tokenParam);

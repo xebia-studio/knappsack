@@ -18,6 +18,7 @@ public class OrganizationValidator implements Validator {
     private static final String NAME_FIELD = "name";
     private static final String STORAGE_PREFIX_FIELD = "storagePrefix";
     private static final String STORAGE_CONFIGURATION_ID_FIELD = "storageConfigurationId";
+    private static final String ADMIN_EMAIL_FIELD = "adminEmail";
 
     @Value("${email.pattern}")
     private String emailPattern;
@@ -45,7 +46,7 @@ public class OrganizationValidator implements Validator {
             errors.rejectValue(STORAGE_CONFIGURATION_ID_FIELD, "organizationValidator.emptyStorageConfigurationId");
         }
 
-        if (organizationForm.getStoragePrefix() == null || "".equals(organizationForm.getStoragePrefix().trim())) {
+        if (!organizationForm.isEditing() && (organizationForm.getStoragePrefix() == null || "".equals(organizationForm.getStoragePrefix().trim()))) {
             errors.rejectValue(STORAGE_PREFIX_FIELD, "organizationValidator.emptyPrefix");
         }
 
@@ -54,9 +55,12 @@ public class OrganizationValidator implements Validator {
             errors.rejectValue(NAME_FIELD, "organizationValidator.nameEquals");
         }
 
-        OrgStorageConfig orgStorageConfig = orgStorageConfigService.getByPrefix(organizationForm.getStoragePrefix());
-        if (orgStorageConfig != null && !orgStorageConfig.getOrganization().getId().equals(organizationForm.getId())) {
-            errors.rejectValue(STORAGE_PREFIX_FIELD, "organizationValidator.prefix");
+        if (!organizationForm.isEditing()) {
+            OrgStorageConfig orgStorageConfig = orgStorageConfigService.getByPrefix(organizationForm.getStoragePrefix());
+            if (orgStorageConfig != null && !orgStorageConfig.getOrganization().getId().equals(organizationForm.getId())) {
+                errors.rejectValue(STORAGE_PREFIX_FIELD, "organizationValidator.prefix");
+            }
         }
+
     }
 }
