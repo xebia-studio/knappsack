@@ -99,8 +99,8 @@ public class EmailServiceIT extends AbstractServiceTests {
 
             assertNotNull(msg);
             assertEquals("Knappsack: Domain Access Request", msg.getSubject());
-            assertEquals("notifications@knappsack.com", msg.getFrom()[0].toString());
-            assertEquals("notifications@knappsack.com",
+            assertEquals("test@test.com", msg.getFrom()[0].toString());
+            assertEquals("john_doe@test.com",
                     msg.getRecipients(MimeMessage.RecipientType.TO)[0].toString());
         }
     }
@@ -118,8 +118,8 @@ public class EmailServiceIT extends AbstractServiceTests {
 
             assertNotNull(msg);
             assertEquals("Knappsack: Account Activation", msg.getSubject());
-            assertEquals("notifications@knappsack.com", msg.getFrom()[0].toString());
-            assertEquals("notifications@knappsack.com",
+            assertEquals("test@test.com", msg.getFrom()[0].toString());
+            assertEquals("john_doe@test.com",
                     msg.getRecipients(MimeMessage.RecipientType.TO)[0].toString());
         }
     }
@@ -139,7 +139,7 @@ public class EmailServiceIT extends AbstractServiceTests {
 
         Invitation invitation = new Invitation();
         invitation.setDomain(organization);
-        invitation.setEmail("notifications@knappsack.com");
+        invitation.setEmail("john_doe@test.com");
 
         Role role = new Role();
         role.setAuthority(UserRole.ROLE_ORG_ADMIN.name());
@@ -157,8 +157,8 @@ public class EmailServiceIT extends AbstractServiceTests {
 
             assertNotNull(msg);
             assertEquals(String.format("%s: Invitation to Knappsack", organization.getName()), msg.getSubject());
-            assertEquals("notifications@knappsack.com", msg.getFrom()[0].toString());
-            assertEquals("notifications@knappsack.com",
+            assertEquals("test@test.com", msg.getFrom()[0].toString());
+            assertEquals("john_doe@test.com",
                     msg.getRecipients(MimeMessage.RecipientType.TO)[0].toString());
         }
     }
@@ -175,8 +175,8 @@ public class EmailServiceIT extends AbstractServiceTests {
 
             assertNotNull(msg);
             assertEquals("Knappsack: Password Changed", msg.getSubject());
-            assertEquals("notifications@knappsack.com", msg.getFrom()[0].toString());
-            assertEquals("notifications@knappsack.com",
+            assertEquals("test@test.com", msg.getFrom()[0].toString());
+            assertEquals("john_doe@test.com",
                     msg.getRecipients(MimeMessage.RecipientType.TO)[0].toString());
         }
     }
@@ -218,8 +218,8 @@ public class EmailServiceIT extends AbstractServiceTests {
 
             assertNotNull(msg);
             assertEquals("Knappsack: Domain Access Request Accepted", msg.getSubject());
-            assertEquals("notifications@knappsack.com", msg.getFrom()[0].toString());
-            assertEquals("notifications@knappsack.com",
+            assertEquals("test@test.com", msg.getFrom()[0].toString());
+            assertEquals("john_doe@test.com",
                     msg.getRecipients(MimeMessage.RecipientType.TO)[0].toString());
         }
     }
@@ -244,8 +244,8 @@ public class EmailServiceIT extends AbstractServiceTests {
 
             assertNotNull(msg);
             assertEquals("Knappsack: Application Publish Request", msg.getSubject());
-            assertEquals("notifications@knappsack.com", msg.getFrom()[0].toString());
-            assertEquals("notifications@knappsack.com",
+            assertEquals("test@test.com", msg.getFrom()[0].toString());
+            assertEquals("john_doe@test.com",
                     msg.getRecipients(MimeMessage.RecipientType.TO)[0].toString());
         }
     }
@@ -270,8 +270,8 @@ public class EmailServiceIT extends AbstractServiceTests {
 
             assertNotNull(msg);
             assertEquals("Knappsack: Application Publish Request", msg.getSubject());
-            assertEquals("notifications@knappsack.com", msg.getFrom()[0].toString());
-            assertEquals("notifications@knappsack.com",
+            assertEquals("test@test.com", msg.getFrom()[0].toString());
+            assertEquals("test@test.com",
                     msg.getRecipients(MimeMessage.RecipientType.TO)[0].toString());
         }
     }*/

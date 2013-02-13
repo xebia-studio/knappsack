@@ -52,10 +52,10 @@ public abstract class AbstractServiceTests extends AbstractTransactionalJUnit4Sp
         if (user == null) {
             MessageDigestPasswordEncoder passwordEncoder = new MessageDigestPasswordEncoder("SHA-256", true);
             user = new User();
-            user.setEmail("notifications@knappsack.com");
+            user.setEmail("john_doe@test.com");
             user.setFirstName("John");
             user.setLastName("Doe");
-            user.setUsername("notifications@knappsack.com");
+            user.setUsername("john_doe@test.com");
             user.setPassword(passwordEncoder.encodePassword("1234", user.getEmail()));
             user.setActivationCode(UUID.randomUUID().toString());
             user.getUuid();
