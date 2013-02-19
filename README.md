@@ -5,7 +5,7 @@ Application repository.
 [http://knappsack.com](http://knappsack.com)
 
 ## Build and Deploy Steps
-https://docs.google.com/document/d/1RLEe7heyBw7CMDthu88vKDTgSuPc00aYiYdT6B-AD_A/edit?usp=sharing
+https://s3.amazonaws.com/knappsack/KnappsackOSSEditionDeploymentGuide.pdf
 
 ## License
 
