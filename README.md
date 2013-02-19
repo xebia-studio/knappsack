@@ -24,10 +24,15 @@ For a tutorial on how to build and deploy Knappsack please use the following lin
 
 [Knappsack Build and Deployment Guide](https://s3.amazonaws.com/knappsack/KnappsackOSSEditionDeploymentGuide.pdf "How to Build and Deploy Knappsack")
 
+## Using Knappsack
+
+Once Knappsack is deployed, the first user you create is the administrator.  Please follow the quick start guide to managing your applications and users.
+
+[Quick Start Guide](https://s3.amazonaws.com/knappsack/KnappsackQuickStartGuide.pdf "Quick Start Guide")
+
 ##Support and Help
 
 Feel free to post issues here on GitHub or our support forum located here:
-
 
 [Support Forum](http://support.knappsack.com "Support")
 
