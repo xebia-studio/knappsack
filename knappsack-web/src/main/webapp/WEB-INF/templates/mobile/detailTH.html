@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="include_detail=${true},title='Knappsack'" xmlns:ks="http://www.knappsack.com">
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_detail=${true},title='C.T.Co App Store'" xmlns:ks="http://www.knappsack.com">
 <head th:substituteby="/mobile/includesTH :: mobileHead"></head>
 <body>
 
@@ -68,12 +68,13 @@
                 var downloadDirectly = /*[[${downloadDirectly}]]*/ true;
 
                 if (downloadDirectly) {
+                    var tt = new Date().getTime();
                     $.ajax({
                         type:"POST",
                         url:generateDownloadApplicationUrl + selectedVersionId,
                         cache:false,
                         dataType:"text",
-                        data:({id:selectedAppId}),
+                        data:({id:selectedAppId, ts:tt}),
                         async:true,
                         success:onSuccess,
                         error:onError
@@ -133,7 +134,7 @@
 <div data-role="header" data-id="mainHeader" class="header">
     <a id="backBtn" href="#" data-rel="back" data-icon="back" data-direction="reverse" th:text="#{mobile.detail.back}">Back</a>
 
-    <h1>Knappsack</h1>
+    <h1>C.T.Co App Store</h1>
 
     <a id="installBtn" rel="external" data-theme="b" th:if="${#bools.isTrue(showInstallBtn)}" th:unless="${#lists.isEmpty(versions)}" th:text="#{mobile.detail.install}">Install</a>
 
