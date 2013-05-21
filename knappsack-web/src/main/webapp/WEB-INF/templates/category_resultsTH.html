@@ -10,14 +10,6 @@
 
     <script type="text/javascript" th:inline="javascript">
         /*<![CDATA[*/
-
-        $(window).load(function() {
-            $('img.delay-image').each(function(index, value) {
-                var $elem = $(this);
-                $elem.attr('src', $elem.data('img-url'));
-            });
-        });
-
         $(document).ready(function () {
 
             var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
@@ -27,7 +19,7 @@
             var $applicationsTable = $('table').dataTable( {
                 "sDom": "<'table-inline'<'row'<'span6'l><'floatright'f>r>t<'row'<'span6'i><'floatright'p>>",
                 "sPaginationType": "bootstrap",
-                "iDisplayLength": 5,
+                "iDisplayLength": 10,
                 "oLanguage": {
                     "sLengthMenu": '<select>'+
                             '<option value="5">5</option>'+
@@ -42,7 +34,11 @@
                     { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%" },
                     { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%" }
                 ],
-                "bAutoWidth": false
+                "bAutoWidth": false,
+                "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                    $elem = $('img.delay-image', nRow);
+                    $elem.attr('src', $elem.data('img-url'));
+                }
             });
 
             $('table').show();
