@@ -358,6 +358,7 @@ public class ApplicationController extends AbstractController {
             File file = new File(appFile.getAbsolutePath());
 
             response.setContentType(appFile.getType());
+            response.setHeader("Content-Length", Long.toString(file.length()));
             response.setHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"");
             InputStream inputStream = null;
             try {
