@@ -102,6 +102,7 @@
                         <id>default-minify</id>
                         <phase>process-resources</phase>
                         <configuration>
+                            <charset>UTF-8</charset>
                             <cssSourceDir>resources</cssSourceDir>
                             <jsSourceDir>resources</jsSourceDir>
                             <cssTargetDir>resources/css</cssTargetDir>
