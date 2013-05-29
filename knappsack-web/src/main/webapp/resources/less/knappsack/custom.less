@@ -1,0 +1,559 @@
+//
+// Custom Knappsack Styles
+// --------------------------------------------------
+
+
+
+@import "./_variables-bootstrap.less";
+@import "./_font-awesome.less";
+
+
+// Structural
+// -------------------------
+
+body {min-height: 100%; height: auto !important; position: relative; }
+html {height: 100%}
+
+.content-wrap {
+  border: 1px solid #D6E3E5;
+  border-top: 0;
+  background-color: #fff;
+  padding: 0 0 30px;
+}
+
+.container-fluid.knappsack-utility-wrap {padding-right: 10px;}
+
+.nav-list {padding-right: 0; padding-top: 0;}
+.nav {text-align: right;}
+
+
+// one-column
+// -------------------------
+
+.utility-logo {padding-bottom: 20px;}
+
+
+a.dashed, a.dashed:hover {
+  text-decoration: none;
+  border-bottom: 1px dashed;
+  cursor: pointer;
+}
+
+.knappsack-container {
+  padding-bottom: 170px;
+  padding-top: 40px;
+}
+
+// Headings
+// -------------------------
+
+h1 { font-size: @baseFontSize * 2.8; } // ~38px
+h2 { font-size: @baseFontSize * 1.75; } // ~32px
+h3 { font-size: @baseFontSize * 1.50; } // ~24px
+h4 { font-size: @baseFontSize * 1.25; } // ~18px
+h5 { font-size: @baseFontSize; }
+h6 { font-size: @baseFontSize * 0.85; } // ~12px
+
+h2 { font-family: "proxima-nova-condensed", sans-serif; font-weight: 600; font-size: 17px;}
+
+
+
+// Left Main Navigation
+// -------------------------
+
+.nav-header {
+  font-size: 15px;
+  font-weight: bold;
+  text-transform: lowercase;
+}
+
+.navbar, .navbar a {text-transform: lowercase;}
+.nav-knappsack, .knappsack-logo {margin-right: 20px;}
+.knappsack-logo.custom {margin-top: -10px;}
+.knappsack-logo:hover {
+  opacity: 0.7;
+  filter:alpha(opacity=70); /* For IE8 and earlier */
+}
+
+
+// Utility Nav
+// -------------------------
+.navbar.knappsack .btn {background: transparent; border: 0 none; box-shadow: 0 0 0 0; border-radius: 0; padding: 0px 8px 0px 13px; line-height: 0;}
+.navbar.knappsack .group-custom {margin-top: 4px;}
+.navbar.knappsack .btn-group {margin-top: 0;}
+.navbar.knappsack .btn-group .btn.dropdown-toggle {box-shadow: 0 0 0 0; border-radius: 0; padding-left: 0;}
+.navbar.knappsack .dropdown-toggle {margin-top: 6px;}
+
+.navbar.knappsack .icon-cog, .navbar.knappsack .icon-envelope-alt, .navbar.knappsack .icon-plus-sign-alt {padding-left: 8px;}
+.navbar.knappsack .btn.home {margin-top: 6px;}
+
+
+//New Filter organization button
+.btn-noborder {
+  display: inline-block;
+  .ie7-inline-block();
+  padding: 6px 12px 4px;
+  margin-bottom: 5px;
+  font-family: @baseFontFamily;
+  font-size: @baseFontSize;
+  line-height: @baseLineHeight;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  .buttonBackground(@btnBackground, @btnBackgroundHighlight, @grayDark, 0 1px 1px rgba(255,255,255,.75));
+  border: none;
+  *border: 0; // Remove the border to prevent IE7's black border on input:focus
+  .border-radius(@baseBorderRadius);
+  .ie7-restore-left-whitespace(); // Give IE7 some love
+  position: relative;
+  background-image: none;
+  color: @knappsackBlue;
+
+// Hover state
+  &:hover {
+    color: @grayDark;
+    text-decoration: none;
+    background-position: 0 -15px;
+
+  // transition is only when going to hover, otherwise the background
+  // behind the gradient (there for IE<=9 fallback) gets mismatched
+    .transition(background-position .1s linear);
+  }
+
+// Focus state for keyboard and accessibility
+  &:focus {
+    .tab-focus();
+  }
+
+// Active state
+  &.active,
+  &:active {
+    background-image: none;
+    outline: 0;
+
+  }
+
+// Disabled state
+  &.disabled,
+  &[disabled] {
+    cursor: default;
+    background-image: none;
+    .opacity(65);
+    .box-shadow(none);
+  }
+
+}
+
+.filter {
+  margin-bottom: 10px;
+}
+
+.filter.open {
+
+// The clickable button for toggling the menu
+// Remove the gradient and set the same inset shadow as the :active state
+  .dropdown-toggle {
+    box-shadow: none;
+  }
+
+  .dropdown-menu > ul.elements {
+    overflow: scroll;
+    max-height: 400px;
+    margin: 0px;
+  }
+
+  .dropdown-menu input {
+    margin: 4px 6px;
+  }
+
+}
+
+.btn-noborder .caret {
+  margin-top: 8px;
+  margin-left: 0;
+  border-top: 4px solid @green;
+}
+
+// Breadcrumbs
+//---------------------------
+
+.breadcrumb > li > .divider {
+  border: 0 none;
+}
+
+// App Page-Header
+// -------------------------
+
+.divider {border-left: dotted thin;height: 5px; margin: 7px 0 0 3px; padding: 4px 0;}
+.app-header.divider {height: 12px; margin: 14px 0 0 12px;}
+
+.navbar.knappsack .btn {box-shadow: none; color: @knappsackBlue; font-weight: normal; text-transform: lowercase; font-family: "proxima-nova","Helvetica Neue",Helvetica,Arial,sans-serif; font-size: @baseFontSize;}
+
+//.app-icon {padding-top: 10px;}
+
+.os-description {font-family: "proxima-nova-condensed", sans-serif; font-weight: 600; font-size: 17px; margin: 15px 0 0 12px;}
+.app-description {font-family:"freight-text-pro", serif; font-weight: 100; font-size: 15px; margin: 6px 0 0;}
+
+.page-header h1 {margin: 0;}
+.page-header.first {margin-top: 40px; padding-bottom: 20px;}
+
+.page-header {border-bottom: #BCBEC0 thin dotted;}
+.page-header.small {margin-bottom: 20px;}
+
+.page-header h2 {margin: 0;}
+
+.app-description-wrap {margin-left: 5px !important;}
+.app-description-wrap blockquote {border: none;}
+.app-description-wrap h1 {font-size: 26px;}
+
+.actions {margin-top: 10px;}
+
+.actions .btn-group {margin-left: 10px;}
+
+.form-instructions {
+  display: block;
+  margin: -20px 0 30px;
+}
+
+.form-instructions.small {
+  margin-bottom: 10px;
+}
+
+
+// BTN
+// -------------------------
+
+.btn {font-weight: 400; font-family: "proxima-nova", sans-serif; text-transform: uppercase; background-image: none; font-size: 12px; text-shadow: none;}
+
+.actions .btn-group > .dropdown-toggle {
+  font-size: 13px;
+}
+
+.btn-primary {font-weight: 600;}
+
+.dropdown-menu .divider {
+  border: none;
+  padding: 0;
+  margin: 4px 1px;
+}
+
+// Alerts
+// -------------------------
+
+.page-info {
+  padding: 20px 35px 20px 20px;
+  margin-bottom: 0;
+  text-shadow: none;
+  background-color: @infoBackground;
+  border: 1px solid @infoBackground;
+  .border-radius(0);
+  font-family: "proxima-nova-condensed", sans-serif;
+  font-weight: 300;
+  font-size: 17px;
+  color: @infoText;
+}
+
+.page-info-bold {font-weight: 600; text-transform: uppercase;}
+
+.alert-notify {
+  background-color: @notifyBackground;
+  border-color: @notifyBorder;
+  color: @notifyText;
+  margin: 0 0 @baseLineHeight 0;
+}
+
+.alert-notify h4 {
+  color: @notifyText;
+}
+
+// Custom alert notch 
+// -------------------------
+
+.callout {
+  position: relative;
+}
+.callout .notch {
+  position: absolute;
+  top: 60px;
+  left: 69px;
+  margin: 0;
+  border-bottom: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid @infoBackground;
+  padding: 0;
+  width: 0;
+  height: 0;
+/* ie6 height fix */
+  font-size: 0;
+  line-height: 0;
+/* ie6 transparent fix */
+  _border-right-color: pink;
+  _border-left-color: pink;
+  _filter: chroma(color=pink);
+}
+
+// Footer
+// -------------------------
+
+.footer {
+  border: 0 none;
+}
+.footer {
+  bottom: 0;
+  height: 121px;
+  margin: 0 !important;
+  position: absolute;
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+div.icons {
+  float: right;
+  margin: 10px 30px 30px 0;
+  width: 140px;
+}
+
+div.icons ul {
+  list-style: none outside none;
+  margin: 0;
+  padding: 0;
+}
+
+div.icons ul li {
+  float: left;
+  list-style: none outside none;
+  padding: 0 4px;
+}
+
+div.icons ul li a.facebook {
+  background: url('../../img/icons.png') no-repeat scroll 0 0 transparent;
+}
+
+div.icons ul li a.twitter {
+  background: url('../../img/icons.png') no-repeat scroll -45px 0 transparent;
+}
+
+div.icons ul li a {
+  float: left;
+  height: 39px;
+  outline: medium none;
+  text-indent: -9999px;
+  width: 38px;
+}
+
+/*---------------Add an app page-------------*/
+ul.wysihtml5-toolbar:after {
+    clear: both;
+    content: "";
+    display: table;
+}
+ul.wysihtml5-toolbar {
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+ul.wysihtml5-toolbar > li {
+    display: list-item;
+    float: left;
+    list-style: none outside none;
+    margin: 0 5px 10px 0;
+}
+
+// Forms
+// -------------------------
+
+.form-actions {
+  background: none repeat scroll 0 center transparent;
+  border: 0 none;
+}
+
+.add-element {margin-left: 5px; color: #83BC65;}
+
+.controls a:hover {
+  text-decoration: none;
+}
+
+.icon-info-sign {
+  margin-left: 5px;
+  font-size: 18px;
+}
+
+
+.manage-versions .form-actions {
+  margin-bottom: 0;
+}
+
+.row-fluid .textbox {
+  min-height: 150px;
+}
+
+table.table {
+  clear: both;
+  margin-bottom: 6px !important;
+  max-width: none !important;
+}
+
+.fileupload .thumbnail {
+  height: 72px;
+  width: 72px;
+  margin-right: 10px;
+}
+
+// Image Replacement
+// -------------------------
+
+h1.default_icon {
+  width: 72px;
+  height: 72px;
+  background: url(../../img/default_icon.png) top right no-repeat;
+  text-indent: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+h1.knappsack-logo {
+  margin-top: 0px;
+  width: 139px;
+  height: 29px;
+  background: url(../../img/logo.png) top right no-repeat;
+  text-indent: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  float: right;
+}
+
+h1.placeholdit_72x72 {
+  margin-top: 0px;
+  width: 72px;
+  height: 72px;
+  background: url(../../img/placeholdit_72x72.gif) top right no-repeat;
+  text-indent: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  float: right;
+}
+
+h1.placeholdit_100x75_noimage {
+  margin-top: 0px;
+  width: 100px;
+  height:75px;
+  background: url(../../img/placeholdit_100x75_noimage.gif) top right no-repeat;
+  text-indent: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  float: right;
+}
+
+// Login
+// -------------------------
+
+.openid {
+  width: 100px;
+  height: 60px;
+/* fix for IE 6 only: http://en.wikipedia.org/wiki/CSS_filter#Underscore_hack */
+  _width: 104px;
+  _height: 64px;
+
+  border: 2px solid #DDD;
+  border-right: 2px solid #ccc;
+  border-bottom: 2px solid #ccc;
+  margin: 3px;
+  float: left;
+  border-radius: 5px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  box-shadow: 2px 2px 4px #ddd;
+  -moz-box-shadow: 2px 2px 4px #ddd;
+  -webkit-box-shadow: 2px 2px 4px #ddd;
+
+  background-color: #ffffff;
+}
+
+.openid:hover {
+  margin: 4px 0 0 6px;
+  border: 2px solid #999;
+  box-shadow: none;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+}
+
+a.openid.yahoo {
+  background-image: url(../../img/openid/yahoo.gif);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+a.openid.google {
+  background-image: url(../../img/openid/google.gif);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.login .tab-content {
+  padding: 10px 30px;
+  background: #fdfcfc url(../../img/featured-light.png) 50% 50% no-repeat;
+  border-color: #DDDDDD #DDDDDD #DDDDDD;
+  border-style: solid;
+  border-width: 1px;
+  border-top: none;
+}
+
+.login .nav-tabs {
+  margin-bottom: 0;
+}
+
+.login .nav-tabs .active a, .nav-tabs .active a:hover {
+  background-color: #fdfcfc;
+  font-weight: bold;
+}
+
+.login .nav-tabs li {
+  float: right;
+  margin-right: -2px;
+}
+
+.login .nav-tabs li a, .login.nav-pills li a {
+  line-height: 24px;
+  margin-right: 2px;
+  padding-left: 28px;
+  padding-right: 24px;
+}
+
+.login .loginForm {
+  padding-top: 40px !important;
+  padding-bottom: 121px;
+}
+
+body.login {
+  background: transparent url(../../img/blizzard.png) repeat 0 0;
+}
+
+.login .knappsack-logo {
+  float: left;
+}
+
+// Tables
+// -------------------------
+
+.table.hover tbody tr:hover td,
+.table.hover tbody tr:hover th {
+  background-color: #D9EDF7;
+}
+
+// Carousels
+// -------------------------
+
+.carousel-inner > .item > img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  max-height: 400px;
+}
+
+.carousel-inner {
+  text-align: center;
+}
+
+noborder {border: none !important;}

@@ -2,7 +2,9 @@ package com.sparc.knappsack.enums;
 
 public enum StorageType {
     //Stored on the local server
-    LOCAL("storageType.local", false);
+    LOCAL("storageType.local", false),
+    //Amazon's S3 storage service
+    AMAZON_S3("storageType.amazonS3", true);
 
     //The message properties key for this StorageType
     private final String messageKey;

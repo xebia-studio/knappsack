@@ -3,6 +3,7 @@ package com.sparc.knappsack.components.controllers;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.enums.AppState;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.enums.Status;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.models.*;
@@ -46,16 +47,11 @@ public class ManagerController extends AbstractController {
 
         User user = userService.getUserFromSecurityContext();
 
-        List<Organization> organizations = userService.getAdministeredOrganizations(user);
-        List<Group> groups = userService.getAdministeredGroups(user);
+        List<Organization> organizations = userService.getAdministeredOrganizations(user, SortOrder.ASCENDING);
+        List<Group> groups = userService.getAdministeredGroups(user, SortOrder.ASCENDING);
         List<GroupModel> groupModels = new ArrayList<GroupModel>();
         for (Group group : groups) {
             groupModels.add(groupService.createGroupModelWithOrganization(group, false, false));
-        }
-
-        if(organizations.size() == 1) {
-            model.addAttribute("hasOneOrganization", true);
-            model.addAttribute("orgId", organizations.get(0).getId());
         }
 
         model.addAttribute("adminGroups", groupModels);
@@ -83,7 +79,7 @@ public class ManagerController extends AbstractController {
 
 //    private void populateAdminDomains(User user, List<GroupModel> adminGroupModels, List<OrganizationModel> adminOrganizationModels) {
 ////        if (user.isSystemAdmin()) {
-////            for (Organization organization : organizationService.getAll()) {
+////            for (Organization organization : organizationService.getAllByOrganizations()) {
 ////                OrganizationModel model = organizationService.createOrganizationModel(organization, false);
 ////                if (model != null) {
 ////                    adminOrganizationModels.add(model);
@@ -185,9 +181,12 @@ public class ManagerController extends AbstractController {
             model = new ApplicationVersionPublishRequestModel();
             Application application = applicationVersion.getApplication();
             if (application != null) {
-                model.setApplication(applicationService.createApplicationModel(application));
+                model.setApplication(applicationService.createApplicationModel(application, false));
+                Group group = application.getOwnedGroup();
+                model.setGroupId(group.getId());
+                model.setGroupName(group.getName());
             }
-            model.setApplicationVersion(applicationVersionService.createApplicationVersionModel(applicationVersion));
+            model.setApplicationVersion(applicationVersionService.createApplicationVersionModel(applicationVersion, false));
             Organization organization = getOrganizationForApplicationVersion(applicationVersion);
             if (organization != null) {
                 model.setOrganization(organizationService.createOrganizationModel(organization, false));

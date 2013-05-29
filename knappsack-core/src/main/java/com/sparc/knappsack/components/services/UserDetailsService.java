@@ -20,6 +20,10 @@ public class UserDetailsService implements AuthenticationUserDetailsService<Open
     @Autowired(required = true)
     private UserDetailsDao userDetailsDao;
 
+    @Qualifier("userService")
+    @Autowired(required = true)
+    private UserService userService;
+
     public User loadUserByUsername(String userName) throws UsernameNotFoundException, DisabledException {
         User user = userDetailsDao.findByEmail(userName);
         if (user == null) {
@@ -28,16 +32,13 @@ public class UserDetailsService implements AuthenticationUserDetailsService<Open
             if (!user.isEnabled()) {
                 throw new DisabledException("User is disabled");
             }
+            userService.setDefaultActiveOrganization(user);
             return user;
         }
     }
 
     @Override
     public org.springframework.security.core.userdetails.UserDetails loadUserDetails(OpenIDAuthenticationToken token) throws UsernameNotFoundException {
-//        User existingUser = userDetailsDao.findByOpenIdIdentifier(token.getName());
-
-//        if (existingUser == null) {
-
         User existingUser = null;
         for (OpenIDAttribute attribute : token.getAttributes()) {
             if ("email".equals(attribute.getName())) {
@@ -49,11 +50,10 @@ public class UserDetailsService implements AuthenticationUserDetailsService<Open
             throw new OpenIDUserNotFoundException("User not found for OpenID: " + token.getName(), token);
         } else {
             existingUser.getOpenIdIdentifiers().add(token.getIdentityUrl());
+            userService.setDefaultActiveOrganization(existingUser);
             userDetailsDao.update(existingUser);
         }
-//        }
 
         return existingUser;
     }
-
 }

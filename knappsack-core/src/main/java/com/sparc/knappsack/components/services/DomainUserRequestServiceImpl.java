@@ -4,6 +4,7 @@ import com.sparc.knappsack.components.dao.DomainUserRequestDao;
 import com.sparc.knappsack.components.entities.Domain;
 import com.sparc.knappsack.components.entities.DomainUserRequest;
 import com.sparc.knappsack.components.entities.User;
+import com.sparc.knappsack.components.entities.UserDomain;
 import com.sparc.knappsack.components.events.EventDelivery;
 import com.sparc.knappsack.components.events.EventDeliveryFactory;
 import com.sparc.knappsack.enums.EventType;
@@ -30,6 +31,10 @@ public class DomainUserRequestServiceImpl implements DomainUserRequestService {
     @Autowired(required = true)
     private DomainUserRequestDao domainUserRequestDao;
 
+    @Qualifier("userDomainService")
+    @Autowired(required = true)
+    private UserDomainService userDomainService;
+
     @Qualifier("userService")
     @Autowired(required = true)
     private UserService userService;
@@ -37,10 +42,6 @@ public class DomainUserRequestServiceImpl implements DomainUserRequestService {
     @Qualifier("domainService")
     @Autowired(required = true)
     private DomainService domainService;
-
-    @Qualifier("groupService")
-    @Autowired(required = true)
-    private GroupService groupService;
 
     @Qualifier("eventDeliveryFactory")
     @Autowired(required = true)
@@ -82,8 +83,7 @@ public class DomainUserRequestServiceImpl implements DomainUserRequestService {
             if (domain != null) {
 
                 //Check if user is already in group or not
-                if (!userService.isUserInDomain(user, domain.getId())) {
-
+                if (userDomainService.get(user, domain.getId()) == null) {
                     //Check if there is already a pendingRequest for this given user and this group
                     if (!doesRequestExist(user, domain, Status.PENDING)) {
                         domainUserRequest = new DomainUserRequest();
@@ -152,9 +152,9 @@ public class DomainUserRequestServiceImpl implements DomainUserRequestService {
     public boolean acceptRequest(DomainUserRequest domainUserRequest, UserRole userRole) {
         boolean success = false;
         if (domainUserRequest != null && userRole != null) {
-            success = userService.addUserToGroup(domainUserRequest.getUser(), domainUserRequest.getDomain().getId(), userRole);
+            UserDomain userDomain = userService.addUserToDomain(domainUserRequest.getUser(), domainUserRequest.getDomain(), userRole);
 
-            if (success) {
+            if (userDomain != null) {
                 domainUserRequest.setStatus(Status.ACCEPTED);
 //                update(domainUserRequest);
 

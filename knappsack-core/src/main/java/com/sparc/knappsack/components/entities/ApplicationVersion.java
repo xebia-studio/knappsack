@@ -5,11 +5,12 @@ import com.sparc.knappsack.enums.EntityState;
 import com.sparc.knappsack.enums.NotifiableType;
 import com.sparc.knappsack.enums.StorableType;
 import org.codehaus.jackson.annotate.JsonManagedReference;
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,13 +19,14 @@ import java.util.List;
  */
 @Entity
 @Table(name = "APPLICATION_VERSION")
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class ApplicationVersion extends Storable implements Notifiable {
 
     private static final long serialVersionUID = 903961092354093124L;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "APPLICATION_ID")
-    @Fetch(FetchMode.JOIN)
+//    @Fetch(FetchMode.JOIN)
     private Application application;
 
     @Column(name = "VERSION_NAME")
@@ -40,7 +42,8 @@ public class ApplicationVersion extends Storable implements Notifiable {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "INSTALLATION_FILE_ID")
     @JsonManagedReference
-    @Fetch(FetchMode.JOIN)
+    @LazyToOne(value = LazyToOneOption.PROXY)
+//    @Fetch(FetchMode.JOIN)
     private AppFile installationFile;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)

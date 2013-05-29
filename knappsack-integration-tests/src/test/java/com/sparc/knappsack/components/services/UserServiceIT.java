@@ -2,10 +2,13 @@ package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.*;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static junit.framework.Assert.*;
@@ -36,9 +39,26 @@ public class UserServiceIT extends AbstractServiceTests {
     @Autowired(required = true)
     private DomainUserRequestService domainUserRequestService;
 
+    @Autowired(required = true)
+    private ApplicationService applicationService;
+
+    @Autowired(required = true)
+    private ApplicationVersionService applicationVersionService;
+
+    @Autowired(required = true)
+    private StorageConfigurationService storageConfigurationService;
+
+    private StorageConfiguration storageConfiguration;
+
+    @Before
+    public void setup() {
+        super.setup();
+        storageConfiguration = createStorageConfiguration();
+    }
+
     @Test
     public void addTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
 
         userService.add(user);
         user = userService.getByEmail(user.getEmail());
@@ -47,7 +67,7 @@ public class UserServiceIT extends AbstractServiceTests {
 
     @Test
     public void getByEmailTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
 
         user = userService.getByEmail(user.getEmail());
         assertNotNull(user);
@@ -55,7 +75,7 @@ public class UserServiceIT extends AbstractServiceTests {
 
     @Test
     public void updateTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
         user.setLastName("Tester");
 
         user = userService.getByEmail(user.getEmail());
@@ -65,9 +85,9 @@ public class UserServiceIT extends AbstractServiceTests {
 
     @Test
     public void deleteTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
 
-        List<Group> groups = userService.getGroups(user);
+        List<Group> groups = userService.getGroups(user, SortOrder.ASCENDING);
         assertTrue(groups.size() == 1);
         List<UserDomain> userGroupDomains = userDomainService.getAll(groups.get(0).getId());
         assertTrue(userGroupDomains.size() == 1);
@@ -78,46 +98,25 @@ public class UserServiceIT extends AbstractServiceTests {
 
     @Test
     public void getGroupsForOrgAdminTest() {
-        User user = getUser(UserRole.ROLE_ORG_ADMIN, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_ADMIN, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
         user = userService.getByEmail(user.getEmail());
 
-        List<Group> groups = userService.getGroups(user);
+        List<Group> groups = userService.getGroups(user, SortOrder.ASCENDING);
         assertTrue(groups.size() == 1);
     }
 
     @Test
     public void getOrganizationsTest() {
-        User user = getUser(UserRole.ROLE_ORG_ADMIN, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_ADMIN, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
         user = userService.getByEmail(user.getEmail());
 
-        List<Organization> organizations = userService.getOrganizations(user);
+        List<Organization> organizations = userService.getOrganizations(user, SortOrder.ASCENDING);
         assertTrue(organizations.size() == 1);
     }
 
     @Test
-    public void getApplicationVersionsByUserTest() {
-        User user = getUser(UserRole.ROLE_ORG_ADMIN, UserRole.ROLE_GROUP_USER);
-        user = userService.getByEmail(user.getEmail());
-
-        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(user);
-        assertTrue(applicationVersions.size() == 2);
-    }
-
-    @Test
-    public void getApplicationVersionByUserApplicationAppState() {
-        User user = getUser(UserRole.ROLE_ORG_ADMIN, UserRole.ROLE_GROUP_USER);
-        user = userService.getByEmail(user.getEmail());
-
-        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(user);
-        for (ApplicationVersion applicationVersion : applicationVersions) {
-            applicationVersions = userService.getApplicationVersions(user, applicationVersion.getApplication().getId(), SortOrder.ASCENDING, AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH);
-            assertTrue(applicationVersions.size() == 1);
-        }
-    }
-
-    @Test
     public void activationTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", false, false);
         user = userService.getByEmail(user.getEmail());
         assertFalse(user.isActivated());
         boolean activated = userService.activate(user.getId(), user.getActivationCode());
@@ -126,120 +125,805 @@ public class UserServiceIT extends AbstractServiceTests {
     }
 
     @Test
-    public void getApplicationsByUserApplicationTypeAppStates() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+    public void getApplicationsByUserApplicationType() {
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
         user = userService.getByEmail(user.getEmail());
-        List<Application> applications = userService.getApplicationsForUser(user, ApplicationType.ANDROID, AppState.GROUP_PUBLISH);
+        List<Application> applications = userService.getApplicationsForUser(user, ApplicationType.ANDROID);
         assertTrue(applications.size() == 1);
     }
 
     @Test
-    public void getApplicationsByUserApplicationTypeCategoryAppStatesTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+    public void getApplicationsByUserApplicationTypeCategoryTest() {
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
         user = userService.getByEmail(user.getEmail());
         Organization organization = organizationService.getAll().get(0);
         Category category = organization.getCategories().get(0);
-        List<Application> applications = userService.getApplicationsForUser(user, ApplicationType.ANDROID, category.getId(), AppState.GROUP_PUBLISH);
+        List<Application> applications = userService.getApplicationsForUser(user, ApplicationType.ANDROID, category.getId());
         assertTrue(applications.size() == 1);
     }
 
     @Test
     public void addUserToGroupTest() {
-        User user = getUser();
+        User user = createUser("user1@knappsack.com", true, false);
 
-        Group group = createGroup(createOrganization());
+        Group group = createGroup(createOrganization("test organization"), "test group");
 
         userService.addUserToGroup(user, group.getId(), UserRole.ROLE_GROUP_USER);
-        List<Group> groups = userService.getGroups(user);
+        List<Group> groups = userService.getGroups(user, SortOrder.ASCENDING);
         assertTrue(groups.size() == 1);
-        assertTrue(userService.isUserInGroup(user, group));
-        assertTrue(userService.isUserInGroup(user, group, UserRole.ROLE_GROUP_USER));
+        assertNotNull(userDomainService.get(user, group.getId()));
+        assertNotNull(userDomainService.get(user, group.getId(), UserRole.ROLE_GROUP_USER));
     }
 
     @Test
     public void addUserToOrganizationTest() {
-        User user = getUser();
+        User user = createUser("user1@knappsack.com", true, false);
 
-        Organization newOrganization = createOrganization();
+        Organization newOrganization = createOrganization("test organization");
 
         userService.addUserToOrganization(user, newOrganization.getId(), UserRole.ROLE_ORG_USER);
-        List<Organization> organizations = userService.getOrganizations(user);
+        List<Organization> organizations = userService.getOrganizations(user, SortOrder.ASCENDING);
         assertTrue(organizations.size() == 1);
-        assertTrue(userService.isUserInOrganization(user, newOrganization, UserRole.ROLE_ORG_USER));
+        assertNotNull(userDomainService.get(user, newOrganization.getId(), UserRole.ROLE_ORG_USER));
     }
 
     @Test
     public void changePasswordTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
 //        user.setPasswordExpired(true);
 
         boolean isChanged = userService.changePassword(user, "password", true);
         assertTrue(isChanged);
     }
 
-//    @Test
-//    public void forgotPasswordTest() {
-//        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
-//
-//        String newPassword = userService.forgotPassword(user);
-//        assertNotNull(newPassword);
-//        assertTrue(!"".equals(newPassword));
-//    }
+
+    @Test
+    public void getApplicationsForUser_And_getApplicaionVersionsForUser_VersionOrgPublishAppState_Test() {
+        Organization organization = createOrganization("first organization");
+        Organization organization2 = createOrganization("second organization");
+        Group group = createGroup(organization, "test group");
+        Group group2 = createGroup(organization, "second group");
+        Category category = createCategory(organization);
+
+        Application application = createApplication(group, category, "test app", ApplicationType.ANDROID);
+        ApplicationVersion applicationVersion = createApplicationVersion(application, "1.0", AppState.ORGANIZATION_PUBLISH);
+
+        User userOrgAdmin = createUser("orgadmin@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userOrgAdmin, organization);
+        User userOrgMember = createUser("orgmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userOrgMember, organization);
+        User userGroupMember = createUser("groupmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userGroupMember, organization);
+        User userSecondGroupMember = createUser("secondgroupmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userSecondGroupMember, organization);
+
+        // Org Admin
+        UserDomain orgAdminUserDomain = userService.addUserToDomain(userOrgAdmin, organization, UserRole.ROLE_ORG_ADMIN);
+        assertNotNull(orgAdminUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgAdminUserDomain.getId()));
+
+        // Org User
+        UserDomain orgMemberUserDomain = userService.addUserToDomain(userOrgMember, organization, UserRole.ROLE_ORG_USER);
+        assertNotNull(orgMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgMemberUserDomain.getId()));
+
+        // Group Member for application parent group
+        UserDomain groupMemberUserDomain = userService.addUserToDomain(userGroupMember, group, UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(groupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(groupMemberUserDomain.getId()));
+
+        // Group Member for group which is NOT Application parent group
+        UserDomain secondGroupMemberUserDomain = userService.addUserToDomain(userSecondGroupMember, group2, UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(secondGroupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(secondGroupMemberUserDomain.getId()));
+
+        // Org admin should see application and all versions
+        List<Application> applications = userService.getApplicationsForUser(userOrgAdmin);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(userOrgAdmin, applications.get(0).getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Org user should see application and all versions
+        applications = userService.getApplicationsForUser(userOrgMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        applicationVersions = userService.getApplicationVersions(userOrgMember, applications.get(0).getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Group Member for application parent group should see application and all versions
+        applications = userService.getApplicationsForUser(userGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        applicationVersions = userService.getApplicationVersions(userGroupMember, applications.get(0).getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Group Member for group which is NOT Application parent group should not see application nor any versions for it
+        applications = userService.getApplicationsForUser(userSecondGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = userService.getApplicationVersions(userSecondGroupMember, application.getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        // Change activeOrganization for all users.  All should not have any access
+        setActiveOrganizationOnUser(userOrgAdmin, organization2);
+        setActiveOrganizationOnUser(userOrgMember, organization2);
+        setActiveOrganizationOnUser(userGroupMember, organization2);
+        setActiveOrganizationOnUser(userSecondGroupMember, organization2);
+
+        assertEquals(userService.getApplicationsForUser(userOrgAdmin).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgAdmin, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userOrgMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userSecondGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userSecondGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+    }
+
+    @Test
+    public void getApplicationsForUser_And_getApplicaionVersionsForUser_VersionRequestPublishAppState_Test() {
+        Organization organization = createOrganization("test organization");
+        Organization organization2 = createOrganization("second organization");
+        Group group = createGroup(organization, "test group");
+        Group guestGroup = createGroup(organization, "guest group");
+        Category category = createCategory(organization);
+
+        Application application = createApplication(group, category, "test app", ApplicationType.ANDROID);
+        ApplicationVersion applicationVersion = createApplicationVersion(application, "1.0", AppState.ORG_PUBLISH_REQUEST, guestGroup);
+
+        User userOrgAdmin = createUser("orgadmin@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userOrgAdmin, organization);
+        User userOrgMember = createUser("orgmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userOrgMember, organization);
+        User userGroupMember = createUser("groupmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userGroupMember, organization);
+        User userGuestGroupMember = createUser("guestgroupmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userGuestGroupMember, organization);
+
+        // Org Admin
+        UserDomain orgAdminUserDomain = userService.addUserToDomain(userOrgAdmin, organization, UserRole.ROLE_ORG_ADMIN);
+        assertNotNull(orgAdminUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgAdminUserDomain.getId()));
+
+        // Org User
+        UserDomain orgMemberUserDomain = userService.addUserToDomain(userOrgMember, organization, UserRole.ROLE_ORG_USER);
+        assertNotNull(orgMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgMemberUserDomain.getId()));
+
+        // Group Member for application parent group
+        UserDomain groupMemberUserDomain = userService.addUserToDomain(userGroupMember, group, UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(groupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(groupMemberUserDomain.getId()));
+
+        // Group Member of group which has guest access applicationVersion shared to it
+        UserDomain guestGroupMemberUserDomain = userService.addUserToDomain(userGuestGroupMember, guestGroup, UserRole.ROLE_GROUP_USER);
+        assertNotNull(guestGroupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(guestGroupMemberUserDomain.getId()));
+
+        // Org admin should see application
+        List<Application> applications = userService.getApplicationsForUser(userOrgAdmin);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(userOrgAdmin, applications.get(0).getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Org user should not see application
+        applications = userService.getApplicationsForUser(userOrgMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application parent group member should see application
+        applications = userService.getApplicationsForUser(userGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        applicationVersions = userService.getApplicationVersions(userGroupMember, applications.get(0).getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application version guest group member should see application
+        applications = userService.getApplicationsForUser(userGuestGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        applicationVersions = userService.getApplicationVersions(userGuestGroupMember, applications.get(0).getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        // Change activeOrganization for all users.  All should not have any access
+        setActiveOrganizationOnUser(userOrgAdmin, organization2);
+        setActiveOrganizationOnUser(userOrgMember, organization2);
+        setActiveOrganizationOnUser(userGroupMember, organization2);
+        setActiveOrganizationOnUser(userGuestGroupMember, organization2);
+
+        assertEquals(userService.getApplicationsForUser(userOrgAdmin).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgAdmin, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userOrgMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGuestGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGuestGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+    }
+
+    @Test
+    public void getApplicationsForUser_And_getApplicaionVersionsForUser_VersionGroupPublishAppState_Test() {
+        Organization organization = createOrganization("test organization");
+        Organization organization2 = createOrganization("second organization");
+        Group group = createGroup(organization, "test group");
+        Group guestGroup = createGroup(organization, "guest group");
+        Category category = createCategory(organization);
+
+        Application application = createApplication(group, category, "test app", ApplicationType.ANDROID);
+        ApplicationVersion applicationVersion = createApplicationVersion(application, "1.0", AppState.GROUP_PUBLISH, guestGroup);
+
+        User userOrgAdmin = createUser("orgadmin@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userOrgAdmin, organization);
+        User userOrgMember = createUser("orgmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userOrgMember, organization);
+        User userGroupMember = createUser("groupmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userGroupMember, organization);
+        User userGuestGroupMember = createUser("guestgroupmember@knappsack.com", true, false);
+        setActiveOrganizationOnUser(userGuestGroupMember, organization);
+
+        // Org Admin
+        UserDomain orgAdminUserDomain = userService.addUserToDomain(userOrgAdmin, organization, UserRole.ROLE_ORG_ADMIN);
+        assertNotNull(orgAdminUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgAdminUserDomain.getId()));
+
+        // Org User
+        UserDomain orgMemberUserDomain = userService.addUserToDomain(userOrgMember, organization, UserRole.ROLE_ORG_USER);
+        assertNotNull(orgMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgMemberUserDomain.getId()));
+
+        // Group Member for application parent group
+        UserDomain groupMemberUserDomain = userService.addUserToDomain(userGroupMember, group, UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(groupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(groupMemberUserDomain.getId()));
+
+        // Group Member of group which has guest access applicationVersion shared to it
+        UserDomain guestGroupMemberUserDomain = userService.addUserToDomain(userGuestGroupMember, guestGroup, UserRole.ROLE_GROUP_USER);
+        assertNotNull(guestGroupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(guestGroupMemberUserDomain.getId()));
+
+        // Org admin should see application
+        List<Application> applications = userService.getApplicationsForUser(userOrgAdmin);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(userOrgAdmin, applications.get(0).getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Org user should not see application
+        applications = userService.getApplicationsForUser(userOrgMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application parent group member should see application
+        applications = userService.getApplicationsForUser(userGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        applicationVersions = userService.getApplicationVersions(userGroupMember, applications.get(0).getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application version guest group member should see application
+        applications = userService.getApplicationsForUser(userGuestGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        assertEquals(applications.get(0), application);
+        applicationVersions = userService.getApplicationVersions(userGuestGroupMember, applications.get(0).getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion);
+
+        // Change activeOrganization for all users.  All should not have any access
+        setActiveOrganizationOnUser(userOrgAdmin, organization2);
+        setActiveOrganizationOnUser(userOrgMember, organization2);
+        setActiveOrganizationOnUser(userGroupMember, organization2);
+        setActiveOrganizationOnUser(userGuestGroupMember, organization2);
+
+        assertEquals(userService.getApplicationsForUser(userOrgAdmin).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgAdmin, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userOrgMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGuestGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGuestGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+    }
+
+    @Test
+    public void getGroupModelsForActiveOrganizationTest() {
+        User user = createUser("user1@knappsack.com", true, false);
+        Organization organization = createOrganization("test organization");
+        Group group = createGroup(organization, "test group");
+
+        user.setActiveOrganization(organization);
+
+        userService.addUserToGroup(user, group.getId(), UserRole.ROLE_GROUP_USER);
+        List<Group> groups = userService.getGroups(user, SortOrder.ASCENDING);
+        assertTrue(groups.size() == 1);
+        assertNotNull(userDomainService.get(user, group.getId()));
+        assertNotNull(userDomainService.get(user, group.getId(), UserRole.ROLE_GROUP_USER));
+
+        List<com.sparc.knappsack.models.api.v1.Group> groupModels = userService.getGroupModelsForActiveOrganization(user, com.sparc.knappsack.models.api.v1.Group.class, SortOrder.ASCENDING);
+        com.sparc.knappsack.models.api.v1.Group groupModel = groupModels.get(0);
+        assertEquals(group.getName(), groupModel.getName());
+        assertEquals(group.getId(), groupModel.getId());
+    }
+
+    @Test
+    public void getApplicationsForUser_And_getApplicaionVersionsForUser_VersionsEmpty_Test() {
+        Organization organization = createOrganization("test organization");
+        Organization organization2 = createOrganization("second Organization");
+        Group group = createGroup(organization, "test group");
+        Category category = createCategory(organization);
+
+        Application application = createApplication(group, category, "test app", ApplicationType.ANDROID);
+
+        User userOrgAdmin = createUser("orgadmin@knappsack.com", true, false);
+        User userOrgMember = createUser("orgmember@knappsack.com", true, false);
+        User userGroupMember = createUser("groupmember@knappsack.com", true, false);
+
+        // Org Admin
+        UserDomain orgAdminUserDomain = userService.addUserToDomain(userOrgAdmin, organization, UserRole.ROLE_ORG_ADMIN);
+        assertNotNull(orgAdminUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgAdminUserDomain.getId()));
+
+        // Org User
+        UserDomain orgMemberUserDomain = userService.addUserToDomain(userOrgMember, organization, UserRole.ROLE_ORG_USER);
+        assertNotNull(orgMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgMemberUserDomain.getId()));
+
+        // Group Member for application parent group
+        UserDomain groupMemberUserDomain = userService.addUserToDomain(userGroupMember, group, UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(groupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(groupMemberUserDomain.getId()));
+
+        // Org admin should not see application or any versions (since there aren't any)
+        List<Application> applications = userService.getApplicationsForUser(userOrgAdmin);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        List<ApplicationVersion> applicationVersions = applicationVersions = userService.getApplicationVersions(userOrgAdmin, application.getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Org user should not see application or any versions (since there aren't any)
+        applications = userService.getApplicationsForUser(userOrgMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = applicationVersions = userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application parent group member should not see application or any versions (since there aren't any)
+        applications = userService.getApplicationsForUser(userGroupMember);
+        assertNotNull(applications);
+        applicationVersions = applicationVersions = userService.getApplicationVersions(userGroupMember, application.getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+        assertEquals(applications.size(), 0);
+
+        // Change activeOrganization for all users.  All should not have any access
+        setActiveOrganizationOnUser(userOrgAdmin, organization2);
+        setActiveOrganizationOnUser(userOrgMember, organization2);
+        setActiveOrganizationOnUser(userGroupMember, organization2);
+
+        assertEquals(userService.getApplicationsForUser(userOrgAdmin).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgAdmin, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userOrgMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+    }
+
+    @Test
+    public void getApplicationsForUser_And_getApplicaionVersionsForUser_VersionsAllDisabled_Test() {
+        Organization organization = createOrganization("test organization");
+        Organization organization2 = createOrganization("second organization");
+        Group group = createGroup(organization, "test group");
+        Group guestGroup = createGroup(organization, "guest group");
+        Category category = createCategory(organization);
+
+        Application application = createApplication(group, category, "test app", ApplicationType.ANDROID);
+        ApplicationVersion applicationVersion1 = createApplicationVersion(application, "1.0", AppState.DISABLED);
+        ApplicationVersion applicationVersion2 = createApplicationVersion(application, "1.0", AppState.DISABLED, guestGroup);
+
+        User userOrgAdmin = createUser("orgadmin@knappsack.com", true, false);
+        User userOrgMember = createUser("orgmember@knappsack.com", true, false);
+        User userGroupMember = createUser("groupmember@knappsack.com", true, false);
+        User userGuestGroupMember = createUser("guestgroupmember@knappsack.com", true, false);
+
+        // Org Admin
+        UserDomain orgAdminUserDomain = userService.addUserToDomain(userOrgAdmin, organization, UserRole.ROLE_ORG_ADMIN);
+        assertNotNull(orgAdminUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgAdminUserDomain.getId()));
+
+        // Org User
+        UserDomain orgMemberUserDomain = userService.addUserToDomain(userOrgMember, organization, UserRole.ROLE_ORG_USER);
+        assertNotNull(orgMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgMemberUserDomain.getId()));
+
+        // Group Member for application parent group
+        UserDomain groupMemberUserDomain = userService.addUserToDomain(userGroupMember, group, UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(groupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(groupMemberUserDomain.getId()));
+
+        // Group Member of group which has guest access to applicationVersion2
+        UserDomain guestGroupMemberUserDomain = userService.addUserToDomain(userGuestGroupMember, guestGroup, UserRole.ROLE_GROUP_USER);
+        assertNotNull(guestGroupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(guestGroupMemberUserDomain.getId()));
+
+        // Org admin should not see applications since all versions are disabled
+        List<Application> applications = userService.getApplicationsForUser(userOrgAdmin);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(userOrgAdmin, application.getId(), null);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Org user should not see applications since all versions are disabled
+        applications = userService.getApplicationsForUser(userOrgMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = userService.getApplicationVersions(userOrgMember, application.getId(), null);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application parent group member should not see applications since all versions are disabled
+        applications = userService.getApplicationsForUser(userGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = userService.getApplicationVersions(userGroupMember, application.getId(), null);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application version guest group member should not see application since all versions are disabled
+        applications = userService.getApplicationsForUser(userGuestGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = userService.getApplicationVersions(userGuestGroupMember, application.getId(), null);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        // Change activeOrganization for all users.  All should not have any access
+        setActiveOrganizationOnUser(userOrgAdmin, organization2);
+        setActiveOrganizationOnUser(userOrgMember, organization2);
+        setActiveOrganizationOnUser(userGroupMember, organization2);
+        setActiveOrganizationOnUser(userGuestGroupMember, organization2);
+
+        assertEquals(userService.getApplicationsForUser(userOrgAdmin).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgAdmin, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userOrgMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGuestGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGuestGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+    }
+
+    @Test
+    public void getApplicationsForUser_And_getApplicaionVersionsForUser_TwoVersions_SecondSharedToGuestGroup_Test() {
+        Organization organization = createOrganization("test organization");
+        Organization organization2 = createOrganization("second organization");
+        Group group = createGroup(organization, "test group");
+        Group guestGroup = createGroup(organization, "guest group");
+        Category category = createCategory(organization);
+
+        Application application = createApplication(group, category, "test app", ApplicationType.ANDROID);
+        ApplicationVersion applicationVersion1 = createApplicationVersion(application, "1.0", AppState.GROUP_PUBLISH);
+        ApplicationVersion applicationVersion2 = createApplicationVersion(application, "2.0", AppState.GROUP_PUBLISH, guestGroup);
+
+        User userOrgAdmin = createUser("orgadmin@knappsack.com", true, false);
+        User userOrgMember = createUser("orgmember@knappsack.com", true, false);
+        User userGroupMember = createUser("groupmember@knappsack.com", true, false);
+        User userGuestGroupMember = createUser("guestgroupmember@knappsack.com", true, false);
+
+        // Org Admin
+        UserDomain orgAdminUserDomain = userService.addUserToDomain(userOrgAdmin, organization, UserRole.ROLE_ORG_ADMIN);
+        assertNotNull(orgAdminUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgAdminUserDomain.getId()));
+
+        // Org User
+        UserDomain orgMemberUserDomain = userService.addUserToDomain(userOrgMember, organization, UserRole.ROLE_ORG_USER);
+        assertNotNull(orgMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgMemberUserDomain.getId()));
+
+        // Group Member for application parent group
+        UserDomain groupMemberUserDomain = userService.addUserToDomain(userGroupMember, group, UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(groupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(groupMemberUserDomain.getId()));
+
+        // Group Member of group which has guest access to applicationVersion2
+        UserDomain guestGroupMemberUserDomain = userService.addUserToDomain(userGuestGroupMember, guestGroup, UserRole.ROLE_GROUP_USER);
+        assertNotNull(guestGroupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(guestGroupMemberUserDomain.getId()));
+
+        // Org admin should not see applications
+        List<Application> applications = userService.getApplicationsForUser(userOrgAdmin);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        // Org admin should see all application versions
+        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(userOrgAdmin, applications.get(0).getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 2);
+        assertEquals(applicationVersions.get(0), applicationVersion2);
+        assertEquals(applicationVersions.get(1), applicationVersion1);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Org user should not see applications
+        applications = userService.getApplicationsForUser(userOrgMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        // Org user should not see any versions
+        applicationVersions = userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application parent group member should see applications
+        applications = userService.getApplicationsForUser(userGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        // Application parent group member should see both application versions
+        applicationVersions = userService.getApplicationVersions(userGroupMember, applications.get(0).getId(), SortOrder.ASCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 2);
+        assertEquals(applicationVersions.get(0), applicationVersion1);
+        assertEquals(applicationVersions.get(1), applicationVersion2);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Guest Group Member should should application due to applicationVersion2 being shared with group
+        applications = userService.getApplicationsForUser(userGuestGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        // Only applicationVersion2 should be available
+        applicationVersions = userService.getApplicationVersions(userGuestGroupMember, applications.get(0).getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion2);
+
+        // Change activeOrganization for all users.  All should not have any access
+        setActiveOrganizationOnUser(userOrgAdmin, organization2);
+        setActiveOrganizationOnUser(userOrgMember, organization2);
+        setActiveOrganizationOnUser(userGroupMember, organization2);
+        setActiveOrganizationOnUser(userGuestGroupMember, organization2);
+
+        assertEquals(userService.getApplicationsForUser(userOrgAdmin).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgAdmin, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userOrgMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGuestGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGuestGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+    }
+
+    @Test
+    public void getApplicationsForUser_And_getApplicaionVersionsForUservv_TwoVersions_SecondSharedToGuestGroupButDisabled_Test() {
+        Organization organization = createOrganization("test organization");
+        Organization organization2 = createOrganization("second organization");
+        Group group = createGroup(organization, "test group");
+        Group guestGroup = createGroup(organization, "guest group");
+        Category category = createCategory(organization);
+
+        Application application = createApplication(group, category, "test app", ApplicationType.ANDROID);
+        ApplicationVersion applicationVersion1 = createApplicationVersion(application, "1.0", AppState.GROUP_PUBLISH);
+        ApplicationVersion applicationVersion2 = createApplicationVersion(application, "2.0", AppState.DISABLED, guestGroup);
+
+        User userOrgAdmin = createUser("orgadmin@knappsack.com", true, false);
+        User userOrgMember = createUser("orgmember@knappsack.com", true, false);
+        User userGroupMember = createUser("groupmember@knappsack.com", true, false);
+        User userGuestGroupMember = createUser("guestgroupmember@knappsack.com", true, false);
+
+        // Org Admin
+        UserDomain orgAdminUserDomain = userService.addUserToDomain(userOrgAdmin, organization, UserRole.ROLE_ORG_ADMIN);
+        assertNotNull(orgAdminUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgAdminUserDomain.getId()));
+
+        // Org User
+        UserDomain orgMemberUserDomain = userService.addUserToDomain(userOrgMember, organization, UserRole.ROLE_ORG_USER);
+        assertNotNull(orgMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(orgMemberUserDomain.getId()));
+
+        // Group Member for application parent group
+        UserDomain groupMemberUserDomain = userService.addUserToDomain(userGroupMember, group, UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(groupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(groupMemberUserDomain.getId()));
+
+        // Group Member of group which has guest access to applicationVersion2
+        UserDomain guestGroupMemberUserDomain = userService.addUserToDomain(userGuestGroupMember, guestGroup, UserRole.ROLE_GROUP_USER);
+        assertNotNull(guestGroupMemberUserDomain);
+        assertTrue(userDomainService.doesEntityExist(guestGroupMemberUserDomain.getId()));
+
+        // Org admin should see application and only first version since applicationVersion2 is disabled
+        List<Application> applications = userService.getApplicationsForUser(userOrgAdmin);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(userOrgAdmin, applications.get(0).getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion1);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Org user should not see applications or versions since all versions are published to group or disabled
+        applications = userService.getApplicationsForUser(userOrgMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application parent group member should see applications and only applicationVersion1 since it is published to the group and applicationVersion2 is disabled
+        applications = userService.getApplicationsForUser(userGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 1);
+        applicationVersions = userService.getApplicationVersions(userGroupMember, applications.get(0).getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 1);
+        assertEquals(applicationVersions.get(0), applicationVersion1);
+
+        applications = null;
+        applicationVersions = null;
+
+        // Application version guest group member should not see application or version since the version that is shared is disabled
+        applications = userService.getApplicationsForUser(userGuestGroupMember);
+        assertNotNull(applications);
+        assertEquals(applications.size(), 0);
+        applicationVersions = userService.getApplicationVersions(userGuestGroupMember, application.getId(), SortOrder.DESCENDING);
+        assertNotNull(applicationVersions);
+        assertEquals(applicationVersions.size(), 0);
+
+        // Change activeOrganization for all users.  All should not have any access
+        setActiveOrganizationOnUser(userOrgAdmin, organization2);
+        setActiveOrganizationOnUser(userOrgMember, organization2);
+        setActiveOrganizationOnUser(userGroupMember, organization2);
+        setActiveOrganizationOnUser(userGuestGroupMember, organization2);
+
+        assertEquals(userService.getApplicationsForUser(userOrgAdmin).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgAdmin, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userOrgMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userOrgMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+        assertEquals(userService.getApplicationsForUser(userGuestGroupMember).size(), 0);
+        assertEquals(userService.getApplicationVersions(userGuestGroupMember, application.getId(), SortOrder.DESCENDING).size(), 0);
+    }
 
     @Test
     public void addUserToGroup() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
 
-        Group group = createGroup(createOrganization());
+        Group group = createGroup(createOrganization("test organization"), "test group");
 
         DomainUserRequest domainUserRequest = domainUserRequestService.createDomainUserRequest(user, group.getUuid());
         requestService.getAll(group.getId());
 
-        boolean isAdded = userService.addUserToGroup(domainUserRequest.getUser(), domainUserRequest.getDomain().getId(), UserRole.ROLE_GROUP_USER);
-        assertTrue(isAdded);
+        UserDomain userDomain = userService.addUserToGroup(domainUserRequest.getUser(), domainUserRequest.getDomain().getId(), UserRole.ROLE_GROUP_USER);
+        assertNotNull(userDomain);
     }
 
     @Test
     public void addUserAdminToGroup() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
 
-        Group group = createGroup(createOrganization());
+        Group group = createGroup(createOrganization("test organization"), "test group");
 
         DomainUserRequest domainUserRequest = domainUserRequestService.createDomainUserRequest(user, group.getUuid());
         requestService.getAll(group.getId());
 
-        boolean isAdded = userService.addUserToGroup(domainUserRequest.getUser(), domainUserRequest.getDomain().getId(), UserRole.ROLE_GROUP_ADMIN);
-        assertTrue(isAdded);
+        UserDomain userDomain = userService.addUserToGroup(domainUserRequest.getUser(), domainUserRequest.getDomain().getId(), UserRole.ROLE_GROUP_ADMIN);
+        assertNotNull(userDomain);
     }
 
     @Test
     public void isUserInDomainTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
 
-        List<Group> groups = userService.getGroups(user);
+        List<Group> groups = userService.getGroups(user, SortOrder.ASCENDING);
         for (Group group : groups) {
-            boolean isInDomain = userService.isUserInDomain(user, group.getId(), UserRole.ROLE_GROUP_USER);
-            assertTrue(isInDomain);
+            UserDomain userDomain = userDomainService.get(user, group.getId(), UserRole.ROLE_GROUP_USER);
+            assertNotNull(userDomain);
         }
 
-        List<Organization> organizations = userService.getOrganizations(user);
+        List<Organization> organizations = userService.getOrganizations(user, SortOrder.ASCENDING);
         for (Organization organization : organizations) {
-            boolean isInDomain = userService.isUserInDomain(user, organization.getId(), UserRole.ROLE_ORG_USER);
-            assertTrue(isInDomain);
+            UserDomain userDomain = userDomainService.get(user, organization.getId(), UserRole.ROLE_ORG_USER);
+            assertNotNull(userDomain);
         }
     }
 
     @Test
     public void getCategoriesForUsersTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER, "user1@knappsack.com", true, false);
 
-        List<Category> categories = userService.getCategoriesForUser(user, ApplicationType.ANDROID);
+        List<Category> categories = userService.getCategoriesForUser(user, ApplicationType.ANDROID, SortOrder.ASCENDING);
         assertTrue(categories.size() == 1);
     }
 
     @Test
     public void updateSecurityContextTest() {
-        User user = getUser(UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUserWithSecurityContext();
 
         boolean isUpdated = userService.updateSecurityContext(user);
         assertTrue(isUpdated);
@@ -248,15 +932,15 @@ public class UserServiceIT extends AbstractServiceTests {
     @Test
     public void canUserEditApplicationTest() {
         //Initial setup
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.add(user);
-        Organization organization = createOrganization();
+        Organization organization = createOrganization("test organization");
         Category category = createCategory(organization);
         organization.getCategories().add(category);
-        Group group = createGroup(organization);
-        Application application = createApplication(group, category, "Test Application", AppState.GROUP_PUBLISH);
-        group.getOwnedApplications().add(application);
-        application.setOwnedGroup(group);
+        Group group = createGroup(organization, "Test Group");
+        Application application = createApplication(group, category, "Test Application", ApplicationType.ANDROID);
+
+        ApplicationVersion applicationVersion = createApplicationVersion(application, "1.0", AppState.GROUP_PUBLISH);
 
         entityManager.flush();
 
@@ -271,7 +955,7 @@ public class UserServiceIT extends AbstractServiceTests {
         entityManager.flush();
 
         //Test if org admin can edit application
-        user = getUser();
+        user = getUserWithSecurityContext();
         userService.add(user);
         entityManager.flush();
         createUserDomain(user, organization, UserRole.ROLE_ORG_ADMIN);
@@ -284,7 +968,7 @@ public class UserServiceIT extends AbstractServiceTests {
         entityManager.flush();
 
         //Test user is org user
-        user = getUser();
+        user = getUserWithSecurityContext();
         userService.add(user);
         entityManager.flush();
         createUserDomain(user, organization, UserRole.ROLE_ORG_USER);
@@ -297,14 +981,14 @@ public class UserServiceIT extends AbstractServiceTests {
         entityManager.flush();
 
         //Test user is not part of organization and not group admin
-        user = getUser();
+        user = getUserWithSecurityContext();
         userService.add(user);
         entityManager.flush();
         assertFalse(userService.canUserEditApplication(user.getId(), application.getId()));
     }
 
-    private User getUser(UserRole organizationUserRole, UserRole groupUserRole) {
-        User user = getUser();
+    private User getUser(UserRole organizationUserRole, UserRole groupUserRole, String email, boolean activated, boolean passwordExpired) {
+        User user = createUser(email, activated, passwordExpired);
 
         Role orgRole = null;
         if (organizationUserRole != null) {
@@ -317,21 +1001,18 @@ public class UserServiceIT extends AbstractServiceTests {
             user.getRoles().add(groupRole);
         }
 
-        Organization organization = createOrganization();
+        Organization organization = createOrganization("test organization");
 
         Category category = createCategory(organization);
+        Category category2 = createCategory(organization);
 
-        Group group = createGroup(organization);
+        Group group = createGroup(organization, "test group");
 
-        Application application = createApplication(group, organization.getCategories().get(0), "Test Application", AppState.GROUP_PUBLISH);
-        Application application2 = createApplication(group, organization.getCategories().get(0), "Test Application 2", AppState.ORGANIZATION_PUBLISH);
+        Application application = createApplication(group, organization.getCategories().get(0), "Test Application", ApplicationType.ANDROID);
+        ApplicationVersion applicationVersion1 = createApplicationVersion(application, "1.0", AppState.GROUP_PUBLISH);
 
-
-
-        group.getOwnedApplications().add(application);
-        group.getOwnedApplications().add(application2);
-
-        organization.getGroups().add(group);
+        Application application2 = createApplication(group, organization.getCategories().get(1), "Test Application 2", ApplicationType.IOS);
+        ApplicationVersion applicationVersion2 = createApplicationVersion(application2, "1.0", AppState.ORGANIZATION_PUBLISH);
 
         userService.save(user);
 
@@ -362,23 +1043,35 @@ public class UserServiceIT extends AbstractServiceTests {
         return user;
     }
 
-    private Application createApplication(Group group, Category category, String applicationName, AppState appState) {
+    private Application createApplication(Group group, Category category, String applicationName, ApplicationType applicationType) {
         Application application = new Application();
         application.setName(applicationName);
-        application.setApplicationType(ApplicationType.ANDROID);
+        application.setApplicationType(applicationType);
         application.setCategory(category);
         application.setOwnedGroup(group);
 
-        ApplicationVersion applicationVersion = new ApplicationVersion();
-        applicationVersion.setVersionName("1.0.0");
-        applicationVersion.setApplication(application);
-        applicationVersion.setAppState(appState);
+        group.getOwnedApplications().add(application);
 
-        application.getApplicationVersions().add(applicationVersion);
-
-        entityManager.flush();
+        applicationService.add(application);
+        assertTrue(applicationService.doesEntityExist(application.getId()));
 
         return application;
+    }
+
+    private ApplicationVersion createApplicationVersion(Application parentApplication, String versionName, AppState appState, Group... guestGroups) {
+        ApplicationVersion applicationVersion = new ApplicationVersion();
+        applicationVersion.setVersionName(versionName);
+        applicationVersion.setAppState(appState);
+        applicationVersion.setApplication(parentApplication);
+        if (guestGroups != null && guestGroups.length > 0) {
+            applicationVersion.getGuestGroups().addAll(Arrays.asList(guestGroups));
+        }
+        parentApplication.getApplicationVersions().add(applicationVersion);
+        applicationVersionService.add(applicationVersion);
+
+        assertTrue(applicationVersionService.doesEntityExist(applicationVersion.getId()));
+
+        return applicationVersion;
     }
 
     private Category createCategory(Organization organization) {
@@ -393,18 +1086,25 @@ public class UserServiceIT extends AbstractServiceTests {
         return category;
     }
 
-    private Organization createOrganization() {
-        Organization organization = new Organization();
-        organization.setName("Test Organization");
-
+    private StorageConfiguration createStorageConfiguration() {
         LocalStorageConfiguration localStorageConfiguration = new LocalStorageConfiguration();
         localStorageConfiguration.setBaseLocation("/path");
         localStorageConfiguration.setName("Local Storage Configuration");
         localStorageConfiguration.setStorageType(StorageType.LOCAL);
 
+        storageConfigurationService.add(localStorageConfiguration);
+        assertTrue(storageConfigurationService.doesEntityExist(localStorageConfiguration.getId()));
+
+        return storageConfiguration;
+    }
+
+    private Organization createOrganization(String name) {
+        Organization organization = new Organization();
+        organization.setName(name);
+
         OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
-        orgStorageConfig.getStorageConfigurations().add(localStorageConfiguration);
-        orgStorageConfig.setPrefix("testPrefix");
+        orgStorageConfig.getStorageConfigurations().add(storageConfiguration);
+        orgStorageConfig.setPrefix(StringUtils.trimAllWhitespace(name));
         orgStorageConfig.setOrganization(organization);
         organization.setOrgStorageConfig(orgStorageConfig);
 
@@ -413,11 +1113,15 @@ public class UserServiceIT extends AbstractServiceTests {
         return organization;
     }
 
-    private Group createGroup(Organization organization) {
+    private Group createGroup(Organization organization, String groupName) {
         Group group = new Group();
-        group.setName("Test Group");
+        group.setName(groupName);
         group.setOrganization(organization);
+
+        organization.getGroups().add(group);
+
         groupService.save(group);
+        assertTrue(groupService.doesEntityExist(group.getId()));
 
         return group;
     }

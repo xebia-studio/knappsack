@@ -78,7 +78,6 @@ public class RegistrationValidator implements Validator {
         if (!doPasswordsMatch(registrationForm.getFirstPassword(), registrationForm.getSecondPassword())) {
             errors.rejectValue(FIRST_PASSWORD_FIELD, "registrationValidator.passwordMismatch");
         }
-
     }
 
     private void checkForInvitations(String email, Errors errors) {

@@ -17,11 +17,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -29,6 +32,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 @Controller
 public class ImageController extends AbstractController {
@@ -41,18 +49,35 @@ public class ImageController extends AbstractController {
     @Autowired
     private StorageServiceFactory storageServiceFactory;
 
+    private static final SimpleDateFormat httpDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+
     @RequestMapping(value = "/image/{id}", method = RequestMethod.GET)
-    public ResponseEntity<byte[]> getImage(@PathVariable long id) {
+    public ResponseEntity<byte[]> getImage(@PathVariable long id, HttpServletRequest request, HttpServletResponse response) {
         checkRequiredEntity(appFileService, id);
         AppFile appFile = appFileService.get(id);
 
         if (!ContentType.IMAGE.equals(MimeType.getForFilename(appFile.getName()).getContentType())) {
             throw new RuntimeException(String.format("Attempted to pull file which wasn't an image: %s", id));
         }
+
+        response.setHeader("Cache-Control", String.format("public, max-age=%s", 31556900 /*Seconds in a year*/));
+        response.setDateHeader("Last-Modified", appFile.getLastUpdate().getTime());
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(appFile.getLastUpdate());
+        calendar.add(Calendar.YEAR, 1);
+        response.setHeader("Expires", httpDateFormat.format(calendar.getTime()));
+
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(appFile.getType()));
 
         StorageService storageService = storageServiceFactory.getStorageService(appFile.getStorageType());
+
+        long requestIfModifiedSince = request.getDateHeader("If-Modified-Since");
+        if (requestIfModifiedSince >= appFile.getLastUpdate().getTime()) {
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            return null;
+        }
 
         if (storageService instanceof RemoteStorageService) {
             byte[] bytes = readImageFromUrl(appFile, (RemoteStorageService) storageService);

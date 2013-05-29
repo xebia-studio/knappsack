@@ -1,17 +1,24 @@
 package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.Invitation;
+import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.events.EventDelivery;
 import com.sparc.knappsack.components.events.EventDeliveryFactory;
 import com.sparc.knappsack.enums.EventType;
-import com.sparc.knappsack.forms.InviteeForm;
+import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.forms.BatchInvitationForm;
+import com.sparc.knappsack.forms.InvitationForm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.mail.MailException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service("invitationControllerService")
 public class InvitationControllerServiceImpl implements InvitationControllerService {
@@ -26,34 +33,64 @@ public class InvitationControllerServiceImpl implements InvitationControllerServ
     @Autowired(required = true)
     private EventDeliveryFactory eventDeliveryFactory;
 
-    @Override
-    public boolean inviteUser(InviteeForm inviteeForm, Long domainId, boolean deleteInvitationOnSendError) {
-        boolean userInvited = false;
-        if (inviteeForm != null && StringUtils.hasText(inviteeForm.getEmail()) && inviteeForm.getUserRole() != null && domainId != null) {
-            Invitation invitation = invitationService.createInvitation(inviteeForm, domainId);
+    @Qualifier("userService")
+    @Autowired(required = true)
+    private UserService userService;
 
-            userInvited = sendInvitation(invitation, deleteInvitationOnSendError);
+    @Override
+    public boolean inviteUser(InvitationForm invitationForm, boolean deleteInvitationsOnSendError) {
+        boolean userInvited = false;
+        User user = userService.getUserFromSecurityContext();
+        if (invitationForm != null && user != null) {
+
+            List<Invitation> createdInvitations = invitationService.createInvitations(invitationForm);
+            userInvited = sendInvitation(createdInvitations, deleteInvitationsOnSendError);
         }
 
         return userInvited;
     }
 
     @Override
-    public boolean sendInvitation(Invitation invitation, boolean deleteOnError) {
+    public boolean inviteBatchUsers(BatchInvitationForm batchInvitationForm, boolean deleteInvitationOnSendError) {
+        boolean usersInvited = false;
+        User user = userService.getUserFromSecurityContext();
+        if (batchInvitationForm != null && user != null) {
+            List<Invitation> createdInvitations = invitationService.createInvitations(batchInvitationForm);
+            usersInvited = sendInvitation(createdInvitations, deleteInvitationOnSendError);
+        }
+
+        return usersInvited;
+    }
+
+    @Override
+    public boolean inviteUserToDomain(String email, Long domainId, UserRole userRole, boolean deleteInvitationOnSendError) {
+        if (StringUtils.hasText(email) && domainId != null && domainId > 0 && userRole != null) {
+            List<Invitation> createdInvitations = new ArrayList<Invitation>();
+            createdInvitations.add(invitationService.createInvitation(StringUtils.trimAllWhitespace(email), userRole, domainId));
+            return sendInvitation(createdInvitations, deleteInvitationOnSendError);
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean sendInvitation(List<Invitation> invitations, boolean deleteOnError) {
         boolean invitationSent = false;
-        if (invitation != null && invitation.getId() != null && invitation.getId() > 0) {
+        if (!CollectionUtils.isEmpty(invitations)) {
             EventDelivery deliveryMechanism = eventDeliveryFactory.getEventDelivery(EventType.USER_INVITE);
             try {
-                deliveryMechanism.sendNotifications(invitation);
-                invitationSent = true;
+                invitationSent = deliveryMechanism.sendNotifications(invitations);
             } catch (MailException e) {
-                log.info("Error during invitation notification.", e);
+                log.info("Error during invitations notification.", e);
                 if (deleteOnError) {
-                    invitationService.delete(invitation.getId());
+                    for (Invitation invitation : invitations) {
+                        invitationService.delete(invitation.getId());
+                    }
                 }
             }
         }
 
         return invitationSent;
     }
+
 }

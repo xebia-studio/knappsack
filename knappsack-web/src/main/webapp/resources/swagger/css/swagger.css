@@ -1,0 +1,9 @@
+/*Swagger*/
+h1.response_throbber {
+    width: 128px;
+    height: 16px;
+    background: url(../images/throbber.gif) top right no-repeat;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+}

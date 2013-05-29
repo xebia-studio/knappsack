@@ -135,7 +135,7 @@ public class BaseEntity implements Serializable {
 
         BaseEntity that = (BaseEntity) o;
 
-        return !(uuid != null ? !uuid.equals(that.uuid) : that.uuid != null);
+        return !(uuid != null ? !uuid.equals(that.getUuid()) : that.getUuid() != null);
     }
 
     @Override

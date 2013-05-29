@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<div th:fragment="email-footer">
+    <p th:if="${!#strings.isEmpty(emailFooter)}">
+        <span th:utext="${emailFooter}">Email Footer</span>
+    </p>
+
+    <p th:if="${#strings.isEmpty(emailFooter)}">
+        Regards, <br/>
+        &emsp; <em>The Knappsack Team</em>
+    </p>
+</div>
+
+</body>
+</html>

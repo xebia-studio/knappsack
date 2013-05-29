@@ -2,7 +2,10 @@ package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.User;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.enums.StorageType;
+import com.sparc.knappsack.forms.OrganizationForm;
 import com.sparc.knappsack.models.OrganizationModel;
 import com.sparc.knappsack.models.UserDomainModel;
 
@@ -16,19 +19,17 @@ public interface OrganizationService extends EntityService<Organization>, Domain
 
     void mapOrgToOrgModel(Organization organization, OrganizationModel organizationModel);
 
-    Organization createOrganization(OrganizationModel organizationModel);
+    Organization createOrganization(OrganizationForm organizationForm);
 
-    void editOrganization(OrganizationModel organizationModel);
+    void editOrganization(OrganizationForm organizationForm);
 
     List<Organization> getAll();
 
     void removeUserFromOrganization(Long organizationId, Long UserId);
 
-    int getTotalUsers(Organization organization);
-
-    int getTotalApplications(Organization organization);
-
-    int getTotalApplicationVersions(Organization organization);
+//    int getTotalApplications(Organization organization);
+//
+//    int getTotalApplicationVersions(Organization organization);
 
     double getTotalMegabyteStorageAmount(Organization organization);
 
@@ -40,7 +41,11 @@ public interface OrganizationService extends EntityService<Organization>, Domain
 
     List<UserDomainModel> getAllOrganizationMembers(Long organizationId, boolean includeGuests);
 
+    List<UserDomainModel> getAllOrganizationMembers(Organization organization, boolean includeGuests);
+
     List<UserDomainModel> getAllOrganizationGuests(Long organizationId);
+
+    List<UserDomainModel> getAllOrganizationGuests(Organization organization);
 
     /**
      * @param organization Organization - check to see if this organization has reached the maximum number of applications allowed.
@@ -50,9 +55,10 @@ public interface OrganizationService extends EntityService<Organization>, Domain
 
     /**
      * @param organization Organization - check to see if this organization has reached the maximum number of users allowed.
+     * @param includeInvitations whether or not pending invitations should be considered.
      * @return boolean true if the organization is at the maximum number of users allowed.
      */
-    boolean isUserLimit(Organization organization);
+    boolean isUserLimit(Organization organization, boolean includeInvitations);
 
     /**
      * @param organization Organization - check to see if this organization has reached the maximum bandwidth allowed for a given time period
@@ -69,9 +75,9 @@ public interface OrganizationService extends EntityService<Organization>, Domain
      */
     OrganizationModel createOrganizationModel(Long organizationId, boolean includeExternalData);
 
-    List<OrganizationModel> createOrganizationModels(List<Organization> organizations, boolean includeExternalData);
+    List<OrganizationModel> createOrganizationModels(List<Organization> organizations, boolean includeExternalData, SortOrder sortOrder);
 
-    List<OrganizationModel> createOrganizationModelsWithoutStorageConfiguration(List<Organization> organizations, boolean includeExternalData);
+    List<OrganizationModel> createOrganizationModelsWithoutStorageConfiguration(List<Organization> organizations, boolean includeExternalData, SortOrder sortOrder);
 
     OrganizationModel createOrganizationModelWithoutStorageConfiguration(Organization organization, boolean includeExternalData);
 
@@ -88,9 +94,10 @@ public interface OrganizationService extends EntityService<Organization>, Domain
 
     /**
      * @param organizationId Long - count all users belonging to this organization
+     * @param includeGroups whether or not to include groups owned by the organization
      * @return long - the total amount of users belonging to this organization
      */
-    long countOrganizationUsers(Long organizationId);
+    long countOrganizationUsers(Long organizationId, boolean includeGroups);
 
     /**
      * @param organizationId Long - count all application belonging to this organization
@@ -109,4 +116,22 @@ public interface OrganizationService extends EntityService<Organization>, Domain
      * @return long - the total amount of groups belonging to this organization
      */
     long countOrganizationGroups(Long organizationId);
+
+    /**
+     * @param organizationId Long - ID of the organization which logo should be deleted.
+     */
+    void deleteLogo(Long organizationId);
+
+    /**
+     * @param organization Organization to search on
+     * @return Whether or not Custom Branding is enabled
+     */
+    public boolean isCustomBrandingEnabled(Organization organization);
+
+    /**
+     * @param groupId Long - ID of the group to search on.
+     * @return Organization which is the parent of the given group.
+     */
+    public Organization getForGroupId(Long groupId);
+
 }

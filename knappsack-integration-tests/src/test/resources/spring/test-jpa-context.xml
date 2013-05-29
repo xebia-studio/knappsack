@@ -54,6 +54,9 @@
         <beans:entry key="hibernate.hbm2ddl.auto" value="create-drop"/>
         <beans:entry key="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
         <beans:entry key="hibernate.show_sql" value="false"/>
+        <beans:entry key="hibernate.cache.use_second_level_cache" value="true"/>
+        <beans:entry key="hibernate.cache.use_query_cache" value="true"/>
+        <beans:entry key="hibernate.cache.region.factory_class" value="com.sparc.knappsack.components.cache.KnappsackIntegrationTestCacheRegionFactory"/>
     </util:map>
 
     <beans:bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"
@@ -62,31 +65,18 @@
     <beans:bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
 
     <!-- Declare a datasource that has pooling capabilities-->
-
-    <!--TO TEST WITH FLYWAY-->
-    <!--<beans:bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"-->
-                <!--destroy-method="close"-->
-                <!--p:driverClass="${test.jdbc.driverClassName}"-->
-                <!--p:jdbcUrl="${test.jdbc.url}"-->
-                <!--p:acquireIncrement="5"-->
-                <!--p:idleConnectionTestPeriod="60"-->
-                <!--p:maxPoolSize="10"-->
-                <!--p:maxStatements="10"-->
-                <!--p:minPoolSize="5"/>-->
-    <!--END TO TEST WITH FLYWAY-->
-
-    <beans:bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
-                destroy-method="close"
-                p:driverClass="${test.jdbc.driverClassName}"
-                p:jdbcUrl="${test.jdbc.url}"
-                p:user="${test.jdbc.username}"
-                p:password="${test.jdbc.password}"
-                p:acquireIncrement="5"
-                p:idleConnectionTestPeriod="60"
-                p:maxPoolSize="10"
-                p:maxStatements="10"
-                p:minPoolSize="5"/>
-
+    <beans:bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource" destroy-method="close">
+        <beans:property name="driverClass" value="${test.jdbc.driverClassName}" />
+        <beans:property name="jdbcUrl" value="${test.jdbc.url}" />
+        <beans:property name="idleConnectionTestPeriod" value="60"/>
+        <beans:property name="idleMaxAge" value="240"/>
+        <beans:property name="maxConnectionsPerPartition" value="30"/>
+        <beans:property name="minConnectionsPerPartition" value="10"/>
+        <beans:property name="partitionCount" value="3"/>
+        <beans:property name="acquireIncrement" value="5"/>
+        <beans:property name="statementsCacheSize" value="100"/>
+        <beans:property name="releaseHelperThreads" value="3"/>
+    </beans:bean>
 
     <beans:bean id="txManager" class="org.springframework.orm.jpa.JpaTransactionManager">
         <beans:property name="dataSource" ref="dataSource"/>

@@ -36,6 +36,7 @@
     <context:property-placeholder location="classpath:properties/view.properties" ignore-unresolvable="true"/>
 
     <mvc:interceptors>
+        <beans:bean id="disabledDomainInterceptor" class="com.sparc.knappsack.web.DisabledDomainInterceptor"/>
         <beans:bean id="mobileViewInterceptor" class="com.sparc.knappsack.web.MobileViewInterceptor">
             <beans:property name="mobileEnabled" value="${mobile.enabled}"/>
             <beans:property name="viewsRootDirectory" value="${views.root.directory}"/>
@@ -43,6 +44,8 @@
             <beans:property name="viewSuffix" value=".html"/>
         </beans:bean>
         <beans:bean id="implicitObjectsInterceptor" class="com.sparc.knappsack.web.ImplicitObjectsInterceptor"/>
+        <beans:bean id="menuInterceptor" class="com.sparc.knappsack.web.MenuInterceptor"/>
+        <beans:bean id="brandingInterceptor" class="com.sparc.knappsack.web.BrandingInterceptor"/>
     </mvc:interceptors>
 
     <!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
@@ -62,9 +65,9 @@
     </beans:bean>
 
     <!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
-    <resources mapping="/resources/**" location="/resources/" cache-period="86400"/>
-    <resources mapping="/favicon.png" location="/resources/img/favicon.png" cache-period="604800"/>
-    <resources mapping="/favicon.ico" location="/resources/img/favicon.ico" cache-period="604800"/>
+    <resources mapping="/resources/datatables/*.swf" location="/resources/ext/DataTables/js/media/" cache-period="604800"/>
+    <!--<resources mapping="/favicon.png" location="/resources/img/favicon.png" cache-period="604800"/>-->
+    <!--<resources mapping="/favicon.ico" location="/resources/img/favicon.ico" cache-period="604800"/>-->
 
     <beans:bean id="marshaller" class="org.springframework.oxm.xstream.XStreamMarshaller"/>
     <!--<beans:bean id="filterMultipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>-->
@@ -79,5 +82,9 @@
     </beans:bean>
 
     <beans:bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"/>
+
+    <!--<beans:bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />-->
+
+    <beans:import resource="../spring-JawrConfig.xml"/>
 
 </beans:beans>

@@ -4,6 +4,7 @@ import com.sparc.knappsack.enums.DeviceType;
 import com.sparc.knappsack.enums.Language;
 import com.sparc.knappsack.enums.NotifiableType;
 import com.sparc.knappsack.enums.Status;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -11,7 +12,10 @@ import java.util.TreeSet;
 
 @Entity
 @Table(name = "DOMAIN_REQUEST", uniqueConstraints = {@UniqueConstraint(columnNames={"DOMAIN_ID", "EMAIL_ADDRESS"})})
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class DomainRequest extends BaseEntity implements Notifiable {
+
+    private static final long serialVersionUID = 1831410842043658067L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

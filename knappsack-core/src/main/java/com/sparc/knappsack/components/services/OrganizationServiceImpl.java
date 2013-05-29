@@ -1,17 +1,16 @@
 package com.sparc.knappsack.components.services;
 
-import com.googlecode.flyway.core.util.StringUtils;
+import com.sparc.knappsack.comparators.OrganizationNameComparator;
 import com.sparc.knappsack.components.dao.OrganizationDao;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.components.events.EventDelivery;
 import com.sparc.knappsack.components.events.EventDeliveryFactory;
-import com.sparc.knappsack.enums.DomainType;
-import com.sparc.knappsack.enums.EventType;
-import com.sparc.knappsack.enums.StorageType;
-import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.enums.*;
+import com.sparc.knappsack.forms.OrganizationForm;
 import com.sparc.knappsack.models.DomainModel;
 import com.sparc.knappsack.models.OrganizationModel;
 import com.sparc.knappsack.models.UserDomainModel;
+import com.sparc.knappsack.util.ListSortUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +19,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -65,13 +67,17 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Autowired(required = true)
     private EventDeliveryFactory eventDeliveryFactory;
 
-    @Qualifier("applicationService")
-    @Autowired(required = true)
-    private ApplicationService applicationService;
-
     @Qualifier("categoryService")
     @Autowired(required = true)
     private CategoryService categoryService;
+
+    @Qualifier("keyVaultEntryService")
+    @Autowired(required = true)
+    private KeyVaultEntryService keyVaultEntryService;
+
+    @Qualifier("appFileService")
+    @Autowired(required = true)
+    private AppFileService appFileService;
 
     @Override
     public void delete(Long id) {
@@ -111,15 +117,25 @@ public class OrganizationServiceImpl implements OrganizationService {
             invitationService.deleteAll(organization.getId());
 
             //Delete Applications
-            List<Application> applications = new ArrayList<Application>();
+//            List<Application> applications = new ArrayList<Application>();
+//            for (Group group : organization.getGroups()) {
+//                applications.addAll(group.getOwnedApplications());
+//                group.getGuestApplicationVersions().clear();
+//            }
+//            for (Application application : applications) {
+//                applicationService.deleteApplicationFilesAndVersions(application);
+//                application.getOwnedGroup().getOwnedApplications().remove(application);
+//                application.setCategory(null);
+//            }
+
+            Set<Long> groupIds = new HashSet<Long>();
             for (Group group : organization.getGroups()) {
-                applications.addAll(group.getOwnedApplications());
-                group.setGuestApplicationVersions(null);
+                groupIds.add(group.getId());
             }
-            for (Application application : applications) {
-                applicationService.deleteApplicationFilesAndVersions(application);
-                application.getOwnedGroup().getOwnedApplications().remove(application);
+            for (Long groupId : groupIds) {
+                groupService.delete(groupId);
             }
+            organization.getGroups().clear();
 
             //Delete Categories
             Set<Long> categoryIds = new HashSet<Long>();
@@ -129,7 +145,26 @@ public class OrganizationServiceImpl implements OrganizationService {
             for (Long id : categoryIds) {
                 categoryService.delete(id);
             }
+            organization.getCategories().clear();
 
+            CustomBranding customBranding = organization.getCustomBranding();
+            if (customBranding != null) {
+                appFileService.delete(customBranding.getLogo());
+            }
+
+            List<User> users = userService.getUsersByActiveOrganization(organization);
+            for (User user : users) {
+                List<Organization> userOrgs = userService.getOrganizations(user, null);
+                if(userOrgs.size() > 0) {
+                    user.setActiveOrganization(userOrgs.get(0));
+                } else {
+                    user.setActiveOrganization(null);
+                }
+            }
+
+            keyVaultEntryService.deleteAllForDomain(organization);
+            organization.setKeyVaultEntries(null);
+            organization.setChildKeyVaultEntries(null);
             organizationDao.delete(organization);
         }
     }
@@ -153,14 +188,6 @@ public class OrganizationServiceImpl implements OrganizationService {
         return organizationDao.getAll();
     }
 
-    private void mapOrgModelToOrg(OrganizationModel organizationModel, Organization organization) {
-        if (organizationModel != null && organization != null) {
-            organization.setId(organizationModel.getId());
-            organization.setName(organizationModel.getName());
-            //TODO: map remaining fields
-        }
-    }
-
     @Override
     public void mapOrgToOrgModel(Organization organization, OrganizationModel organizationModel) {
         if (organization != null && organizationModel != null) {
@@ -174,22 +201,22 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public Organization createOrganization(OrganizationModel organizationModel) {
+    public Organization createOrganization(OrganizationForm organizationForm) {
         Organization organization = null;
-        if (organizationModel != null) {
+        if (organizationForm != null) {
             organization = new Organization();
 
             organization.setDomainConfiguration(new DomainConfiguration());
 
-            mapOrgModelToOrg(organizationModel, organization);
+            organization.setName(StringUtils.trimTrailingWhitespace(organizationForm.getName()));
 
             save(organization);
 
             StorageConfiguration storageConfiguration;
-            if (organizationModel.getStorageConfigurationId() == null || organizationModel.getStorageConfigurationId() <= 0) {
+            if (organizationForm.getStorageConfigurationId() == null || organizationForm.getStorageConfigurationId() <= 0) {
                 storageConfiguration = storageConfigurationService.getRegistrationDefault();
             } else {
-                storageConfiguration = storageConfigurationService.get(organizationModel.getStorageConfigurationId());
+                storageConfiguration = storageConfigurationService.get(organizationForm.getStorageConfigurationId());
             }
             if (storageConfiguration == null) {
                 log.error("Attempted to create organization without a StorageConfiguration");
@@ -197,8 +224,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             }
 
             OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
-            if (StringUtils.hasText(organizationModel.getStoragePrefix())) {
-                orgStorageConfig.setPrefix(organizationModel.getStoragePrefix().trim());
+            if (StringUtils.hasText(organizationForm.getStoragePrefix())) {
+                orgStorageConfig.setPrefix(organizationForm.getStoragePrefix().trim());
             } else {
                 orgStorageConfig.setPrefix(organization.getUuid());
             }
@@ -207,17 +234,60 @@ public class OrganizationServiceImpl implements OrganizationService {
             organization.setOrgStorageConfig(orgStorageConfig);
 
             update(organization);
+
+            CustomBranding customBranding = organization.getCustomBranding();
+            if (customBranding == null) {
+                customBranding = new CustomBranding();
+                customBranding.setStorageConfiguration(storageConfiguration);
+                customBranding.setEmailHeader(organizationForm.getEmailHeader().replaceAll("<br>", "<br/>"));
+                customBranding.setEmailFooter(organizationForm.getEmailFooter().replaceAll("<br>", "<br/>"));
+            }
+            if (organizationForm.getLogo() != null) {
+                AppFile logo = createLogo(organizationForm.getLogo(), organization);
+
+                if (logo != null) {
+                    logo.setStorable(customBranding);
+                    customBranding.setLogo(logo);
+                }
+            }
+            organization.setCustomBranding(customBranding);
+            update(organization);
+
+            User user = userService.getUserFromSecurityContext();
+            if (user != null) {
+                user.setActiveOrganization(organization);
+            }
         }
 
         return organization;
     }
 
     @Override
-    public void editOrganization(OrganizationModel organizationModel) {
-        if (organizationModel != null) {
-            Organization organization = get(organizationModel.getId());
+    public void editOrganization(OrganizationForm organizationForm) {
+        if (organizationForm != null) {
+            Organization organization = get(organizationForm.getId());
             if (organization != null) {
-                mapOrgModelToOrg(organizationModel, organization);
+                organization.setName(StringUtils.trimTrailingWhitespace(organizationForm.getName()));
+
+                if (isCustomBrandingEnabled(organization)) {
+                    CustomBranding customBranding = organization.getCustomBranding();
+                    if (customBranding == null) {
+                        customBranding = new CustomBranding();
+                        customBranding.setStorageConfiguration(organization.getStorageConfigurations().get(0));
+                    }
+
+                    if(organizationForm.getLogo() != null) {
+                        AppFile logo = createLogo(organizationForm.getLogo(), organization);
+                        if (logo != null) {
+                            logo.setStorable(customBranding);
+                            customBranding.setLogo(logo);
+                        }
+                    }
+                    customBranding.setEmailHeader(organizationForm.getEmailHeader().replaceAll("<br>", "<br/>"));
+                    customBranding.setEmailFooter(organizationForm.getEmailFooter().replaceAll("<br>", "<br/>"));
+                    customBranding.setSubdomain((organizationForm.getSubdomain()));
+                    organization.setCustomBranding(customBranding);
+                }
 
                 save(organization);
             }
@@ -264,41 +334,23 @@ public class OrganizationServiceImpl implements OrganizationService {
         return users;
     }
 
-    @Override
-    public int getTotalUsers(Organization organization) {
-        Set<User> users = new HashSet<User>();
-        List<UserDomain> orgUserDomains = userDomainService.getAll(organization.getId());
-        for (UserDomain orgUserDomain : orgUserDomains) {
-            users.add(orgUserDomain.getUser());
-        }
-
-        for (Group group : organization.getGroups()) {
-            List<UserDomain> groupUserDomains = userDomainService.getAll(group.getId());
-            for (UserDomain groupUserDomain : groupUserDomains) {
-                users.add(groupUserDomain.getUser());
-            }
-        }
-
-        return users.size();
-    }
-
-    @Override
-    public int getTotalApplications(Organization organization) {
-        int totalApplications = 0;
-        for (Group group : organization.getGroups()) {
-            totalApplications += groupService.getTotalApplications(group);
-        }
-        return totalApplications;
-    }
-
-    @Override
-    public int getTotalApplicationVersions(Organization organization) {
-        int totalApplicationVersions = 0;
-        for (Group group : organization.getGroups()) {
-            totalApplicationVersions += groupService.getTotalApplicationVersions(group);
-        }
-        return totalApplicationVersions;
-    }
+//    @Override
+//    public int getTotalApplications(Organization organization) {
+//        int totalApplications = 0;
+//        for (Group group : organization.getGroups()) {
+//            totalApplications += groupService.getTotalApplications(group);
+//        }
+//        return totalApplications;
+//    }
+//
+//    @Override
+//    public int getTotalApplicationVersions(Organization organization) {
+//        int totalApplicationVersions = 0;
+//        for (Group group : organization.getGroups()) {
+//            totalApplicationVersions += groupService.getTotalApplicationVersions(group);
+//        }
+//        return totalApplicationVersions;
+//    }
 
     @Override
     public double getTotalMegabyteStorageAmount(Organization organization) {
@@ -312,20 +364,23 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     public List<UserDomainModel> getAllOrganizationMembers(Long organizationId, boolean includeGuests) {
+        return getAllOrganizationMembers(get(organizationId), includeGuests);
+    }
+
+    @Override
+    public List<UserDomainModel> getAllOrganizationMembers(Organization organization, boolean includeGuests) {
+        Assert.notNull(organization, "Organization cannot be null");
         Map<Long, UserDomainModel> userDomainModels = new HashMap<Long, UserDomainModel>();
-        Organization organization = get(organizationId);
 
-        if (organization != null) {
-            for (UserDomain userDomain : userDomainService.getAll(organizationId)) {
-                UserDomainModel model = userDomainService.createUserDomainModel(userDomain);
-                userDomainModels.put(userDomain.getUser().getId(), model);
-            }
+        for (UserDomain userDomain : userDomainService.getAll(organization.getId())) {
+            UserDomainModel model = userDomainService.createUserDomainModel(userDomain);
+            userDomainModels.put(userDomain.getUser().getId(), model);
+        }
 
-            if (includeGuests) {
-                for (UserDomainModel guest : getAllOrganizationGuests(organizationId)) {
-                    if (!userDomainModels.containsKey(guest.getUser().getId())) {
-                        userDomainModels.put(guest.getUser().getId(), guest);
-                    }
+        if (includeGuests) {
+            for (UserDomainModel guest : getAllOrganizationGuests(organization.getId())) {
+                if (!userDomainModels.containsKey(guest.getUser().getId())) {
+                    userDomainModels.put(guest.getUser().getId(), guest);
                 }
             }
         }
@@ -335,16 +390,20 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     public List<UserDomainModel> getAllOrganizationGuests(Long organizationId) {
-        Map<Long, UserDomainModel> userDomainsModels = new HashMap<Long, UserDomainModel>();
-        Organization organization = get(organizationId);
+        return getAllOrganizationGuests(get(organizationId));
+    }
 
-        if (organization != null) {
-            for (Group group : organization.getGroups()) {
-                for (UserDomain userDomain : userDomainService.getAll(group.getId())) {
-                    if (!userDomainsModels.containsKey(userDomain.getUser().getId()) && !userService.isUserInDomain(userDomain.getUser(), organization.getId())) {
-                        UserDomainModel model = userDomainService.createUserDomainModel(userDomain);
-                        userDomainsModels.put(userDomain.getUser().getId(), model);
-                    }
+    @Override
+    public List<UserDomainModel> getAllOrganizationGuests(Organization organization) {
+        Assert.notNull(organization, "Organization cannot be null");
+
+        Map<Long, UserDomainModel> userDomainsModels = new HashMap<Long, UserDomainModel>();
+
+        for (Group group : organization.getGroups()) {
+            for (UserDomain userDomain : userDomainService.getAll(group.getId())) {
+                if (!userDomainsModels.containsKey(userDomain.getUser().getId()) && userDomainService.get(userDomain.getUser(), organization.getId()) == null) {
+                    UserDomainModel model = userDomainService.createUserDomainModel(userDomain);
+                    userDomainsModels.put(userDomain.getUser().getId(), model);
                 }
             }
         }
@@ -354,12 +413,21 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     public boolean isApplicationLimit(Organization organization) {
-        return organization.getDomainConfiguration().getApplicationLimit() <= getTotalApplications(organization);
+        if (organization == null) {
+            return true;
+        }
+        return organization.getDomainConfiguration().getApplicationLimit() <= countOrganizationApps(organization.getId());
     }
 
     @Override
-    public boolean isUserLimit(Organization organization) {
-        return organization.getDomainConfiguration().getUserLimit() <= getTotalUsers(organization);
+    public boolean isUserLimit(Organization organization, boolean includeInvitations) {
+        long totalUsers = countOrganizationUsers(organization.getId(), true);
+
+        // Add invitation count for Organization and all child Groups to total count
+        if (includeInvitations) {
+            totalUsers += invitationService.countAllForOrganizationIncludingGroups(organization.getId());
+        }
+        return organization.getDomainConfiguration().getUserLimit() <= totalUsers;
     }
 
     @Override
@@ -399,9 +467,10 @@ public class OrganizationServiceImpl implements OrganizationService {
         return success;
     }
 
-    public List<OrganizationModel> createOrganizationModels(List<Organization> organizations, boolean includeExternalData) {
+    public List<OrganizationModel> createOrganizationModels(List<Organization> organizations, boolean includeExternalData, SortOrder sortOrder) {
         List<OrganizationModel> organizationModels = new ArrayList<OrganizationModel>();
-        for (Organization organization : organizations) {
+
+        for (Organization organization : ListSortUtils.sortList(organizations, sortOrder, new OrganizationNameComparator())) {
             organizationModels.add(createOrganizationModel(organization, includeExternalData));
         }
 
@@ -409,9 +478,10 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public List<OrganizationModel> createOrganizationModelsWithoutStorageConfiguration(List<Organization> organizations, boolean includeExternalData) {
+    public List<OrganizationModel> createOrganizationModelsWithoutStorageConfiguration(List<Organization> organizations, boolean includeExternalData, SortOrder sortOrder) {
         List<OrganizationModel> organizationModels = new ArrayList<OrganizationModel>();
-        for (Organization organization : organizations) {
+
+        for (Organization organization : ListSortUtils.sortList(organizations, sortOrder, new OrganizationNameComparator())) {
             organizationModels.add(createOrganizationModelWithoutStorageConfiguration(organization, includeExternalData));
         }
 
@@ -527,7 +597,35 @@ public class OrganizationServiceImpl implements OrganizationService {
                 log.error("Error processing getAllOrganizationsForCreateDateRange:", e);
             }
         }
-
+//        List<CustomerModel> customerModels = customerService.getAllCustomersForCreateDateRange(minDate, maxDate);
+//        if (CollectionUtils.isEmpty(customerModels)) {
+//            return models;
+//        }
+//
+//        Map<Long, CustomerModel> customerModelMap = new HashMap<Long, CustomerModel>();
+//        for (CustomerModel customerModel : customerModels) {
+//            if (customerModel.getOrganizationId() != null && customerModel.getOrganizationId() > 0) {
+//                customerModelMap.put(customerModel.getOrganizationId(), customerModel);
+//            }
+//        }
+//
+//        List<Organization> organizations = new ArrayList<Organization>();
+//        if (minDate == null && maxDate == null) {
+//            organizations.addAll(organizationDao.getAll());
+//        } else {
+//            organizations.addAll(organizationDao.getAllForCreateDateRange(minDate, maxDate));
+//        }
+//
+//        for (Organization organization : organizations) {
+//            CustomerModel customerModel = customerModelMap.get(organization.getId());
+//            if (customerModel != null) {
+//                OrganizationModel model = createOrganizationModel(organization, false);
+//                if (model != null) {
+//                    model.setCustomer(customerModel);
+//                    models.add(model);
+//                }
+//            }
+//        }
         return models;
     }
 
@@ -542,22 +640,34 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public long countOrganizationUsers(Long organizationId) {
-        return organizationDao.countOrganizationUsers(organizationId);
+    public long countOrganizationUsers(Long organizationId, boolean includeGroups) {
+        if (organizationId == null || organizationId <= 0) {
+            return 0;
+        }
+        return organizationDao.countOrganizationUsers(organizationId, includeGroups);
     }
 
     @Override
     public long countOrganizationApps(Long organizationId) {
+        if (organizationId == null || organizationId <= 0) {
+            return 0;
+        }
         return organizationDao.countOrganizationApps(organizationId);
     }
 
     @Override
     public long countOrganizationAppVersions(Long organizationId) {
+        if (organizationId == null || organizationId <= 0) {
+            return 0;
+        }
         return organizationDao.countOrganizationAppVersions(organizationId);
     }
 
     @Override
     public long countOrganizationGroups(Long organizationId) {
+        if (organizationId == null || organizationId <= 0) {
+            return 0;
+        }
         return organizationDao.countOrganizationGroups(organizationId);
     }
 
@@ -584,6 +694,34 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
+    public boolean isApplicationResignerEnabled(Organization organization) {
+        boolean isResignerEnabled = false;
+
+        if (organization != null) {
+            DomainConfiguration domainConfiguration = organization.getDomainConfiguration();
+            if (domainConfiguration != null && domainConfiguration.isApplicationResignerEnabled()) {
+                isResignerEnabled = true;
+            }
+        }
+
+        return isResignerEnabled;
+    }
+
+    @Override
+    public boolean isCustomBrandingEnabled(Organization organization) {
+        boolean isCustomBrandingEnabled = false;
+
+        if (organization != null) {
+            DomainConfiguration domainConfiguration = organization.getDomainConfiguration();
+            if (domainConfiguration != null && domainConfiguration.isCustomBrandingEnabled()) {
+                isCustomBrandingEnabled = true;
+            }
+        }
+
+        return isCustomBrandingEnabled;
+    }
+
+    @Override
     public Set<User> getAllAdmins(Organization organization, boolean includeParentDomainAdminsIfEmpty) {
         Set<User> users = new HashSet<User>();
         if (organization != null) {
@@ -601,5 +739,43 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
 
         return users;
+    }
+
+    @Override
+    public void deleteLogo(Long organizationId) {
+        Organization organization = get(organizationId);
+        if (organization != null) {
+            CustomBranding customBranding = organization.getCustomBranding();
+            if (customBranding != null) {
+                AppFile logo = customBranding.getLogo();
+                if (logo != null) {
+                    customBranding.setLogo(null);
+                    appFileService.delete(logo);
+                }
+            }
+        }
+    }
+
+    @Override
+    public Organization getForGroupId(Long groupId) {
+        if (groupId == null || groupId <= 0) {
+            log.info("Attempted to retrieve Organization for empty groupId.");
+            return null;
+        }
+
+        return organizationDao.getForGroupId(groupId);
+    }
+
+    private AppFile createLogo(MultipartFile logo, Organization organization) {
+        StorageService storageService = getStorageService(organization.getStorageConfigurations().get(0).getId());
+        return storageService.save(logo, AppFileType.LOGO.getPathName(), organization.getOrgStorageConfig().getId(), organization.getStorageConfigurations().get(0).getId(), organization.getUuid());
+    }
+
+    private StorageService getStorageService(Long storageConfigurationId) {
+        return storageServiceFactory.getStorageService(getStorageConfiguration(storageConfigurationId).getStorageType());
+    }
+
+    private StorageConfiguration getStorageConfiguration(Long storageConfigurationId) {
+        return storageConfigurationService.get(storageConfigurationId);
     }
 }

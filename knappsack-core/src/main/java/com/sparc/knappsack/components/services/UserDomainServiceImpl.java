@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,33 +68,6 @@ public class UserDomainServiceImpl implements UserDomainService {
     }
 
     @Override
-    public List<UserDomain> getAll(User user, DomainType domainType) {
-        return userDomainDao.getUserDomains(user, domainType);
-    }
-
-    @Override
-    public List<UserDomain> getAll(User user, DomainType... domainTypes) {
-        return userDomainDao.getUserDomains(user, domainTypes);
-    }
-
-    @Override
-    public List<UserDomain> getAll(User user, DomainType domainType, UserRole userRole) {
-        List<UserDomain> userDomains = new ArrayList<UserDomain>();
-
-        if (user != null && domainType != null && userRole != null) {
-            List<UserDomain> allUserDomains = getAll(user, domainType);
-
-            for (UserDomain userDomain : allUserDomains) {
-                if (userDomain.getRole().getUserRole().equals(userRole) && !userDomains.contains(userDomain)) {
-                    userDomains.add(userDomain);
-                }
-            }
-        }
-
-        return userDomains;
-    }
-
-    @Override
     public List<UserDomain> getAll(Long domainId) {
         List<UserDomain> userDomains = new ArrayList<UserDomain>();
         if (domainId != null && domainId > 0) {
@@ -133,6 +107,20 @@ public class UserDomainServiceImpl implements UserDomainService {
         }
 
         return userDomains;
+    }
+
+    @Override
+    public List<UserDomain> getUserDomainsForEmailsAndDomains(List<String> emails, List<Long> domainIds) {
+        if (CollectionUtils.isEmpty(emails) || CollectionUtils.isEmpty(domainIds)) {
+            return new ArrayList<UserDomain>();
+        }
+
+        List<UserDomain> userDomains = userDomainDao.getUserDomainsForEmailsAndDomains(emails, domainIds);
+        if (CollectionUtils.isEmpty(userDomains)) {
+            return new ArrayList<UserDomain>();
+        } else {
+            return userDomains;
+        }
     }
 
     @Override

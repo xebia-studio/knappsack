@@ -1,10 +1,12 @@
 package com.sparc.knappsack.models;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.sparc.knappsack.enums.EventType;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public class EmailModel {
 
     private EventType eventType;

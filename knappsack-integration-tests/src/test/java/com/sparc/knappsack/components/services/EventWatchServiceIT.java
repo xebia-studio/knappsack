@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -34,7 +33,7 @@ public class EventWatchServiceIT extends AbstractServiceTests {
     @Test
     public void addTest() {
         Application notifiable = getApplication();
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.save(user);
         EventWatch eventWatch = new EventWatch();
         eventWatch.setUser(user);
@@ -50,7 +49,7 @@ public class EventWatchServiceIT extends AbstractServiceTests {
     @Test
     public void updateTest() {
         Application notifiable = getApplication();
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.save(user);
         EventWatch eventWatch = new EventWatch();
         eventWatch.setUser(user);
@@ -70,7 +69,7 @@ public class EventWatchServiceIT extends AbstractServiceTests {
     @Test
     public void deleteTest() {
         Application notifiable = getApplication();
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.save(user);
         EventWatch eventWatch = new EventWatch();
         eventWatch.setUser(user);
@@ -86,7 +85,7 @@ public class EventWatchServiceIT extends AbstractServiceTests {
 
     @Test
     public void createEventWatchTest() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.save(user);
         Application application = getApplication();
         boolean isEventCreated = eventWatchService.createEventWatch(user, application, EventType.APPLICATION_VERSION_BECOMES_AVAILABLE);
@@ -98,7 +97,7 @@ public class EventWatchServiceIT extends AbstractServiceTests {
     @Test
     public void deleteAllEventWatchForNotifiableTest() {
         Application notifiable = getApplication();
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.save(user);
         EventWatch eventWatch = new EventWatch();
         eventWatch.setUser(user);

@@ -1,6 +1,7 @@
 package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.NotifiableType;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 
@@ -9,7 +10,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "INVITATION", uniqueConstraints = {@UniqueConstraint(name = "UNQ_INVITATION", columnNames={"EMAIL", "DOMAIN_ID", "ROLE_ID"})})
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Invitation extends BaseEntity implements Notifiable {
 
     private static final long serialVersionUID = -1170543161710859798L;

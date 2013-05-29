@@ -12,6 +12,9 @@
                 <beans:prop key="LOCAL">
                     localStorageService
                 </beans:prop>
+                <beans:prop key="AMAZON_S3">
+                    s3StorageService
+                </beans:prop>
             </beans:props>
         </beans:property>
     </beans:bean>
@@ -25,6 +28,23 @@
                 </beans:prop>
                 <beans:prop key="GROUP">
                     groupService
+                </beans:prop>
+            </beans:props>
+        </beans:property>
+    </beans:bean>
+
+    <beans:bean id="keyVaultServiceFactory" class="org.springframework.beans.factory.config.ServiceLocatorFactoryBean">
+        <beans:property name="serviceLocatorInterface" value="com.sparc.knappsack.components.services.KeyVaultServiceFactory"/>
+        <beans:property name="serviceMappings">
+            <beans:props>
+                <beans:prop key="IPHONE">
+                    iosKeyVaultService
+                </beans:prop>
+                <beans:prop key="IPAD">
+                    iosKeyVaultService
+                </beans:prop>
+                <beans:prop key="IOS">
+                    iosKeyVaultService
                 </beans:prop>
             </beans:props>
         </beans:property>
@@ -62,6 +82,9 @@
                 </beans:prop>
                 <beans:prop key="ORGANIZATION_REGISTRATION">
                     organizationRegistrationEvent
+                </beans:prop>
+                <beans:prop key="APPLICATION_VERSION_RESIGN">
+                    applicationVersionResignEvent
                 </beans:prop>
             </beans:props>
         </beans:property>

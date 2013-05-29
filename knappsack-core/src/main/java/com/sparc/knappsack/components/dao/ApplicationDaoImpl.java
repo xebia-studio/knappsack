@@ -1,8 +1,7 @@
 package com.sparc.knappsack.components.dao;
 
-import com.sparc.knappsack.components.entities.Application;
-import com.sparc.knappsack.components.entities.Category;
-import com.sparc.knappsack.components.entities.QApplication;
+import com.mysema.query.jpa.impl.JPAQuery;
+import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.ApplicationType;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +11,8 @@ import java.util.List;
 public class ApplicationDaoImpl extends BaseDao implements ApplicationDao {
 
     QApplication application = QApplication.application;
+    QOrganization organization = QOrganization.organization;
+    QDomain domain = QDomain.domain;
 
     public void add(Application application) {
         getEntityManager().persist(application);
@@ -30,7 +31,7 @@ public class ApplicationDaoImpl extends BaseDao implements ApplicationDao {
     }
 
     public List<Application> getAll(ApplicationType applicationType) {
-          return query().from(application).where(application.applicationType.eq(applicationType)).list(application);
+        return query().from(application).where(application.applicationType.eq(applicationType)).list(application);
     }
 
     /*
@@ -61,12 +62,30 @@ public class ApplicationDaoImpl extends BaseDao implements ApplicationDao {
      */
     @Override
     public List<Application> getByCategory(Category category) {
-        return query().from(application).where(application.category.eq(category)).list(application);
+        return cacheableQuery().from(application).where(application.category.eq(category)).list(application);
     }
 
     @Override
     public List<Application> getByCategoryAndApplicationType(Category category, ApplicationType applicationType) {
-        return query().from(application).where(application.category.eq(category).and(application.applicationType.eq(applicationType))).list(application);
+        return cacheableQuery().from(application).where(application.category.eq(category).and(application.applicationType.eq(applicationType))).list(application);
+    }
+
+    @Override
+    public List<Application> getByGroup(Group group, ApplicationType... applicationTypes) {
+        if(applicationTypes == null || applicationTypes.length == 0) {
+            return cacheableQuery().from(application).where(application.ownedGroup.eq(group)).list(application);
+        }
+
+        return cacheableQuery().from(application).where(application.ownedGroup.eq(group).and(application.applicationType.in(applicationTypes))).list(application);
+    }
+
+    @Override
+    public List<Application> getAllForUser(User user, ApplicationType... applicationTypes) {
+
+        JPAQuery query = cacheableQuery().from(application)
+                .where(getApplicationForUserBooleanExpression(user, applicationTypes));
+
+        return query.listDistinct(application);
     }
 
     public void update(Application application) {

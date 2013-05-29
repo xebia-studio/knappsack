@@ -7,7 +7,10 @@ import com.sparc.knappsack.components.entities.Invitation;
 import com.sparc.knappsack.components.entities.Role;
 import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.forms.BatchInvitationForm;
+import com.sparc.knappsack.forms.InvitationForm;
 import com.sparc.knappsack.forms.InviteeForm;
+import com.sparc.knappsack.models.Contact;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +18,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,13 +28,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Transactional( propagation = Propagation.REQUIRED )
 @Service("invitationService")
 public class InvitationServiceImpl implements InvitationService {
 
-    private static Logger LOG = LoggerFactory.getLogger(InvitationServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(InvitationServiceImpl.class);
 
     @Qualifier("invitationDao")
     @Autowired(required = true)
@@ -90,7 +97,16 @@ public class InvitationServiceImpl implements InvitationService {
     public long countAll(Long domainId) {
         return invitationDao.countAll(domainId);
     }
-    
+
+    @Override
+    public long countAllForOrganizationIncludingGroups(Long organizationId) {
+        if (organizationId == null || organizationId <= 0) {
+            return 0;
+        }
+
+        return invitationDao.countAllForOrganizationIncludingGroups(organizationId);
+    }
+
     @Override
     public List<Invitation> getAll(String email, Long domainId) {
         List<Invitation> invitations = new ArrayList<Invitation>();
@@ -98,6 +114,29 @@ public class InvitationServiceImpl implements InvitationService {
         invitations.addAll(invitationDao.getAllForEmailAndDomain(email, domainId));
 
         return invitations;
+    }
+
+    @Override
+    public long countEmailsWithoutInvitationsForOrganization(Set<String> emails, Long organizationId, boolean includeGroups) {
+
+        // Only attempt if emails and organization id are not empty
+        if (CollectionUtils.isEmpty(emails) || organizationId == null || organizationId <= 0) {
+            return 0;
+        }
+
+        return invitationDao.countEmailsWithoutInvitationsForOrganization(emails, organizationId, includeGroups);
+    }
+
+    @Override
+    public List<Invitation> getAllForEmailsAndDomains(List<String> emails, List<Long> domainIds) {
+        if (CollectionUtils.isEmpty(emails) || CollectionUtils.isEmpty(domainIds)) {
+            return new ArrayList<Invitation>();
+        }
+
+        Set<Invitation> invitations = new HashSet<Invitation>();
+        invitations.addAll(invitationDao.getAllForEmailsAndDomains(emails, domainIds));
+
+        return new ArrayList<Invitation>(invitations);
     }
 
     @Override
@@ -122,6 +161,54 @@ public class InvitationServiceImpl implements InvitationService {
         return invitation;
     }
 
+    @Override
+    public List<Invitation> createInvitations(InvitationForm invitationForm) {
+        Assert.notNull(invitationForm, "InvitationForm cannot be null");
+
+        List<Invitation> invitations = new ArrayList<Invitation>();
+
+        User user = userService.getUserFromSecurityContext();
+        if (user != null) {
+
+            // Create Organization invitation if necessary
+            if (invitationForm.getOrganizationUserRole() != null && !UserRole.ROLE_ORG_GUEST.equals(invitationForm.getOrganizationUserRole())) {
+                invitations.add(createInvitation(StringUtils.trimAllWhitespace(invitationForm.getEmail()), invitationForm.getOrganizationUserRole(), user.getActiveOrganization().getId()));
+            }
+
+            if (!CollectionUtils.isEmpty(invitationForm.getGroupIds()) && invitationForm.getGroupUserRole() != null) {
+                for (Long groupId : invitationForm.getGroupIds()) {
+                    invitations.add(createInvitation(StringUtils.trimAllWhitespace(invitationForm.getEmail()), invitationForm.getGroupUserRole(), groupId));
+                }
+            }
+        }
+
+        return invitations;
+    }
+
+    @Override
+    public List<Invitation> createInvitations(BatchInvitationForm batchInvitationForm) {
+        Assert.notNull(batchInvitationForm, "BatchInvitationForm cannot be null");
+
+        List<Invitation> invitations = new ArrayList<Invitation>();
+
+        User user = userService.getUserFromSecurityContext();
+        if (user != null) {
+            for (Contact contact : batchInvitationForm.getContacts()) {
+                // Create Organization invitation if necessary
+                if (batchInvitationForm.getOrganizationUserRole() != null && !UserRole.ROLE_ORG_GUEST.equals(batchInvitationForm.getOrganizationUserRole())) {
+                    invitations.add(createInvitation(StringUtils.trimAllWhitespace(contact.getEmail()), batchInvitationForm.getOrganizationUserRole(), user.getActiveOrganization().getId()));
+                }
+
+                if (!CollectionUtils.isEmpty(batchInvitationForm.getGroupIds())) {
+                    for (Long groupId : batchInvitationForm.getGroupIds()) {
+                        invitations.add(createInvitation(StringUtils.trimAllWhitespace(contact.getEmail()), UserRole.ROLE_GROUP_USER, groupId));
+                    }
+                }
+            }
+        }
+
+        return invitations;
+    }
 
     @Override
     public long deleteAll(Long domainId) {
@@ -160,16 +247,16 @@ public class InvitationServiceImpl implements InvitationService {
 
         Invitation invitation = new Invitation();
         invitation.setDomain(domainService.get(domainId));
-        invitation.setEmail(email);
+        invitation.setEmail(email.toLowerCase().trim());
         invitation.setRole(role);
 
         return invitation;
     }
 
-    public List<InviteeForm> parseContactsGoogle(MultipartFile contactsFile) {
-        List<InviteeForm> inviteeList = new ArrayList<InviteeForm>();
+    public List<Contact> parseContactsGoogle(MultipartFile contactsFile) {
+        List<Contact> contactsList = new ArrayList<Contact>();
         if(contactsFile == null) {
-            return inviteeList;
+            return contactsList;
         }
 
         try {
@@ -179,28 +266,27 @@ public class InvitationServiceImpl implements InvitationService {
             while (contacts.readRecord()) {
                 String name = contacts.get("Name");
                 String email = contacts.get("E-mail 1 - Value");
-                if(email == null || email.isEmpty()) {
+                if(!StringUtils.hasText(email)) {
                     continue;
                 }
-                InviteeForm inviteeForm = new InviteeForm();
-                inviteeForm.setEmail(email);
-                inviteeForm.setName(name);
-                inviteeForm.setUserRole(UserRole.ROLE_ORG_USER);
-                inviteeList.add(inviteeForm);
+                Contact contact = new Contact();
+                contact.setEmail(StringUtils.trimAllWhitespace(email.toLowerCase()));
+                contact.setName(StringUtils.trimTrailingWhitespace(StringUtils.trimLeadingWhitespace(name)));
+                contactsList.add(contact);
             }
         } catch (FileNotFoundException e) {
-            LOG.error("FileNotFoundException caught attempting to parse an Google contacts CSV file.", e);
+            log.error("FileNotFoundException caught attempting to parse an Google contacts CSV file.", e);
         } catch (IOException e) {
-            LOG.error("IOException caught attempting to parse an Google contacts CSV file.", e);
+            log.error("IOException caught attempting to parse an Google contacts CSV file.", e);
         }
 
-        return inviteeList;
+        return contactsList;
     }
 
-    public List<InviteeForm> parseContactsOutlook(MultipartFile contactsFile) {
-        List<InviteeForm> inviteeList = new ArrayList<InviteeForm>();
+    public List<Contact> parseContactsOutlook(MultipartFile contactsFile) {
+        List<Contact> contactList = new ArrayList<Contact>();
         if(contactsFile == null) {
-            return inviteeList;
+            return contactList;
         }
 
         try {
@@ -209,26 +295,25 @@ public class InvitationServiceImpl implements InvitationService {
             contacts.readHeaders();
             while (contacts.readRecord()) {
                 String email = contacts.get("E-mail Address");
-                if(email == null || email.isEmpty()) {
+                if(!StringUtils.hasText(email)) {
                     continue;
                 }
                 String firstName = contacts.get("First Name");
                 String lastName = contacts.get("Last Name");
                 String fullName = firstName + " " + lastName;
 
-                InviteeForm inviteeForm = new InviteeForm();
-                inviteeForm.setEmail(email);
-                inviteeForm.setName(fullName);
-                inviteeForm.setUserRole(UserRole.ROLE_ORG_USER);
-                inviteeList.add(inviteeForm);
+                Contact contact = new Contact();
+                contact.setEmail(StringUtils.trimAllWhitespace(email).toLowerCase());
+                contact.setName(StringUtils.trimTrailingWhitespace(StringUtils.trimLeadingWhitespace(fullName)));
+                contactList.add(contact);
             }
         } catch (FileNotFoundException e) {
-            LOG.error("FileNotFoundException caught attempting to parse an Outlook contacts CSV file.", e);
+            log.error("FileNotFoundException caught attempting to parse an Outlook contacts CSV file.", e);
         } catch (IOException e) {
-            LOG.error("IOException caught attempting to parse an Outlook contacts CSV file.", e);
+            log.error("IOException caught attempting to parse an Outlook contacts CSV file.", e);
         }
 
-        return inviteeList;
+        return contactList;
     }
 
     @Override

@@ -10,17 +10,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
-public class ImplicitObjectsInterceptor extends HandlerInterceptorAdapter {
+public class ImplicitObjectsInterceptor extends FilteredRequestHandlerInterceptorAdapter {
 
     @Qualifier("userService")
-    @Autowired
+    @Autowired(required = true)
     private UserService userService;
 
     @Value("${" + SystemProperties.APPLICATION_DOMAIN + "}")
@@ -28,6 +27,10 @@ public class ImplicitObjectsInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
+        if(isBlackLabeledRequest(request)) {
+            return true;
+        }
+
         HttpSession session = request.getSession();
         boolean redirect = false;
 
@@ -39,14 +42,14 @@ public class ImplicitObjectsInterceptor extends HandlerInterceptorAdapter {
 
                     String servletPath = request.getServletPath();
 
-                    if (!servletPath.startsWith("/auth") && !servletPath.startsWith("/resources") && user != null) {
+                    if (!servletPath.startsWith("/auth") && !servletPath.startsWith("/resources") && !servletPath.startsWith("/static") && !servletPath.startsWith("/contacts") && user != null && !servletPath.startsWith("/getSystemNotifications")) {
                         boolean skipValidation = false;
 
-                        if (user.isPasswordExpired() && !servletPath.startsWith("/profile/changePassword") && !servletPath.startsWith("/auth/forgotPassword")) {
+                        if (user.isPasswordExpired() && !servletPath.startsWith("/profile/changePassword") && !servletPath.startsWith("/profile/resetPassword") && !servletPath.startsWith("/auth/forgotPassword")) {
                             response.sendRedirect(request.getContextPath() + "/profile/changePassword");
                             skipValidation = true;
                             redirect = true;
-                        } else if (user.isPasswordExpired() && (servletPath.startsWith("/profile/changePassword") || servletPath.startsWith("/auth/forgotPassword"))) {
+                        } else if (user.isPasswordExpired() && (servletPath.startsWith("/profile/changePassword") || servletPath.startsWith("/profile/resetPassword") || servletPath.startsWith("/auth/forgotPassword"))) {
                             skipValidation = true;
                         }
 
@@ -80,6 +83,9 @@ public class ImplicitObjectsInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
+        if(isBlackLabeledRequest(request)) {
+            return;
+        }
 
         if (response != null) {
             response.setHeader("X-Frame-Options", "DENY");

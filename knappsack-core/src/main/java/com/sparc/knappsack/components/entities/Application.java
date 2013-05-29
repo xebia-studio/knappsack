@@ -4,11 +4,12 @@ import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.NotifiableType;
 import com.sparc.knappsack.enums.StorableType;
 import org.codehaus.jackson.annotate.JsonManagedReference;
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "APPLICATION")
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Application extends Storable implements Notifiable {
 
     private static final long serialVersionUID = 1265568333226947048L;
@@ -33,23 +35,25 @@ public class Application extends Storable implements Notifiable {
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "ICON_ID")
-    @JsonManagedReference
-    @Fetch(FetchMode.JOIN)
+    @LazyToOne(value = LazyToOneOption.NO_PROXY)
+//    @Fetch(FetchMode.JOIN)
     private AppFile icon;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinTable(name = "APPLICATION_SCREENSHOT", joinColumns = @JoinColumn(name = "APPLICATION_ID"), inverseJoinColumns = @JoinColumn(name = "SCREENSHOT_ID"))
     @JsonManagedReference
     @BatchSize(size=30)
-    private List<AppFile> screenShots = new ArrayList<AppFile>();
+    private List<AppFile> screenshots = new ArrayList<AppFile>();
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "CATEGORY_ID")
+    @Fetch(FetchMode.JOIN)
     private Category category;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "GROUP_ID")
-    @Fetch(FetchMode.JOIN)
+    @LazyToOne(value = LazyToOneOption.PROXY)
+//    @Fetch(FetchMode.JOIN)
     private Group ownedGroup;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "application", orphanRemoval = true)
@@ -81,6 +85,22 @@ public class Application extends Storable implements Notifiable {
         this.applicationType = applicationType;
     }
 
+//    public AppFile getIcon() {
+//        if (icons == null) {
+//            icons = new ArrayList<AppFile>();
+//        }
+//        return (icons.size() > 0 ? icons.get(0) : null);
+//    }
+//
+//    public void setIcon(AppFile icon) {
+//        if (icons != null && !icons.isEmpty()) {
+//            icons.remove(0);
+//        } else if (icons == null) {
+//            icons = new ArrayList<AppFile>();
+//        }
+//        this.icons.add(icon);
+//    }
+
     public AppFile getIcon() {
         return icon;
     }
@@ -89,16 +109,16 @@ public class Application extends Storable implements Notifiable {
         this.icon = icon;
     }
 
-    public List<AppFile> getScreenShots() {
-        return screenShots;
+    public List<AppFile> getScreenshots() {
+        return screenshots;
     }
 
-    public void setScreenShots(List<AppFile> screenShots) {
-        this.screenShots = screenShots;
+    public void setScreenshots(List<AppFile> screenshots) {
+        this.screenshots = screenshots;
     }
 
     public Category getCategory() {
-        return category;
+        return initializeAndUnproxy(category);
     }
 
     public void setCategory(Category category) {

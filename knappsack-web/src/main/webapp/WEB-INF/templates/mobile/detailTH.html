@@ -1,139 +1,137 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="include_detail=${true},title='Knappsack'" xmlns:ks="http://www.knappsack.com">
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_detail=${true},title='${orgName}'">
 <head th:substituteby="/mobile/includesTH :: mobileHead"></head>
 <body>
 
 <div id="detailPage" data-role="page" data-theme="b" class="page-no-cache">
 
-<div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
-
 <script type="text/javascript" th:inline="javascript">
     /*<![CDATA[*/
     var selectedVersionId = /*[[${initialVersionId}]]*/ '';
 
-    $('#detailPage').live('pageinit', function(event) {
+    $(document).on('pageshow', '#detailPage', function(e) {
+        var slider;
 
-        $('#detailPage').live('pageshow', function() {
-            var slider;
+        var screenShots = /*[[${selectedApplication.screenshots}]]*/ '';
+        if (screenShots.length <= 0) {
+            $('.image-container').hide();
+        } else {
+            var sliderDiv = $('#mySlider');
 
-            var screenShots = /*[[${selectedApplication.screenShots}]]*/ '';
-            if (screenShots.length <= 0) {
-                $('.image-container').hide();
-            } else {
-                var sliderDiv = $('#mySlider');
-
-                if (sliderDiv) {
-                    slider = sliderDiv.flexslider({
-                        animation: "slide",
-                        controlsContainer: ".controls-container",
-                        smoothHeight: true,
-                        directionNav: false,
-                        startAt: 0
-                    });
-                }
+            if (sliderDiv) {
+                slider = sliderDiv.flexslider({
+                    animation: "slide",
+                    controlsContainer: ".controls-container",
+                    smoothHeight: true,
+                    directionNav: false,
+                    startAt: 0
+                });
             }
-        });
-
-        $('#detailPage').bind('pagebeforeshow', function() {
-
-            $('.tab').hide();
-            $('#installContent').hide();
-            $('#tab1Div').show();
-
-            var bandwidthExceeded = /*[[${bandwidthExceeded}]]*/ false;
-            if(bandwidthExceeded) {
-                $("#installBtn").addClass('ui-disabled');
-                $("#download").addClass('ui-disabled');
-            }
-
-            var description = /*[[${selectedApplication.description}]]*/ '';
-            $('#description').addHtml(description);
-
-            var recentChanges = '';
-            var versions = /*[[${versions}]]*/ [];
-            if (versions.length > 0) {
-                recentChanges = versions[0].recentChanges;
-            }
-            $('#recentChanges').addHtml(recentChanges);
-
-            var instance, indicators;
-
-            $('p').nl2br();
-
-            $("#installBtn").on("click", function() {
-
-                var selectedAppId = /*[[${selectedApplication.id}]]*/ '';
-                var generateDownloadApplicationUrl = /*[[@{/generateDownloadApplicationUrl/}]]*/ '';
-                var downloadDirectly = /*[[${downloadDirectly}]]*/ true;
-
-                if (downloadDirectly) {
-                    $.ajax({
-                        type:"POST",
-                        url:generateDownloadApplicationUrl + selectedVersionId,
-                        cache:false,
-                        dataType:"text",
-                        data:({id:selectedAppId}),
-                        async:true,
-                        success:onSuccess,
-                        error:onError
-                    });
-                } else {
-                    $('.tab').hide();
-                    $('.tab-link').removeClass('ui-btn-active');
-                    $('#installContent').show();
-                }
-
-            });
-
-            $("#installContent #download").click(function() {
-                var url = /*[[@{/downloadApplication/}]]*/ '/downloadApplication/';
-                window.location = url + selectedVersionId;
-            });
-
-            function onSuccess(data) {
-                //                $.mobile.loadPage(data);
-                window.location = data;
-                //                $.mobile.changePage(data);
-            }
-
-            function onError(jqXHR, textStatus, errorThrown) {
-                console.log(jqXHR);
-                console.log(textStatus);
-                console.log(errorThrown);
-            }
-
-            $('#versionSelect').change(function() {
-                var recentChanges = $('#versionSelect option:selected').attr('data-recent-changes');
-                selectedVersionId = $('#versionSelect option:selected').attr('data-id');
-
-                $('#recentChanges').addHtml(recentChanges);
-            });
-
-            $('.tab-link').bind('click', function() {
-                $('.tab-link').removeClass('ui-btn-active');
-                $(this).addClass("ui-btn-active");
-                $('.tab').hide();
-                switch ($(this).attr('id')) {
-                    case "tab1":
-                        $("#tab1Div").show();
-                        break;
-                    case "tab2":
-                        $("#tab2Div").show();
-                        break;
-                }
-                return false;
-            });
-        });
-
+        }
     });
+
+    $(document).on('pagebeforeshow', '#detailPage', function(event) {
+
+        $('.tab').hide();
+        $('#installContent').hide();
+        $('#tab1Div').show();
+
+        var bandwidthExceeded = /*[[${bandwidthExceeded}]]*/ false;
+        if(bandwidthExceeded) {
+            $("#installBtn").addClass('ui-disabled');
+            $("#download").addClass('ui-disabled');
+        }
+
+        var description = /*[[${selectedApplication.description}]]*/ '';
+        $('#description').addHtml(description);
+
+        var recentChanges = '';
+        var versions = /*[[${versions}]]*/ [];
+        if (versions.length > 0) {
+            recentChanges = versions[0].recentChanges;
+        }
+        $('#recentChanges').addHtml(recentChanges);
+
+        var instance, indicators;
+
+        $('p').nl2br();
+
+        $('#detailPage').on('click', '#installBtn', function(e) {
+            e.preventDefault();
+
+            var selectedAppId = /*[[${selectedApplication.id}]]*/ '';
+            var generateDownloadApplicationUrl = /*[[@{/generateDownloadApplicationUrl/}]]*/ '';
+            var downloadDirectly = /*[[${downloadDirectly}]]*/ true;
+
+            if (downloadDirectly) {
+                $.ajax({
+                    type:"POST",
+                    url:generateDownloadApplicationUrl + selectedVersionId,
+                    cache:false,
+                    dataType:"text",
+                    data:({id:selectedAppId}),
+                    async:true,
+                    success:onSuccess,
+                    error:onError
+                });
+            } else {
+                $('.tab').hide();
+                $('.tab-link').removeClass('ui-btn-active');
+                $('#installContent').show();
+            }
+
+        });
+
+        $('#detailPage').on('click', '#installContent #download', function(e) {
+            e.preventDefault();
+            var url = /*[[@{/downloadApplication/}]]*/ '/downloadApplication/';
+            window.location = url + selectedVersionId;
+        });
+
+        function onSuccess(data) {
+            //                $.mobile.loadPage(data);
+            window.location = data;
+            //                $.mobile.changePage(data);
+        }
+
+        function onError(jqXHR, textStatus, errorThrown) {
+            console.log(jqXHR);
+            console.log(textStatus);
+            console.log(errorThrown);
+        }
+
+        $('#detailPage').on('change', '#versionSelect', function() {
+            var recentChanges = $('#versionSelect option:selected').attr('data-recent-changes');
+            selectedVersionId = $('#versionSelect option:selected').attr('data-id');
+
+            $('#recentChanges').addHtml(recentChanges);
+        });
+
+        $('#detailPage').on('click', '.tab-link', function(e) {
+            e.preventDefault();
+            $('.tab-link').removeClass('ui-btn-active');
+            $(this).addClass("ui-btn-active");
+            $('.tab').hide();
+            switch ($(this).attr('id')) {
+                case "tab1":
+                    $("#tab1Div").show();
+                    break;
+                case "tab2":
+                    $("#tab2Div").show();
+                    break;
+            }
+            return false;
+        });
+    });
+
     /*]]>*/
 </script>
 
 <div data-role="header" data-id="mainHeader" class="header">
     <a id="backBtn" href="#" data-rel="back" data-icon="back" data-direction="reverse" th:text="#{mobile.detail.back}">Back</a>
 
-    <h1>Knappsack</h1>
+    <h1 th:text="${orgName}">Knappsack</h1>
 
     <a id="installBtn" rel="external" data-theme="b" th:if="${#bools.isTrue(showInstallBtn)}" th:unless="${#lists.isEmpty(versions)}" th:text="#{mobile.detail.install}">Install</a>
 
@@ -145,7 +143,7 @@
             <div class="li-floater">
                 <div class="thumb">
                     <img src="" th:src="@{${selectedApplication.icon.url}}" class="li-thumbnail" th:if="${#bools.isTrue(selectedApplication.icon)}"/>
-                    <img src="" ks:src="@{/resources/img/default_icon.png}" class="li-thumbnail" th:if="${#bools.isFalse(selectedApplication.icon)}"/>
+                    <h1 class="default_icon li-thumbnail" th:if="${#bools.isFalse(selectedApplication.icon)}"/>
                 </div>
             </div>
 
@@ -179,7 +177,7 @@
         <div class="image-container">
             <div id="mySlider" class="flexslider">
                 <ul class="slides">
-                    <li th:each="screenShot : ${selectedApplication.screenShots}">
+                    <li th:each="screenShot : ${selectedApplication.screenshots}">
                         <img th:src="${screenShot.url}"/>
                     </li>
                 </ul>

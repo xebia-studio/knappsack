@@ -1,5 +1,7 @@
 package com.sparc.knappsack.components.entities;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import javax.persistence.*;
 
 /**
@@ -13,7 +15,7 @@ import javax.persistence.*;
 @Table(name = "USER_DOMAIN",
         uniqueConstraints = {@UniqueConstraint(columnNames={"DOMAIN_ID", "ROLE_ID", "USER_ID"})}
 )
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class UserDomain extends BaseEntity {
 
     private static final long serialVersionUID = 71727224831146511L;

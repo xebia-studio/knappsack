@@ -1,5 +1,6 @@
 package com.sparc.knappsack.components.controllers;
 
+import com.sparc.knappsack.components.entities.S3StorageConfiguration;
 import com.sparc.knappsack.components.entities.StorageConfiguration;
 import com.sparc.knappsack.components.services.StorageConfigurationService;
 import com.sparc.knappsack.components.validators.StorageConfigurationValidator;
@@ -107,6 +108,12 @@ public class StorageController extends AbstractController {
                 storageForm.setStorageType(storageConfiguration.getStorageType());
                 storageForm.setRegistrationDefault(storageConfiguration.isRegistrationDefault());
                 storageForm.setEditing(true);
+
+                if(storageConfiguration instanceof S3StorageConfiguration) {
+                    storageForm.setAccessKey(((S3StorageConfiguration) storageConfiguration).getAccessKey());
+                    storageForm.setSecretKey(((S3StorageConfiguration) storageConfiguration).getSecretKey());
+                    storageForm.setBucketName(((S3StorageConfiguration) storageConfiguration).getBucketName());
+                }
 
                 model.addAttribute("storageForm", storageForm);
             } else {

@@ -3,6 +3,7 @@ package com.sparc.knappsack.components.controllers;
 import com.sparc.knappsack.components.entities.Organization;
 import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.components.services.reports.ReportService;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.models.reports.DirectedGraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,7 +29,7 @@ public class ReportsController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/viewReports", method = RequestMethod.GET)
     public String viewReports(Model model) {
-        List<Organization> organizations = userService.getAdministeredOrganizations(userService.getUserFromSecurityContext());
+        List<Organization> organizations = userService.getAdministeredOrganizations(userService.getUserFromSecurityContext(), SortOrder.ASCENDING);
         model.addAttribute("organizations", organizations);
 
         return "manager/reportsTH";

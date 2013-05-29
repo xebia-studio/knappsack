@@ -7,6 +7,26 @@
 
     <context:component-scan base-package="com.sparc.knappsack.components.services"/>
 
+    <beans:beans profile="production">
+        <!--<context:property-placeholder location="classpath*:/properties/sqs.properties" ignore-unresolvable="true"/>-->
+        <beans:bean id="emailDeliveryService" class="com.sparc.knappsack.components.services.SQSEmailServiceImpl">
+            <property name="awsAccessKey" value="${AWS_ACCESS_KEY_ID}"/>
+            <property name="awsSecretKey" value="${AWS_SECRET_KEY}"/>
+            <property name="sqsQueueName" value="${SqsEmailQueue}"/>
+        </beans:bean>
+    </beans:beans>
+
+    <beans:beans profile="dev">
+        <context:property-placeholder location="classpath*:/properties/sqs.properties" ignore-unresolvable="true"/>
+
+        <!--<beans:bean id="emailDeliveryService" class="com.sparc.knappsack.components.services.SQSEmailServiceImpl">-->
+        <!--<property name="awsAccessKey" value="${AWS_ACCESS_KEY_ID}"/>-->
+        <!--<property name="awsSecretKey" value="${AWS_SECRET_KEY}"/>-->
+        <!--<property name="sqsQueueName" value="${dev.sqs.email.queue.name}"/>-->
+        <!--</beans:bean>-->
+
+    </beans:beans>
+
     <beans:beans profile="dev">
         <beans:bean id="emailDeliveryService" class="com.sparc.knappsack.components.services.EmailServiceImpl"/>
     </beans:beans>

@@ -4,6 +4,9 @@ import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.NotifiableType;
 import com.sparc.knappsack.enums.UserRole;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.LazyToOne;
+import org.hibernate.annotations.LazyToOneOption;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +20,7 @@ import java.util.*;
  */
 @Entity
 @Table(name = "USER")
-// @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class User extends BaseEntity implements UserDetails, Notifiable {
 
     private static final long serialVersionUID = 1690650481252062307L;
@@ -68,6 +71,11 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
 
     @Column(name = "PASSWORD_EXPIRED")
     private boolean passwordExpired = false;
+
+    @OneToOne(cascade = CascadeType.REFRESH, orphanRemoval = false)
+    @JoinColumn(name = "ACTIVE_ORGANIZATION_ID")
+    @LazyToOne(value = LazyToOneOption.PROXY)
+    private Organization activeOrganization;
 
     public User() {
         this.username = "";
@@ -213,6 +221,45 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
         return false;
     }
 
+    @SuppressWarnings("unused")
+    public boolean isActiveOrganizationAdmin() {
+        if(isSystemAdmin()) {
+            return true;
+        }
+
+        if(activeOrganization != null) {
+            for (UserDomain userDomain : userDomains) {
+                if (DomainType.ORGANIZATION.equals(userDomain.getDomain().getDomainType())
+                        && userDomain.getDomain().getId().equals(activeOrganization.getId())
+                        && UserRole.ROLE_ORG_ADMIN.toString().equals(userDomain.getRole().getAuthority())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isActiveOrganizationGroupAdmin() {
+        if (isSystemAdmin()) {
+            return true;
+        }
+
+        if (activeOrganization != null) {
+            for (UserDomain userDomain : getUserDomains()) {
+                if (DomainType.GROUP.equals(userDomain.getDomain().getDomainType())
+                        && ((Group) userDomain.getDomain()).getOrganization() != null
+                        && ((Group) userDomain.getDomain()).getOrganization().getId().equals(activeOrganization.getId())
+                        && UserRole.ROLE_GROUP_ADMIN.equals(userDomain.getRole().getUserRole())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public boolean isOrganizationAdmin() {
         for (UserDomain userDomain : userDomains) {
             if (DomainType.ORGANIZATION.equals(userDomain.getDomain().getDomainType()) && UserRole.ROLE_ORG_ADMIN.toString().equals(userDomain.getRole().getAuthority())) {
@@ -239,6 +286,20 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
 
     public boolean isOrganizationOrGroupAdmin() {
         return isGroupAdmin() || isOrganizationAdmin();
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isOrganizationAdminWithResignerEnabled() {
+        if(isSystemAdmin()) {
+            return true;
+        }
+
+        if(isActiveOrganizationAdmin()) {
+            return activeOrganization.getDomainConfiguration().isApplicationResignerEnabled();
+
+        }
+
+        return isSystemAdmin();
     }
 
     public List<UserDomain> getUserDomains() {
@@ -276,6 +337,14 @@ public class User extends BaseEntity implements UserDetails, Notifiable {
 
     public void setPasswordExpired(boolean passwordExpired) {
         this.passwordExpired = passwordExpired;
+    }
+
+    public Organization getActiveOrganization() {
+        return activeOrganization;
+    }
+
+    public void setActiveOrganization(Organization activeOrganization) {
+        this.activeOrganization = activeOrganization;
     }
 }
 

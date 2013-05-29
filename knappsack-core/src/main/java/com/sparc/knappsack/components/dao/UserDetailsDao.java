@@ -1,5 +1,6 @@
 package com.sparc.knappsack.components.dao;
 
+import com.sparc.knappsack.components.entities.Organization;
 import com.sparc.knappsack.components.entities.User;
 
 import java.util.List;
@@ -37,8 +38,13 @@ public interface UserDetailsDao extends Dao<User> {
      */
     List<User> getBatch(List<Long> ids);
 
+    List<User> getBatchForEmails(List<String> emails);
+
     /**
      * @return long - a count of all the users in the system
      */
     long countAll();
+
+    List<User> getUsersByActiveOrganization(Organization organization);
+
 }

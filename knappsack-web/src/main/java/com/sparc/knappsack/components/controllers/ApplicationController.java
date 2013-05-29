@@ -3,17 +3,14 @@ package com.sparc.knappsack.components.controllers;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.components.validators.ApplicationValidator;
-import com.sparc.knappsack.enums.ApplicationType;
-import com.sparc.knappsack.enums.EventType;
-import com.sparc.knappsack.enums.StorageType;
+import com.sparc.knappsack.enums.*;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.exceptions.TokenException;
+import com.sparc.knappsack.forms.ApplicationForm;
+import com.sparc.knappsack.forms.ApplicationVersionForm;
 import com.sparc.knappsack.forms.EnumEditor;
 import com.sparc.knappsack.forms.Result;
-import com.sparc.knappsack.forms.UploadApplication;
-import com.sparc.knappsack.forms.UploadApplicationVersion;
-import com.sparc.knappsack.models.ApplicationVersionStatisticSummaryModel;
-import com.sparc.knappsack.models.ApplicationVersionUserStatisticModel;
+import com.sparc.knappsack.models.*;
 import com.sparc.knappsack.security.SingleUseToken;
 import com.sparc.knappsack.security.SingleUseTokenRepository;
 import com.sparc.knappsack.util.UserAgentInfo;
@@ -22,22 +19,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.*;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,13 +75,17 @@ public class ApplicationController extends AbstractController {
     @Autowired(required = true)
     private StorageServiceFactory storageServiceFactory;
 
-    @Qualifier("groupService")
+    @Qualifier("categoryService")
     @Autowired(required = true)
-    private GroupService groupService;
+    private CategoryService categoryService;
 
     @Qualifier("bandwidthService")
     @Autowired(required = true)
     private BandwidthService bandwidthService;
+
+    @Qualifier("appFileService")
+    @Autowired(required = true)
+    private AppFileService appFileService;
 
     @Qualifier("iosService")
     @Autowired(required = true)
@@ -89,31 +95,43 @@ public class ApplicationController extends AbstractController {
     @Autowired(required = true)
     private SingleUseTokenRepository singleUseTokenRepository;
 
-    @InitBinder("uploadApplication")
+    @Qualifier("messageSource")
+    @Autowired(required = true)
+    private MessageSource messageSource;
+
+    @InitBinder("applicationForm")
     protected void initBinder(WebDataBinder binder) {
         binder.setValidator(applicationValidator);
         binder.setBindEmptyMultipartFiles(false);
         binder.registerCustomEditor(StorageType.class, new EnumEditor(StorageType.class));
     }
 
-    @PreAuthorize("isDomainAdmin(#uploadApplication.groupId) or hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/uploadFile", method = RequestMethod.POST)
-    public String saveApplication(Model model, @ModelAttribute("uploadApplication") @Validated UploadApplication uploadApplication, BindingResult bindingResult, HttpServletRequest request) {
+    @PreAuthorize("isDomainAdmin(#applicationForm.groupId) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/saveApplication", method = RequestMethod.POST)
+    public String saveApplication(Model model, @ModelAttribute("applicationForm") @Validated ApplicationForm applicationForm, BindingResult bindingResult, HttpServletRequest request, final RedirectAttributes redirectAttributes) {
+        boolean editing = applicationForm.getId() != null && applicationForm.getId() > 0;
+
         if(bindingResult.hasErrors()) {
-            return addApplication(model, uploadApplication.getGroupId());
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.applicationForm", bindingResult);
+            redirectAttributes.addFlashAttribute("applicationForm", applicationForm);
+
+            return editing ? String.format("redirect:/manager/editApplication/%s", applicationForm.getId()) : "redirect:/manager/addApplication";
         }
 
-        uploadApplication.setContextPath(request.getHeader("origin") + request.getContextPath());
 
-        boolean editing = (uploadApplication.getId() != null && uploadApplication.getId() > 0);
+        applicationForm.setContextPath(request.getHeader("origin") + request.getContextPath());
 
-        Application savedApplication = applicationService.saveApplication(uploadApplication);
+        Application savedApplication = applicationService.saveApplication(applicationForm);
 
-        if (!editing) {
-            return "redirect:/manager/addVersion/" + savedApplication.getId();
-        } else {
-            return "redirect:/manager/editGroup/" + uploadApplication.getGroupId();
+        if (savedApplication == null || savedApplication.getId() == null || savedApplication.getId() <= 0) {
+            bindingResult.reject("desktop.manageApplication.error.generic");
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.applicationForm", bindingResult);
+            redirectAttributes.addFlashAttribute("applicationForm", applicationForm);
+            return editing ? String.format("redirect:/manager/editApplication/%s", applicationForm.getId()) : "redirect:/manager/addApplication";
         }
+
+        return String.format("redirect:/detail/%s", savedApplication.getId());
+
     }
 
     @PreAuthorize("canEditApplication(#id) or hasRole('ROLE_ADMIN')")
@@ -121,11 +139,20 @@ public class ApplicationController extends AbstractController {
     public String deleteApplication(@PathVariable Long id) {
         checkRequiredEntity(applicationService, id);
 
-        Application application = applicationService.get(id);
-        Group group = application.getOwnedGroup();
         applicationService.delete(id);
 
-        return "redirect:/manager/editGroup/" + group.getId();
+        return "redirect:/home";
+    }
+
+    @PreAuthorize("canEditApplication(#applicationId) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/deleteApplication", method = RequestMethod.POST)
+    public @ResponseBody Result deleteApplicationAJAX(@RequestParam(value = "id", required = true) Long applicationId) {
+        Result result = new Result();
+        applicationService.delete(applicationId);
+
+        result.setResult(!applicationService.doesEntityExist(applicationId));
+
+        return result;
     }
 
     @PreAuthorize("canEditApplication(#applicationId) or hasRole('ROLE_ADMIN')")
@@ -165,8 +192,8 @@ public class ApplicationController extends AbstractController {
     }
 
     @PreAuthorize("canEditApplication(#applicationId) or hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/deleteScreenShot/{applicationId}/{index}", method = RequestMethod.POST)
-    public @ResponseBody Result deleteScreenShot(@PathVariable Long applicationId, @PathVariable int index) {
+    @RequestMapping(value = "/manager/deleteScreenshot/{applicationId}/{index}", method = RequestMethod.POST)
+    public @ResponseBody Result deleteScreenshot(@PathVariable Long applicationId, @PathVariable int index) {
         Result result = new Result();
 
         try {
@@ -184,27 +211,32 @@ public class ApplicationController extends AbstractController {
         return result;
     }
 
-    @PreAuthorize("isDomainAdmin(#groupId) or hasRole('ROLE_ADMIN')")
-    @RequestMapping(value = "/manager/addApplication/{groupId}", method = RequestMethod.GET)
-    public String addApplication(Model model, @PathVariable Long groupId) {
+    @PreAuthorize("isDomainAdmin() or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/addApplication", method = RequestMethod.GET)
+    public String addApplication(Model model, @RequestParam(required = false) Long grp) {
 
-        checkRequiredEntity(groupService, groupId);
-
-        Group group = groupService.get(groupId);
-
-        model.addAttribute("parentGroupId", group.getId());
-        model.addAttribute("parentGroupName", group.getName());
-
-        if (!model.containsAttribute("uploadApplication")) {
-            UploadApplication uploadApplication = new UploadApplication();
-            uploadApplication.setGroupId(groupId);
-            uploadApplication.setOrgStorageConfigId(group.getOrganization().getOrgStorageConfig().getId());
-            model.addAttribute("orgStorageConfigId", group.getOrganization().getOrgStorageConfig().getId());
-            model.addAttribute("uploadApplication", uploadApplication);
+        if (!model.containsAttribute("applicationForm")) {
+            ApplicationForm applicationForm = new ApplicationForm();
+            applicationForm.setApplicationVersion(new ApplicationVersionForm());
+            applicationForm.setGroupId(grp);
+            model.addAttribute("applicationForm", applicationForm);
         }
-        List<StorageConfiguration> storageConfigurations = new ArrayList<StorageConfiguration>(group.getOrganization().getOrgStorageConfig().getStorageConfigurations());
-        model.addAttribute("storageConfigurations", storageConfigurations);
-        model.addAttribute("categories", group.getOrganization().getCategories());
+
+        User user = userService.getUserFromSecurityContext();
+        Organization organization = user.getActiveOrganization();
+
+        List<CategoryModel> categories = new ArrayList<CategoryModel>();
+        if (organization != null) {
+            for (Category category : organization.getCategories()) {
+                CategoryModel categoryModel = categoryService.createCategoryModel(category, false);
+                if (categoryModel != null) {
+                    categories.add(categoryModel);
+                }
+            }
+        }
+
+        model.addAttribute("groups", userService.getAdministeredGroupModels(user, GroupModel.class, SortOrder.ASCENDING));
+        model.addAttribute("categories", categories);
         model.addAttribute("applicationTypes", ApplicationType.values());
         model.addAttribute("isEdit", false);
 
@@ -213,69 +245,63 @@ public class ApplicationController extends AbstractController {
 
     @PreAuthorize("canEditApplication(#id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editApplication/{id}", method = RequestMethod.GET)
-    public String editApplication(Model model, @PathVariable Long id) {
+    public String editApplication(Model model, @PathVariable Long id, HttpServletRequest request) throws IOException {
 
         checkRequiredEntity(applicationService, id);
 
+        User user = userService.getUserFromSecurityContext();
+
         Application application = applicationService.get(id);
 
-        Group group = application.getOwnedGroup();
+        if (!model.containsAttribute("applicationForm")) {
 
-        if (group != null) {
+            ApplicationForm applicationForm = new ApplicationForm();
+            applicationForm.setId(application.getId());
+            applicationForm.setGroupId(application.getOwnedGroup().getId());
+            applicationForm.setApplicationType(application.getApplicationType());
+            applicationForm.setDescription(application.getDescription());
+            applicationForm.setName(application.getName());
+            applicationForm.setCategoryId(application.getCategory().getId());
 
-            model.addAttribute("parentGroupId", group.getId());
-            model.addAttribute("parentGroupName", group.getName());
+            StorageService storageService = storageServiceFactory.getStorageService(application.getStorageConfiguration().getStorageType());
 
-            if (!model.containsAttribute("uploadApplication")) {
-
-                UploadApplication uploadApplication = new UploadApplication();
-                uploadApplication.setId(application.getId());
-                uploadApplication.setGroupId(group.getId());
-                uploadApplication.setApplicationType(application.getApplicationType());
-                uploadApplication.setDescription(application.getDescription());
-                uploadApplication.setName(application.getName());
-                uploadApplication.setCategoryId(application.getCategory().getId());
-
-                uploadApplication.setOrgStorageConfigId(group.getOrganization().getOrgStorageConfig().getId());
-                uploadApplication.setStorageConfigurationId(application.getStorageConfiguration().getId());
-
-                AppFile icon = application.getIcon();
-                if (icon != null) {
-                    MockMultipartFile iconMultipartFile = new MockMultipartFile(application.getIcon().getName(), application.getIcon().getName(), application.getIcon().getType(), new byte[0]);
-                    uploadApplication.setIcon(iconMultipartFile);
-                }
-
-                List<AppFile> screenShots = application.getScreenShots();
-                List<MultipartFile> screenShotMultipartFiles = new ArrayList<MultipartFile>();
-                for (AppFile screenShot : screenShots) {
-                    MockMultipartFile screenShotMultipartFile = new MockMultipartFile(screenShot.getName(), screenShot.getName(), screenShot.getType(), new byte[0]);
-                    screenShotMultipartFiles.add(screenShotMultipartFile);
-                }
-                uploadApplication.setScreenShots(screenShotMultipartFiles);
-
-                List<UploadApplicationVersion> uploadApplicationVersions = new ArrayList<UploadApplicationVersion>();
-                for (ApplicationVersion version : application.getApplicationVersions()) {
-                    UploadApplicationVersion uploadApplicationVersion = new UploadApplicationVersion();
-                    uploadApplicationVersion.setId(version.getId());
-                    uploadApplicationVersion.setVersionName(version.getVersionName());
-                    uploadApplicationVersion.setAppState(version.getAppState());
-                    uploadApplicationVersions.add(uploadApplicationVersion);
-                }
-                uploadApplication.setApplicationVersions(uploadApplicationVersions);
-
-                model.addAttribute("uploadApplication", uploadApplication);
+            AppFile icon = application.getIcon();
+            if (icon != null) {
+                MockMultipartFile iconMultipartFile = new MockMultipartFile(application.getIcon().getName(), application.getIcon().getName(), application.getIcon().getType(), new byte[0]);
+                applicationForm.setIcon(iconMultipartFile);
+                model.addAttribute("icon", appFileService.createImageModel(icon));
             }
 
-            List<StorageConfiguration> storageConfigurations = new ArrayList<StorageConfiguration>(group.getOrganization().getOrgStorageConfig().getStorageConfigurations());
-            model.addAttribute("storageConfigurations", storageConfigurations);
-            model.addAttribute("categories", group.getOrganization().getCategories());
-            model.addAttribute("applicationTypes", ApplicationType.values());
-            model.addAttribute("isEdit", true);
+            List<AppFile> screenShots = application.getScreenshots();
+            List<MultipartFile> screenShotMultipartFiles = new ArrayList<MultipartFile>();
+            List<ImageModel> screenshotImageModels = new ArrayList<ImageModel>();
+            for (AppFile screenShot : screenShots) {
+                MockMultipartFile screenShotMultipartFile = new MockMultipartFile(screenShot.getName(), screenShot.getName(), screenShot.getType(), storageService.getInputStream(screenShot));
+                screenShotMultipartFiles.add(screenShotMultipartFile);
+                screenshotImageModels.add(appFileService.createImageModel(screenShot));
+            }
+            applicationForm.setScreenshots(screenShotMultipartFiles);
+            model.addAttribute("screenshots", screenshotImageModels);
 
-            return "manager/manageApplicationTH";
-        } else {
-            throw new EntityNotFoundException(String.format("Group Entity not found while editing Application: %s", application.getId()));
+            model.addAttribute("applicationForm", applicationForm);
         }
+
+        List<ApplicationVersionModel> applicationVersions = new ArrayList<ApplicationVersionModel>();
+        for (ApplicationVersion applicationVersion : application.getApplicationVersions()) {
+            ApplicationVersionModel applicationVersionModel = applicationVersionService.createApplicationVersionModel(applicationVersion, false);
+            if (applicationVersionModel != null) {
+                applicationVersions.add(applicationVersionModel);
+            }
+        }
+        model.addAttribute("applicationVersion", applicationVersions);
+
+        model.addAttribute("groups", userService.getAdministeredGroupModels(user, GroupModel.class, SortOrder.ASCENDING));
+        model.addAttribute("categories", application.getOwnedGroup().getOrganization().getCategories());
+        model.addAttribute("applicationTypes", ApplicationType.getAllInGroup(application.getApplicationType()));
+        model.addAttribute("isEdit", true);
+        model.addAttribute("appStates", getAppStates(request));
+
+        return "manager/manageApplicationTH";
     }
 
     @PreAuthorize("hasAccessToApplicationVersion(#applicationVersionId) or hasRole('ROLE_ADMIN')")
@@ -284,26 +310,27 @@ public class ApplicationController extends AbstractController {
 
         checkRequiredEntity(applicationVersionService, Long.valueOf(applicationVersionId));
 
-        String url = addApplicationToResponse(response, applicationVersionId, userAgentInfo);
+        String url = addApplicationToResponse(response, applicationVersionId, userAgentInfo, true);
 
         subscribeUserAndCreateStatistic(Long.valueOf(applicationVersionId), request);
 
-        if (url.isEmpty()) {
+        if (!StringUtils.hasText(url)) {
             return "";
         }
 
         return "redirect:" + url;
     }
 
-    @RequestMapping(value = "ios/downloadApplication/{id}", method = RequestMethod.GET)
-    public void downloadApplicationIos(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, UserAgentInfo userAgentInfo) {
+    @RequestMapping(value = "/ios/downloadApplication/{id}", method = {RequestMethod.GET, RequestMethod.HEAD})
+    public void downloadApplicationIOS(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestParam(required = true) String token, UserAgentInfo userAgentInfo) {
         checkRequiredEntity(applicationVersionService, Long.valueOf(id));
 
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
-        addApplicationToResponse(response, id, userAgentInfo);
+
+        addApplicationToResponse(response, id, userAgentInfo, RequestMethod.GET.equals(RequestMethod.valueOf(request.getMethod())) ? true : false);
     }
 
     @PreAuthorize("hasAccessToApplicationVersion(#id) or hasRole('ROLE_ADMIN')")
@@ -329,7 +356,7 @@ public class ApplicationController extends AbstractController {
 
     }
 
-    private String addApplicationToResponse(HttpServletResponse response, String id, UserAgentInfo userAgentInfo) {
+    public String addApplicationToResponse(HttpServletResponse response, String id, UserAgentInfo userAgentInfo, boolean includeFile) {
         ApplicationVersion version = applicationVersionService.get(Long.parseLong(id));
 
         if (version != null && version.getAppState() != null && version.getAppState().isDownloadable()) {
@@ -350,25 +377,31 @@ public class ApplicationController extends AbstractController {
                 }
 
                 String url = ((RemoteStorageService)storageService).getUrl(appFile, 20);
+                response.setStatus(200);
                 response.setContentType(appFile.getType());
                 response.setHeader("Content-Disposition", "attachment; filename=\"" + url + "\"");
                 return url;
             }
 
-            File file = new File(appFile.getAbsolutePath());
-
             response.setContentType(appFile.getType());
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"");
-            InputStream inputStream = null;
-            try {
-                inputStream = new FileInputStream(file);
-            } catch (FileNotFoundException e) {
-                log.error("Error creating FileInputStream", e);
-            }
-            try {
-                FileCopyUtils.copy(inputStream, response.getOutputStream());
-            } catch (IOException e) {
-                log.error("Error copying inputStream to response outputStream", e);
+            NumberFormat numberFormat = NumberFormat.getInstance();
+            numberFormat.setGroupingUsed(false);
+            response.setStatus(200);
+            response.setHeader("Content-Length", numberFormat.format(appFile.getSize() * 1024 * 1024) /*Convert MB to Bytes*/);
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + appFile.getName() + "\"");
+            if (includeFile) {
+                File file = new File(appFile.getAbsolutePath());
+                InputStream inputStream = null;
+                try {
+                    inputStream = new FileInputStream(file);
+                } catch (FileNotFoundException e) {
+                    log.error("Error creating FileInputStream", e);
+                }
+                try {
+                    FileCopyUtils.copy(inputStream, response.getOutputStream());
+                } catch (IOException e) {
+                    log.error("Error copying inputStream to response outputStream", e);
+                }
             }
         }
         return "";
@@ -387,7 +420,7 @@ public class ApplicationController extends AbstractController {
      * When a user downloads a specific application version, automatically subscribe them to that application and
      * create an ApplicationVersionUserStatistic to track the download.
      */
-    private void subscribeUserAndCreateStatistic(Long applicationVersionId, HttpServletRequest request) {
+    public void subscribeUserAndCreateStatistic(Long applicationVersionId, HttpServletRequest request) {
         User user = userService.getUserFromSecurityContext();
         ApplicationVersion applicationVersion = applicationVersionService.get(applicationVersionId);
         applicationVersionUserStatisticService.create(applicationVersion, user, request.getRemoteAddr(), request.getHeader("User-Agent"));
@@ -395,6 +428,22 @@ public class ApplicationController extends AbstractController {
         if(!isSubscribed) {
             eventWatchService.createEventWatch(user, applicationVersion.getApplication(), EventType.APPLICATION_VERSION_BECOMES_AVAILABLE);
         }
+    }
+
+    private List<InternationalizedObject> getAppStates(HttpServletRequest request) {
+        List<InternationalizedObject> appStates = new ArrayList<InternationalizedObject>();
+        for (AppState appState : AppState.values()) {
+            try {
+                appStates.add(new InternationalizedObject(appState, messageSource.getMessage(appState.getMessageKey(), null, request.getLocale())));
+            } catch (NoSuchMessageException ex) {
+                log.error(String.format("No message for appState: %s", appState.name()), ex);
+
+                // Put the applicationType name so that the application doesn't error out.
+                appStates.add(new InternationalizedObject(appState, appState.name()));
+            }
+        }
+
+        return appStates;
     }
 
 }

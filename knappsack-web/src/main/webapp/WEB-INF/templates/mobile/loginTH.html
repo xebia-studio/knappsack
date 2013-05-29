@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="include_login=${true},title='Knappsack'" >
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_login=${true},title='${orgName}'" >
 <head th:substituteby="/mobile/includesTH :: mobileHead">
 </head>
 <body>
@@ -21,9 +21,9 @@
         $('#loginPage').live('pageinit', function() {
 
             var contextPath = /*[[${#httpServletRequest.contextPath}]]*/ "";
-            var imagePath = contextPath + '/resources/img/openid/';
+            var imagePath = contextPath + '/static/resources/img/openid/';
 
-            $(providers).each(function() {
+            $(openid_providers).each(function() {
                 var anchor = $('<a>').attr('data-provider', this.url).addClass('openid_btn').css('background-image', 'url(' + imagePath + this.image + ')').css('background-repeat', 'no-repeat').css('background-position', 'center');
                 $('#openid_btns').append(anchor);
             });
@@ -106,12 +106,13 @@
                         <input type="password" id="j_password" name="j_password" class="required" required="required" placeholder="Password:" value=""/>
                     </div>
                     <div class="control-group">
-                        <label class="checkbox" data-mini="true" th:inline="text">
-                            <input id="rememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked"/>
-                            [[#{mobile.login.rememberMe}]] </label>
+                        <div class="ui-checkbox">
+                            <input id="rememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked" />
+                            <label for="rememberMeCheckBox" class="checkbox" data-mini="true" th:text="#{mobile.login.rememberMe}">Remember Me</label>
+                        </div>
                     </div>
                     <div class="form-actions">
-                        <button class="btn btn-large btn-primary" href="#" data-mini="true" data-theme="b" th:text="#{mobile.login.login}">Login</button>
+                        <button id="mobileLoginBtn" class="btn btn-large btn-primary" href="#" data-mini="true" data-theme="b" th:text="#{mobile.login.login}">Login</button>
                     </div>
                 </fieldset>
             </form>
@@ -280,8 +281,6 @@
         </div>
     </div>
 </div>
-
-<div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
 
 </body>
 </html>

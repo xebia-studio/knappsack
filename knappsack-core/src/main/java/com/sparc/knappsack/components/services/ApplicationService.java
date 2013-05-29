@@ -3,8 +3,9 @@ package com.sparc.knappsack.components.services;
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.Category;
 import com.sparc.knappsack.components.entities.Domain;
+import com.sparc.knappsack.components.entities.Group;
 import com.sparc.knappsack.enums.ApplicationType;
-import com.sparc.knappsack.forms.UploadApplication;
+import com.sparc.knappsack.forms.ApplicationForm;
 import com.sparc.knappsack.models.ApplicationModel;
 
 import java.util.List;
@@ -32,6 +33,8 @@ public interface ApplicationService extends EntityService<Application> {
      */
     List<Application> getAllByNameAndDescription(String searchCriteria);
 
+    List<Application> getAll(Group group, ApplicationType... applicationTypes);
+
     /**
      * @param category Category
      * @return List<Application> - return all Applications belonging to the given Category
@@ -49,25 +52,29 @@ public interface ApplicationService extends EntityService<Application> {
      * @param applications List<Application>
      * @return List<ApplicationModel> - return a list of ApplicationModel objects populated with data from the specified Applications
      */
-    List<ApplicationModel> createApplicationModels(List<Application> applications);
+    List<ApplicationModel> createApplicationModels(List<Application> applications, boolean mapScreenShots);
 
     /**
      * @param applicationId Long
      * @return ApplicationModel - return an ApplicationModel populated with data from an Application
      */
-    ApplicationModel createApplicationModel(Long applicationId);
+    ApplicationModel createApplicationModel(Long applicationId, boolean mapScreenShots);
+
+    <D> D getApplicationModel(Long applicationId, Class<D> modelClass);
+
+    <D> List<D> getApplicationModels(List<Application> applications, Class<D> modelClass);
 
     /**
      * @param application Application
      * @return ApplicationModel - return an ApplicationModel populated with data from an Application
      */
-    ApplicationModel createApplicationModel(Application application);
+    ApplicationModel createApplicationModel(Application application, boolean mapScreenShots);
 
     /**
-     * @param uploadApplication UploadApplication
+     * @param applicationForm UploadApplication
      * @return Application - create and persist and Application given the data in the UploadApplication
      */
-    Application saveApplication(UploadApplication uploadApplication);
+    Application saveApplication(ApplicationForm applicationForm);
 
     /**
      * @param application Application

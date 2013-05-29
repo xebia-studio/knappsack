@@ -10,4 +10,6 @@ public interface SingleUseTokenRepository {
 
     SingleUseToken getToken(String key);
 
+    boolean validateAndExpireTokenForKey(String key, boolean shouldExpireToken);
+
 }

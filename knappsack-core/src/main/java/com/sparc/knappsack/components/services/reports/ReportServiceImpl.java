@@ -6,6 +6,7 @@ import com.sparc.knappsack.components.entities.Group;
 import com.sparc.knappsack.components.entities.Organization;
 import com.sparc.knappsack.components.services.OrganizationService;
 import com.sparc.knappsack.components.services.UserService;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.models.reports.DirectedGraph;
 import com.sparc.knappsack.models.reports.Link;
 import com.sparc.knappsack.models.reports.Node;
@@ -60,7 +61,7 @@ public class ReportServiceImpl implements ReportService {
 
         List<Node> nodes = new ArrayList<Node>();
         List<Link> links = new ArrayList<Link>();
-        List<Organization> organizations = userService.getAdministeredOrganizations(userService.getUserFromSecurityContext());
+        List<Organization> organizations = userService.getAdministeredOrganizations(userService.getUserFromSecurityContext(), SortOrder.ASCENDING);
 
         Node rootNode = new Node();
         rootNode.setType("root");

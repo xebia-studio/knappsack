@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -211,8 +212,8 @@ public class LocalStorageService extends AbstractStorageService implements Stora
         }
     }
 
-    private LocalStorageConfiguration getStorageConfiguration(Long storageConfigurationId) {
-        return (LocalStorageConfiguration) storageConfigurationService.get(storageConfigurationId);
+    protected LocalStorageConfiguration getStorageConfiguration(Long storageConfigurationId) {
+        return storageConfigurationService.get(storageConfigurationId, LocalStorageConfiguration.class);
     }
 
     private String getInitialPath(Long storageConfigurationId, Long orgStorageConfigId) {
@@ -246,5 +247,18 @@ public class LocalStorageService extends AbstractStorageService implements Stora
             entity.setName(form.getName().trim());
             entity.setRegistrationDefault(form.isRegistrationDefault());
         }
+    }
+
+    @Override
+    public InputStream getInputStream(AppFile appFile) {
+        Assert.notNull(appFile, "AppFile cannot be null");
+
+        try {
+            return new FileInputStream(appFile.getAbsolutePath());
+        } catch (FileNotFoundException e) {
+            log.error(String.format("Unable to create FileInputStream for appFile with ID %s", appFile.getId()));
+        }
+
+        return null;
     }
 }

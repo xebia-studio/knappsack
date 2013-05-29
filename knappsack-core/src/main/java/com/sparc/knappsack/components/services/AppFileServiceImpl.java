@@ -81,7 +81,7 @@ public class AppFileServiceImpl implements AppFileService {
             }
         }
 
-        return null;
+        return "";
     }
 
     @Override

@@ -8,4 +8,7 @@ import java.util.List;
 
 public interface SearchService {
     List<ApplicationModel> searchApplications(String criteria, User user, ApplicationType deviceType);
+
+    <D> List<D> searchApplications(String criteria, User user, ApplicationType deviceType, Class<D> classModel);
+
 }

@@ -3,7 +3,6 @@ package com.sparc.knappsack.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,6 +11,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -68,14 +68,14 @@ public class TokenFilter extends AbstractAuthenticationProcessingFilter {
 
         Collection<GrantedAuthority> grantedAuthorityList;
 
-        SimpleGrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_ANONYMOUS");
+        SimpleGrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_IOS");
         grantedAuthorityList = new ArrayList<GrantedAuthority>();
         grantedAuthorityList.add(grantedAuthority);
 
-        Authentication authentication = new AnonymousAuthenticationToken("key", "anonymousUser", grantedAuthorityList);
+        Authentication authentication = new PreAuthenticatedAuthenticationToken(tokenParam, tokenParam, grantedAuthorityList);
         authentication.setAuthenticated(authenticated);
 
-        authenticationSuccessHandler.setDefaultTargetUrl((authenticated ? request.getServletPath() : LOGIN_URL));
+        authenticationSuccessHandler.setDefaultTargetUrl((authenticated ? String.format("%s?token=%s", request.getServletPath(), tokenParam) : LOGIN_URL));
         this.setAuthenticationSuccessHandler(authenticationSuccessHandler);
 
         return authentication;
@@ -86,37 +86,43 @@ public class TokenFilter extends AbstractAuthenticationProcessingFilter {
                          FilterChain chain) throws IOException, ServletException {
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
-        if(request.getMethod().equals(GET) && !request.getServletPath().startsWith("/ios/downloadIOSPlist/")) {
-            // If the incoming request is a POST, then we send it up
-            // to the AbstractAuthenticationProcessingFilter.
+        if(request.getMethod().equals(GET) && request.getServletPath().startsWith("/ios/downloadApplication/")) {
             super.doFilter(request, response, chain);
         } else {
-            // If it's a GET, we ignore this request and send it
-            // to the next filter in the chain.  In this case, that
-            // pretty much means the request will hit the /login
-            // controller which will process the request to show the
-            // login page.
             chain.doFilter(request, response);
         }
     }
 
     @Override
     protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
-        SecurityContext context = SecurityContextHolder.getContext();
-        HttpSession session = request.getSession();
-        if (context != null && context.getAuthentication() != null) {
-            Object continueAttribute = null;
-            if (session != null) {
-                continueAttribute = session.getAttribute("continueAttribute");
-            }
-            if (request.getServletPath().equals("/auth/login")) {
+//        if ("GET".equalsIgnoreCase(request.getMethod()) && request.getServletPath().matches("/ios/downloadApplication/\\d+")) {
+            SecurityContext securityContext = SecurityContextHolder.getContext();
+            if (securityContext != null && securityContext.getAuthentication() != null) {
                 return false;
-            } else if (request.getServletPath().startsWith("/ios/downloadApplication")) {
-                return continueAttribute == null;
             }
-            return false;
-        }
-        return true;
+            return true;
+//        }
+
+//        return false;
     }
+
+//    @Override
+//    protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
+//        SecurityContext context = SecurityContextHolder.getContext();
+//        HttpSession session = request.getSession();
+//        if (context != null && context.getAuthentication() != null) {
+//            Object continueAttribute = null;
+//            if (session != null) {
+//                continueAttribute = session.getAttribute("continueAttribute");
+//            }
+//            if (request.getServletPath().equals("/auth/login")) {
+//                return false;
+//            } else if (request.getServletPath().startsWith("/ios/downloadApplication")) {
+//                return continueAttribute == null;
+//            }
+//            return false;
+//        }
+//        return true;
+//    }
 
 }

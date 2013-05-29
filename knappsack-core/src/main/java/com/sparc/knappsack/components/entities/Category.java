@@ -1,19 +1,18 @@
 package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.StorableType;
-import org.codehaus.jackson.annotate.JsonManagedReference;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.LazyToOne;
+import org.hibernate.annotations.LazyToOneOption;
 
 import javax.persistence.*;
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.Table;
 
 /**
  * A category is a division of applications with a specific purpose.
  */
 @Entity
 @Table(name = "CATEGORY")
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Category extends Storable {
 
     private static final long serialVersionUID = -6859847730817266053L;
@@ -25,9 +24,9 @@ public class Category extends Storable {
     private String description;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
     @JoinColumn(name = "ICON_ID")
-    @Fetch(FetchMode.JOIN)
+    @LazyToOne(value = LazyToOneOption.NO_PROXY)
+//    @Fetch(FetchMode.JOIN)
     private AppFile icon;
 
     @ManyToOne(optional = false)

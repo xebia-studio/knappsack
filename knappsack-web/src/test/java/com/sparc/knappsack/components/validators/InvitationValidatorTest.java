@@ -2,30 +2,29 @@ package com.sparc.knappsack.components.validators;
 
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.components.services.*;
-import com.sparc.knappsack.enums.DomainType;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.forms.InvitationForm;
-import com.sparc.knappsack.forms.InviteeForm;
-import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class InvitationValidatorTest {
@@ -39,7 +38,7 @@ public class InvitationValidatorTest {
     private UserService userService;
 
     @Mock
-    private DomainService domainService;
+    private UserDomainService userDomainService;
 
     @Mock
     private GroupService groupService;
@@ -55,12 +54,14 @@ public class InvitationValidatorTest {
 
     private Errors errors;
     private InvitationForm invitationForm;
+    private User user;
 
     @Before
     public void setup() {
-        invitationForm = createInvitationForm();
+        invitationForm = new InvitationForm();
         errors = new BeanPropertyBindingResult(invitationForm, "invitationForm");
         ReflectionTestUtils.setField(validator, "emailPattern", EMAIL_PATTERN);
+        user = new User("test", "originalPassword", "test@test.com", "test", "test", new ArrayList<Role>());
     }
 
     @Test
@@ -74,150 +75,446 @@ public class InvitationValidatorTest {
     }
 
     @Test
-    public void testValidInvitiation() {
-        invitationForm.getInviteeForms().add(createInviteeForm());
+    public void testValidOrganizationInvitiation() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ORG_ADMIN);
 
-        Organization organization = new Organization();
-        organization.setName("Test Organziation");
-        organization.setDomainConfiguration(new DomainConfiguration());
+        Organization organization = createOrganization(null);
+        user.setActiveOrganization(organization);
+        addUserToDomain(organization, user, UserRole.ROLE_ORG_ADMIN);
 
-        Mockito.when(domainService.get(invitationForm.getDomainId())).thenReturn(organization);
-        Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
+        when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
 
-        Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
-        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong())).thenReturn(new ArrayList<Invitation>());
-        Mockito.when(userService.getByEmail(Matchers.anyString())).thenReturn(null);
+        when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
+        when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong())).thenReturn(new ArrayList<Invitation>());
+        when(userService.getByEmail(Matchers.anyString())).thenReturn(null);
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
 
         validator.validate(invitationForm, errors);
 
         assertFalse(errors.hasErrors());
-
     }
 
     @Test
-    public void testInvalidInvitation() {
-        InviteeForm inviteeForm1 = createInviteeForm();
-        inviteeForm1.setEmail("invalid");
-        inviteeForm1.setUserRole(UserRole.ROLE_ADMIN);
+    public void testValidGroupInvitiation() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ORG_GUEST);
+        invitationForm.setGroupUserRole(UserRole.ROLE_GROUP_ADMIN);
 
-        InviteeForm inviteeForm2 = createInviteeForm();
+        Group group1 = new Group();
+        group1.setName("group1");
+        group1.setId(1L);
+        Group group2 = new Group();
+        group2.setName("group2");
+        group2.setId(2L);
+        List<Group> groups = new ArrayList<Group>();
+        groups.add(group1);
+        groups.add(group2);
 
-        invitationForm.getInviteeForms().add(inviteeForm1);
-        invitationForm.getInviteeForms().add(inviteeForm2);
+        invitationForm.getGroupIds().add(group1.getId());
+        invitationForm.getGroupIds().add(group2.getId());
 
-        List<Invitation> invitations = new ArrayList<Invitation>();
-        Invitation invitation = new Invitation();
-        invitation.setDomain(createDomain(DomainType.ORGANIZATION));
-        invitation.setEmail("test@test.com");
-        Role role = new Role();
-        role.setAuthority(UserRole.ROLE_ORG_USER.name());
-        invitation.setRole(role);
-        invitations.add(invitation);
+        Organization organization = createOrganization(groups);
+        user.setActiveOrganization(organization);
 
-//        when(invitationService.getAll(inviteeForm1.getEmail(), invitationForm.getDomainId(), invitationForm.getDomainType())).thenReturn(invitations);
-        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong())).thenReturn(invitations);
+        when(groupService.get(group1.getId())).thenReturn(group1);
+        when(groupService.get(group2.getId())).thenReturn(group2);
+        when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
+        when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong())).thenReturn(new ArrayList<Invitation>());
+        when(userService.getByEmail(Matchers.anyString())).thenReturn(null);
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+        when(userService.getAdministeredGroups(user, null)).thenReturn(groups);
+        when(userDomainService.get(any(User.class), anyLong())).thenReturn(null);
 
-        User user1 = new User();
+        validator.validate(invitationForm, errors);
 
-        User user2 = new User();
-        user2.setEmail(inviteeForm2.getEmail());
+        assertFalse(errors.hasErrors());
+    }
 
-        Organization organization = new Organization();
-        organization.setName("Test Organziation");
-        organization.setDomainConfiguration(new DomainConfiguration());
+    @Test
+    public void testInvalidEmail() {
+        Organization organization = createOrganization(null);
+        user.setActiveOrganization(organization);
 
-        Mockito.when(domainService.get(invitationForm.getDomainId())).thenReturn(organization);
-        Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
-
-        Mockito.when(userService.getByEmail(inviteeForm1.getEmail())).thenReturn(user1);
-        Mockito.when(userService.isUserInDomain(user1, invitationForm.getDomainId())).thenReturn(false);
-        Mockito.when(userService.getByEmail(inviteeForm2.getEmail())).thenReturn(user2);
-        Mockito.when(userService.isUserInDomain(user2, invitationForm.getDomainId())).thenReturn(true);
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
 
         validator.validate(invitationForm, errors);
 
         assertTrue(errors.hasErrors());
-        Assert.assertEquals(errors.getErrorCount(), 5);
-
-    }
-
-    @Test
-    public void testInvalidUserRole() {
-        InviteeForm inviteeForm = createInviteeForm();
-        inviteeForm.setUserRole(null);
-        invitationForm.getInviteeForms().add(inviteeForm);
-
-        Organization organization = new Organization();
-        organization.setName("Test Organziation");
-        organization.setDomainConfiguration(new DomainConfiguration());
-
-        Mockito.when(domainService.get(invitationForm.getDomainId())).thenReturn(organization);
-        Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
-
-        Mockito.when(invitationService.getAll(Matchers.anyString(), Matchers.anyLong())).thenReturn(null);
-        Mockito.when(userService.getByEmail(Matchers.anyString())).thenReturn(null);
-
-        validator.validate(invitationForm, errors);
-
-        assertTrue(errors.hasGlobalErrors());
-        Assert.assertEquals(errors.getErrorCount(), 1);
-        Assert.assertEquals(errors.getGlobalErrorCount(), 1);
-    }
-
-    @Test
-    public void testEmptyInviteeForms() {
-        Organization organization = new Organization();
-        organization.setName("Test Organziation");
-        organization.setDomainConfiguration(new DomainConfiguration());
-
-        Mockito.when(domainService.get(invitationForm.getDomainId())).thenReturn(organization);
-        Mockito.when(messageSource.getMessage(organization.getDomainType().getMessageKey(), null, LocaleContextHolder.getLocale())).thenReturn("organization");
-
-        validator.validate(invitationForm, errors);
-
-        assertTrue(errors.hasGlobalErrors());
-        Assert.assertEquals(errors.getErrorCount(), 1);
-        Assert.assertEquals(errors.getGlobalErrorCount(), 1);
+        assertTrue(errors.hasFieldErrors("email"));
 
         setup();
 
-        invitationForm.setInviteeForms(null);
+        invitationForm.setEmail("badEmail");
 
         validator.validate(invitationForm, errors);
 
-        assertTrue(errors.hasGlobalErrors());
-        Assert.assertEquals(errors.getErrorCount(), 1);
-        Assert.assertEquals(errors.getGlobalErrorCount(), 1);
+        assertTrue(errors.hasErrors());
+        assertTrue(errors.hasFieldErrors("email"));
     }
 
-    private InvitationForm createInvitationForm() {
-        InvitationForm invitationForm = new InvitationForm();
-        invitationForm.setDomainId(1L);
-        invitationForm.setDomainType(DomainType.ORGANIZATION);
+    @Test
+    public void testInvalidUserRoles() {
+        invitationForm.setEmail("invitee@knappsack.com");
 
-        return invitationForm;
-    }
+        Organization organization = createOrganization(null);
+        user.setActiveOrganization(organization);
 
-    private InviteeForm createInviteeForm() {
-        InviteeForm inviteeForm = new InviteeForm();
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
 
-        inviteeForm.setEmail("test@test.com");
-        inviteeForm.setName("Test");
-        inviteeForm.setUserRole(UserRole.ROLE_ORG_USER);
+        validator.validate(invitationForm, errors);
 
-        return inviteeForm;
-    }
+        assertTrue(errors.hasErrors());
+        assertNotNull(errors.getFieldError("groupUserRole"));
 
-    private Domain createDomain(DomainType domainType) {
-        Domain domain = null;
-        switch (domainType) {
-            case GROUP:
-                domain = new Group();
+        setup();
+
+        invitationForm.setEmail("invitee@knappsack.com");
+
+        user.setActiveOrganization(organization);
+        addUserToDomain(organization, user, UserRole.ROLE_ORG_ADMIN);
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        boolean userRoleErrorExists = false;
+        for(ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.userRole.both.empty".equalsIgnoreCase(error.getCode())) {
+                userRoleErrorExists = true;
                 break;
-            case ORGANIZATION:
-                domain = new Organization();
-                break;
+            }
         }
-        return domain;
+        assertTrue(userRoleErrorExists);
+
+        setup();
+
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ORG_GUEST);
+
+        user.setActiveOrganization(organization);
+        addUserToDomain(organization, user, UserRole.ROLE_ORG_ADMIN);
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        assertNotNull(errors.getFieldError("groupUserRole"));
+        boolean groupUserRoleErrorExists = false;
+        for(ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.orgGuest.groupRole.empty".equalsIgnoreCase(error.getCode())) {
+                userRoleErrorExists = true;
+                break;
+            }
+        }
+        assertTrue(userRoleErrorExists);
+    }
+
+    @Test
+    public void testInvalidOrganizationInvitation_UserNotOrgAdmin() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ADMIN);
+
+        Organization organization = createOrganization(null);
+        user.setActiveOrganization(organization);
+
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        assertTrue(errors.hasFieldErrors("organizationUserRole"));
+    }
+
+    @Test
+    public void testOrganizationOverLimit() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ADMIN);
+
+        Organization organization = createOrganization(null);
+        organization.getDomainConfiguration().setUserLimit(10);
+        user.setActiveOrganization(organization);
+
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+        when(invitationService.countEmailsWithoutInvitationsForOrganization(anySet(), anyLong(), anyBoolean())).thenReturn(1L);
+        when(organizationService.countOrganizationUsers(organization.getId(), true)).thenReturn(8L);
+        when(invitationService.countAllForOrganizationIncludingGroups(organization.getId())).thenReturn(2L);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        boolean userLimitErrorExists = false;
+        for(ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.domain.userLimit".equalsIgnoreCase(error.getCode())) {
+                userLimitErrorExists = true;
+                break;
+            }
+        }
+        assertTrue(userLimitErrorExists);
+    }
+
+    @Test
+    public void testInvitationAlreadyExistsForOrganization() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ADMIN);
+
+        Organization organization = createOrganization(null);
+        organization.getDomainConfiguration().setUserLimit(10);
+        user.setActiveOrganization(organization);
+        addUserToDomain(organization, user, UserRole.ROLE_ORG_ADMIN);
+
+        List<Invitation> existingInvitations = new ArrayList<Invitation>();
+        existingInvitations.add(new Invitation());
+        when(invitationService.getAll(invitationForm.getEmail(), user.getActiveOrganization().getId()) ).thenReturn(existingInvitations);
+
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        boolean invitationExistsErrorExists = false;
+        for (ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.organization.invitationExists".equalsIgnoreCase(error.getCode())) {
+                invitationExistsErrorExists = true;
+                break;
+            }
+        }
+        assertTrue(invitationExistsErrorExists);
+    }
+
+    @Test
+    public void testUserAlreadyBelongsToOrganization() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ADMIN);
+
+        Organization organization = createOrganization(null);
+        organization.getDomainConfiguration().setUserLimit(10);
+        user.setActiveOrganization(organization);
+        addUserToDomain(organization, user, UserRole.ROLE_ORG_ADMIN);
+
+        when(invitationService.getAll(invitationForm.getEmail(), user.getActiveOrganization().getId()) ).thenReturn(null);
+
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+        when(userService.getByEmail(invitationForm.getEmail())).thenReturn(new User());
+        when(userDomainService.get(any(User.class), anyLong())).thenReturn(new UserDomain());
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        boolean userExistsErrorExists = false;
+        for (ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.organization.userExists".equalsIgnoreCase(error.getCode())) {
+                userExistsErrorExists = true;
+                break;
+            }
+        }
+        assertTrue(userExistsErrorExists);
+    }
+
+    @Test
+    public void testEmptyGroupsError() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ORG_GUEST);
+        invitationForm.setGroupUserRole(UserRole.ROLE_GROUP_ADMIN);
+
+        Organization organization = createOrganization(null);
+        user.setActiveOrganization(organization);
+
+        when(invitationService.getAll(invitationForm.getEmail(), user.getActiveOrganization().getId())).thenReturn(null);
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        assertNotNull(errors.getFieldError("groupIds"));
+        boolean groupIdsEmptyErrorExists = false;
+        for (ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.groupIds.invalid".equalsIgnoreCase(error.getCode())) {
+                groupIdsEmptyErrorExists = true;
+                break;
+            }
+        }
+        assertTrue(groupIdsEmptyErrorExists);
+    }
+
+    @Test
+    public void testGroupInviteNotGroupAdminError() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ORG_GUEST);
+        invitationForm.setGroupUserRole(UserRole.ROLE_GROUP_ADMIN);
+
+        Group group1 = new Group();
+        group1.setName("testGroup1");
+        group1.setId(1L);
+        Group group2 = new Group();
+        group2.setName("testGroup");
+        group2.setId(2L);
+        List<Group> groups = new ArrayList<Group>();
+        groups.add(group1);
+        groups.add(group2);
+        Organization organization = createOrganization(groups);
+
+        List<Long> formGroupIds = new ArrayList<Long>();
+        formGroupIds.add(group2.getId());
+        invitationForm.setGroupIds(formGroupIds);
+
+        addUserToDomain(group1, user, UserRole.ROLE_GROUP_USER);
+        user.setActiveOrganization(organization);
+
+        when(invitationService.getAll(invitationForm.getEmail(), user.getActiveOrganization().getId())).thenReturn(null);
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+        when(userService.getAdministeredGroups(any(User.class), any(SortOrder.class))).thenReturn(null);
+
+        validator.validate(invitationForm, errors);
+        assertTrue(errors.hasErrors());
+        assertNotNull(errors.getFieldError("groupIds"));
+        boolean administeredGroupsEmptyErrorExists = false;
+        for (ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.groupIds.invalid".equalsIgnoreCase(error.getCode())) {
+                administeredGroupsEmptyErrorExists = true;
+                break;
+            }
+        }
+        assertTrue(administeredGroupsEmptyErrorExists);
+
+        errors = new BeanPropertyBindingResult(invitationForm, "invitationForm");
+
+        List<Group> administeredGroups = new ArrayList<Group>();
+        administeredGroups.add(group1);
+
+        when(userService.getAdministeredGroups(any(User.class), any(SortOrder.class))).thenReturn(administeredGroups);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        assertNotNull(errors.getFieldError("groupIds"));
+        boolean groupSecurityErrorExists = false;
+        for (ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.security.group.invalid".equalsIgnoreCase(error.getCode())) {
+                groupSecurityErrorExists = true;
+                break;
+            }
+        }
+        assertTrue(groupSecurityErrorExists);
+    }
+
+    @Test
+    public void testInvitationAlreadyExistsForGroup() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ORG_GUEST);
+        invitationForm.setGroupUserRole(UserRole.ROLE_GROUP_ADMIN);
+
+        Group group1 = new Group();
+        group1.setName("testGroup1");
+        group1.setId(1L);
+        Group group2 = new Group();
+        group2.setName("testGroup");
+        group2.setId(2L);
+        List<Group> groups = new ArrayList<Group>();
+        groups.add(group1);
+        groups.add(group2);
+        Organization organization = createOrganization(groups);
+        user.setActiveOrganization(organization);
+        for(Group group : groups) {
+            addUserToDomain(group, user, UserRole.ROLE_GROUP_ADMIN);
+        }
+
+        List<Long> formGroupIds = new ArrayList<Long>();
+        formGroupIds.add(group2.getId());
+        invitationForm.setGroupIds(formGroupIds);
+
+        List<Invitation> existingInvitations = new ArrayList<Invitation>();
+        existingInvitations.add(new Invitation());
+        when(invitationService.getAll(invitationForm.getEmail(), group2.getId()) ).thenReturn(existingInvitations);
+
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+        when(userService.getAdministeredGroups(any(User.class), any(SortOrder.class))).thenReturn(groups);
+        when(groupService.get(group2.getId())).thenReturn(group2);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        boolean invitationExistsErrorExists = false;
+        for (ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.group.invitationExists".equalsIgnoreCase(error.getCode())) {
+                invitationExistsErrorExists = true;
+                break;
+            }
+        }
+        assertTrue(invitationExistsErrorExists);
+    }
+
+    @Test
+    public void testUserAlreadyBelongsToGroup() {
+        invitationForm.setEmail("invitee@knappsack.com");
+        invitationForm.setOrganizationUserRole(UserRole.ROLE_ORG_GUEST);
+        invitationForm.setGroupUserRole(UserRole.ROLE_GROUP_ADMIN);
+
+        Group group1 = new Group();
+        group1.setName("testGroup1");
+        group1.setId(1L);
+        Group group2 = new Group();
+        group2.setName("testGroup");
+        group2.setId(2L);
+        List<Group> groups = new ArrayList<Group>();
+        groups.add(group1);
+        groups.add(group2);
+        Organization organization = createOrganization(groups);
+        user.setActiveOrganization(organization);
+        for(Group group : groups) {
+            addUserToDomain(group, user, UserRole.ROLE_GROUP_ADMIN);
+        }
+
+        List<Long> formGroupIds = new ArrayList<Long>();
+        formGroupIds.add(group2.getId());
+        invitationForm.setGroupIds(formGroupIds);
+
+        when(invitationService.getAll(invitationForm.getEmail(), group2.getId())).thenReturn(null);
+
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
+        when(userService.getAdministeredGroups(any(User.class), any(SortOrder.class))).thenReturn(groups);
+        when(userService.getByEmail(invitationForm.getEmail())).thenReturn(new User());
+        when(userDomainService.get(any(User.class), anyLong())).thenReturn(new UserDomain());
+        when(groupService.get(group2.getId())).thenReturn(group2);
+
+        validator.validate(invitationForm, errors);
+
+        assertTrue(errors.hasErrors());
+        boolean userExistsError = false;
+        for (ObjectError error : errors.getAllErrors()) {
+            if ("invitationValidator.group.userExists".equalsIgnoreCase(error.getCode())) {
+                userExistsError = true;
+                break;
+            }
+        }
+        assertTrue(userExistsError);
+    }
+
+    private Organization createOrganization(List<Group> groups) {
+        Organization organization = new Organization();
+        organization.setName("Test Organziation");
+        organization.setDomainConfiguration(new DomainConfiguration());
+        organization.setId(2L);
+        if (!CollectionUtils.isEmpty(groups)) {
+            for (Group group : groups) {
+                group.setOrganization(organization);
+            }
+            organization.getGroups().addAll(groups);
+        }
+
+        return organization;
+    }
+
+    private UserDomain addUserToDomain(Domain domain, User user, UserRole userRole) {
+        UserDomain userDomain = new UserDomain();
+        userDomain.setId(1L);
+        userDomain.setUser(user);
+        userDomain.setDomain(domain);
+        Role role = new Role();
+        role.setAuthority(userRole.name());
+        userDomain.setRole(role);
+        user.getUserDomains().add(userDomain);
+
+        return userDomain;
     }
 }

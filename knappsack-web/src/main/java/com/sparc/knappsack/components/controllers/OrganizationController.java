@@ -1,16 +1,19 @@
 package com.sparc.knappsack.components.controllers;
 
-import com.sparc.knappsack.components.entities.ApplicationVersion;
+import com.sparc.knappsack.components.entities.AppFile;
 import com.sparc.knappsack.components.entities.Organization;
 import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.components.validators.OrganizationValidator;
 import com.sparc.knappsack.enums.AppState;
+import com.sparc.knappsack.enums.DomainType;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.OrganizationForm;
 import com.sparc.knappsack.forms.Result;
 import com.sparc.knappsack.models.DomainStatisticsModel;
+import com.sparc.knappsack.models.InternationalizedObject;
 import com.sparc.knappsack.models.OrganizationModel;
 import com.sparc.knappsack.models.UserDomainModel;
 import org.slf4j.Logger;
@@ -18,7 +21,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,6 +35,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -49,9 +56,6 @@ public class OrganizationController extends AbstractController {
     private StorageConfigurationService storageConfigurationService;
 
     @Autowired(required = true)
-    private ApplicationVersionService applicationVersionService;
-
-    @Autowired(required = true)
     private CategoryService categoryService;
 
     @Qualifier("bandwidthService")
@@ -70,9 +74,18 @@ public class OrganizationController extends AbstractController {
     @Autowired(required = true)
     private UserService userService;
 
+    @Qualifier("invitationService")
+    @Autowired(required = true)
+    private InvitationService invitationService;
+
+    @Qualifier("messageSource")
+    @Autowired(required = true)
+    private MessageSource messageSource;
+
     @InitBinder("organization")
     protected void initBinder(WebDataBinder binder) {
         binder.setValidator(organizationValidator);
+        binder.setBindEmptyMultipartFiles(false);
         binder.registerCustomEditor(Date.class, new CustomDateEditor(new SimpleDateFormat("MM/dd/yyyy"), true));
     }
 
@@ -96,8 +109,7 @@ public class OrganizationController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin(#id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editOrg/{id}", method = RequestMethod.GET)
-    public String editOrganization(Model model, @PathVariable Long id)  {
-
+    public String editOrganization(HttpServletRequest request, Model model, @PathVariable Long id)  {
         checkRequiredEntity(organizationService, id);
         Organization existingOrg = organizationService.get(id);
 
@@ -110,6 +122,17 @@ public class OrganizationController extends AbstractController {
                 orgForm.setStorageConfigurationId(existingOrg.getOrgStorageConfig().getStorageConfigurations().get(0).getId());
                 orgForm.setStoragePrefix(existingOrg.getOrgStorageConfig().getPrefix());
 
+                if (existingOrg.getCustomBranding() != null) {
+                    AppFile logo = existingOrg.getCustomBranding().getLogo();
+                    if (logo != null) {
+                        MockMultipartFile logoMultipartFile = new MockMultipartFile(logo.getName(), logo.getName(), logo.getType(), new byte[0]);
+                        orgForm.setLogo(logoMultipartFile);
+                    }
+                    orgForm.setEmailHeader(existingOrg.getCustomBranding().getEmailHeader());
+                    orgForm.setEmailFooter(existingOrg.getCustomBranding().getEmailFooter());
+                    orgForm.setSubdomain(existingOrg.getCustomBranding().getSubdomain());
+                }
+
                 model.addAttribute("organization", orgForm);
             } else {
                 ((OrganizationForm) model.asMap().get("organization")).setStorageConfigurationId(existingOrg.getOrgStorageConfig().getStorageConfigurations().get(0).getId());
@@ -117,33 +140,62 @@ public class OrganizationController extends AbstractController {
             model.addAttribute("originalName", existingOrg.getName());
             model.addAttribute("categories", existingOrg.getCategories());
             model.addAttribute("appStates", AppState.values());
-            List<ApplicationVersion> applicationVersions = applicationVersionService.getAll(existingOrg.getId());
-            model.addAttribute("applicationVersions", applicationVersions);
-            boolean hasApplicationRequests = false;
-            for (ApplicationVersion applicationVersion : applicationVersions) {
-                if(AppState.ORG_PUBLISH_REQUEST.equals(applicationVersion.getAppState())) {
-                    hasApplicationRequests = true;
-                    break;
-                }
-            }
-            model.addAttribute("hasApplicationRequests", hasApplicationRequests);
-
-            List<UserDomainModel> organizationMembers = organizationService.getAllOrganizationMembers(id, false);
-            model.addAttribute("organizationMembers", organizationMembers);
-            List<UserDomainModel> organizationGuests = organizationService.getAllOrganizationGuests(id);
-            model.addAttribute("organizationGuests", organizationGuests);
+//            List<ApplicationVersion> applicationVersions = applicationVersionService.getAll(existingOrg.getId());
+//            model.addAttribute("applicationVersions", applicationVersions);
+//            boolean hasApplicationRequests = false;
+//            for (ApplicationVersion applicationVersion : applicationVersions) {
+//                if(AppState.ORG_PUBLISH_REQUEST.equals(applicationVersion.getAppState())) {
+//                    hasApplicationRequests = true;
+//                    break;
+//                }
+//            }
+//            model.addAttribute("hasApplicationRequests", hasApplicationRequests);
 
             model.addAttribute("domainStatistics", getDomainStatisticsModel(existingOrg));
 
-            List<UserRole> userRoles = new ArrayList<UserRole>();
-            userRoles.add(UserRole.ROLE_ORG_ADMIN);
-            userRoles.add(UserRole.ROLE_ORG_USER);
+            List<InternationalizedObject> userRoles = new ArrayList<InternationalizedObject>();
+            for (UserRole userRole : UserRole.getAllSelectableForDomainType(DomainType.ORGANIZATION)) {
+                try {
+                    userRoles.add(new InternationalizedObject(userRole, messageSource.getMessage(userRole.getMessageKey(), null, request.getLocale())));
+                } catch (NoSuchMessageException ex) {
+                    log.error(String.format("No message for userRole: %s", userRole.name()), ex);
+
+                    // Put the userRole name so that the application doesn't error out.
+                    userRoles.add(new InternationalizedObject(userRole, userRole.name()));
+                }
+            }
             model.addAttribute("userRoles", userRoles);
 
+//            List<InternationalizedObject> applicationTypes = new ArrayList<InternationalizedObject>();
+//            for (ApplicationType applicationType : ApplicationType.values()) {
+//                try {
+//                    applicationTypes.add(new InternationalizedObject(applicationType, messageSource.getMessage(applicationType.getMessageKey(), null, request.getLocale())));
+//                } catch (NoSuchMessageException ex) {
+//                    log.error(String.format("No message for applicationType: %s", applicationType.name()), ex);
+//
+//                    // Put the userRole name so that the application doesn't error out.
+//                    applicationTypes.add(new InternationalizedObject(applicationType, applicationType.name()));
+//                }
+//            }
+//            model.addAttribute("applicationTypes", applicationTypes);
+//
+//            List<InternationalizedObject> appStates = new ArrayList<InternationalizedObject>();
+//            for (AppState appState : AppState.values()) {
+//                try {
+//                    appStates.add(new InternationalizedObject(appState, messageSource.getMessage(appState.getMessageKey(), null, request.getLocale())));
+//                } catch (NoSuchMessageException ex) {
+//                    log.error(String.format("No message for appState: %s", appState.name()), ex);
+//
+//                    // Put the userRole name so that the application doesn't error out.
+//                    appStates.add(new InternationalizedObject(appState, appState.name()));
+//                }
+//            }
+//            model.addAttribute("appStates", appStates);
 
             model.addAttribute("storageConfigurations", storageConfigurationService.getAll());
             model.addAttribute("isEdit", true);
 
+            model.addAttribute("customBrandingEnabled", organizationService.isCustomBrandingEnabled(existingOrg));
             return "manager/manageOrganizationTH";
         }
         throw new EntityNotFoundException(String.format("Organization not found: %s", id));
@@ -171,7 +223,7 @@ public class OrganizationController extends AbstractController {
 
     @PreAuthorize("isOrganizationAdmin(#organizationForm.id) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadOrg", method = RequestMethod.POST)
-    public String uploadOrganization(Model model, @ModelAttribute("organization") @Validated OrganizationForm organizationForm, BindingResult bindingResult) {
+    public String uploadOrganization(HttpServletRequest request, Model model, @ModelAttribute("organization") @Validated OrganizationForm organizationForm, BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             if(!model.containsAttribute("organization")) {
@@ -180,21 +232,21 @@ public class OrganizationController extends AbstractController {
             model.addAttribute("storageConfigurations", storageConfigurationService.getAll());
             model.addAttribute("organization", organizationForm);
             if (organizationForm.isEditing()) {
-                return editOrganization(model, organizationForm.getId());
+                return editOrganization(request, model, organizationForm.getId());
             } else {
                 return addOrganization(model);
             }
         }
 
-        OrganizationModel organizationModel = new OrganizationModel();
-        organizationModel.setId(organizationForm.getId());
-        organizationModel.setName(organizationForm.getName());
-        organizationModel.setStorageConfigurationId(organizationForm.getStorageConfigurationId());
-        organizationModel.setStoragePrefix(organizationForm.getStoragePrefix());
+//        OrganizationModel organizationModel = new OrganizationModel();
+//        organizationModel.setId(organizationForm.getId());
+//        organizationModel.setName(organizationForm.getName());
+//        organizationModel.setStorageConfigurationId(organizationForm.getStorageConfigurationId());
+//        organizationModel.setStoragePrefix(organizationForm.getStoragePrefix());
 
         Long orgId = organizationForm.getId();
         if(organizationForm.getId() != null && organizationForm.getId() > 0) {
-            organizationService.editOrganization(organizationModel);
+            organizationService.editOrganization(organizationForm);
         } else {
             //Only create organization if user is System Admin
             User user = userService.getUserFromSecurityContext();
@@ -205,7 +257,7 @@ public class OrganizationController extends AbstractController {
                 return addOrganization(model);
             }
 
-            Organization organization = organizationService.createOrganization(organizationModel);
+            Organization organization = organizationService.createOrganization(organizationForm);
             if (organization == null || organization.getId() == null || organization.getId() <= 0) {
                 String[] codes = {"desktop.manager.organization.create.error"};
                 ObjectError error = new ObjectError("organizationForm", codes, null, null);
@@ -259,6 +311,7 @@ public class OrganizationController extends AbstractController {
     @ResponseBody
     Result removeUsers(@RequestParam Long organizationId, @RequestParam(value = "userIds[]") List<Long> userIds) {
         Result result = new Result();
+        List<Long> userIdsRemoved = new ArrayList<Long>();
 
         try {
             checkRequiredEntity(organizationService, organizationId);
@@ -274,16 +327,17 @@ public class OrganizationController extends AbstractController {
             for (Long userId : userIds) {
                 if (user != null && !userId.equals(user.getId())) {
                     organizationService.removeUserFromOrganization(organizationId, userId);
-                    result.getIds().add(userId);
+                    userIdsRemoved.add(userId);
                 }
             }
         }
 
-        if (result.getIds().size() != userIds.size()) {
+        if (userIdsRemoved.size() != userIds.size()) {
             result.setResult(false);
         } else {
             result.setResult(true);
         }
+        result.setValue(userIdsRemoved);
 
         return result;
     }
@@ -324,16 +378,93 @@ public class OrganizationController extends AbstractController {
     public @ResponseBody List<OrganizationModel> getOrganizationsForUser() {
         User user = userService.getUserFromSecurityContext();
 
-        return organizationService.createOrganizationModelsWithoutStorageConfiguration(userService.getAdministeredOrganizations(user), false);
+        return organizationService.createOrganizationModelsWithoutStorageConfiguration(userService.getAdministeredOrganizations(user, SortOrder.ASCENDING), false, SortOrder.ASCENDING);
     }
+
+    @PreAuthorize("isOrganizationAdmin(#id) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/deleteOrgLogo", method = RequestMethod.POST)
+    public @ResponseBody Result deleteOrganizationLogo(@RequestParam(required = true) Long id) {
+        Result result = new Result();
+
+        organizationService.deleteLogo(id);
+
+        result.setResult(true);
+
+        return result;
+    }
+
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @RequestMapping(value = "/activeOrganizations", method = RequestMethod.GET)
+    public @ResponseBody List<OrganizationModel> getOrganizations() {
+        User user = userService.getUserFromSecurityContext();
+
+        return organizationService.createOrganizationModelsWithoutStorageConfiguration(userService.getOrganizations(user, SortOrder.ASCENDING), false, SortOrder.ASCENDING);
+    }
+
+    @PreAuthorize("isUserInOrganization(#id) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/activeOrganization/{id}")
+    public String setActiveOrganization(@PathVariable Long id) {
+        User user = userService.getUserFromSecurityContext();
+        user.setActiveOrganization(organizationService.get(id));
+        userService.update(user);
+
+        return "redirect:/home";
+    }
+
+    @PreAuthorize("isOrganizationAdminForActiveOrganization() or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/getUsersForActiveOrganization", method = RequestMethod.GET)
+    public @ResponseBody List<UserDomainModel> getUsersForActiveOrganization(@RequestParam(required = true) boolean includeGuests) {
+        List<UserDomainModel> userDomainModels = new ArrayList<UserDomainModel>();
+        User user = userService.getUserFromSecurityContext();
+
+        if (user != null && user.getActiveOrganization() != null) {
+            userDomainModels.addAll(organizationService.getAllOrganizationMembers(user.getActiveOrganization().getId(), includeGuests));
+        }
+
+        return userDomainModels;
+    }
+
+    @PreAuthorize("isOrganizationAdminForActiveOrganization() or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/getGuestsForActiveOrganization", method = RequestMethod.GET)
+    public @ResponseBody List<UserDomainModel> getGuestsForActiveOrganization() {
+        List<UserDomainModel> userDomainModels = new ArrayList<UserDomainModel>();
+        User user = userService.getUserFromSecurityContext();
+
+        if (user != null && user.getActiveOrganization() != null) {
+            userDomainModels.addAll(organizationService.getAllOrganizationGuests(user.getActiveOrganization()));
+        }
+
+        return userDomainModels;
+    }
+
+//    @PreAuthorize("isOrganizationAdminForActiveOrganization() or hasRole('ROLE_ADMIN')")
+//    @RequestMapping(value = "/manager/getApplicationsForActiveOrganization", method = RequestMethod.GET)
+//    public @ResponseBody List<ApplicationVersionModel> getAllApplicationVersionsForActiveOrganization(@RequestParam(required = true) boolean includeAppFiles) {
+//        List<ApplicationVersionModel> applicationVersionModels = new ArrayList<ApplicationVersionModel>();
+//        User user = userService.getUserFromSecurityContext();
+//
+//        if (user != null && user.getActiveOrganization() != null) {
+//            List<ApplicationVersion> applicationVersions = applicationVersionService.getAll(user.getActiveOrganization().getId());
+//            if (applicationVersions != null) {
+//                for (ApplicationVersion applicationVersion : applicationVersions) {
+//                    ApplicationVersionModel model = applicationVersionService.createApplicationVersionModel(applicationVersion, includeInstallFile);
+//                    if (model != null) {
+//                        applicationVersionModels.add(model);
+//                    }
+//                }
+//            }
+//        }
+//        return applicationVersionModels;
+//    }
 
     private DomainStatisticsModel getDomainStatisticsModel(Organization organization) {
         DomainStatisticsModel domainStatisticsModel = new DomainStatisticsModel();
-        domainStatisticsModel.setTotalApplications(organizationService.getTotalApplications(organization));
-        domainStatisticsModel.setTotalApplicationVersions(organizationService.getTotalApplicationVersions(organization));
-        domainStatisticsModel.setTotalUsers(organizationService.getTotalUsers(organization));
+        domainStatisticsModel.setTotalApplications(organization != null ? organizationService.countOrganizationApps(organization.getId()) : 0);
+        domainStatisticsModel.setTotalApplicationVersions(organization != null ? organizationService.countOrganizationAppVersions(organization.getId()) : 0);
+        domainStatisticsModel.setTotalUsers(organization != null ? organizationService.countOrganizationUsers(organization.getId(), true) : 0);
+        domainStatisticsModel.setTotalPendingInvitations(organization != null ? invitationService.countAllForOrganizationIncludingGroups(organization.getId()) : 0);
         domainStatisticsModel.setTotalMegabyteStorageAmount(organizationService.getTotalMegabyteStorageAmount(organization));
-        domainStatisticsModel.setTotalMegabyteBandwidthUsed(bandwidthService.getMegabyteBandwidthUsed(organization.getId()));
+        domainStatisticsModel.setTotalMegabyteBandwidthUsed(organization != null ? bandwidthService.getMegabyteBandwidthUsed(organization.getId()) : 0);
 
         return domainStatisticsModel;
     }

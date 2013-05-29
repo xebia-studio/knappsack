@@ -1,173 +1,50 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="active='organizationNav',title=#{desktop.manager.title}">
+<html xmlns:th="http://www.thymeleaf.org" th:with="adminOrganizationNavActive=${true},title=#{desktop.manager.title}">
 
 <head th:substituteby="/includesTH :: head"></head>
 
-<body class="lightNav">
+<body>
 
-<div th:substituteby="/includesTH :: header"/>
+<div class="container knappsack-container">
 
-<div class="container-fluid">
+    <div th:substituteby="/includesTH :: header"/>
 
-    <script type="text/javascript" th:inline="javascript">
-        /*<![CDATA[*/
-        $(document).ready(function () {
+    <div class="row">
 
-            var contextPath = /*[[${#httpServletRequest.contextPath}]]*/ "";
-            var getOrganizationsUrl = /*[[@{/manager/getOrganizationsForUser}]]*/ '/manager/getOrganizationsForUser';
-
-            var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
-            var $orgTable = $('#organizationTable').dataTable( {
-                "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
-                "sPaginationType": "bootstrap",
-                "oLanguage": {
-                    "sLengthMenu": "_MENU_ " + recordsPerPage
-                },
-                "bSort": true,
-                "sAjaxSource": getOrganizationsUrl,
-                "sAjaxDataProp":"",
-                "bProcessing": true,
-                "bAutoWidth": true,
-                "aoColumnDefs" : [
-                    {
-                        "aTargets" : [0],
-                        "mData" : "name",
-                        "sDefaultContent" : "N/A"
-                    },
-                    {
-                        "bSortable" : false,
-                        "aTargets" : [1],
-                        "mData" : "id",
-                        "mRender" : function(data, type, full) {
-                            var editOrganizationUrl = contextPath + '/manager/editOrg/';
-                            var editText = /*[[#{desktop.organizations.edit}]]*/ 'Edit';
-                            var $elem = $('<a>').attr('href', editOrganizationUrl + data).text(editText);
-                            return $('<div>').append($elem).html();
-                        },
-                        "sDefaultContent" : "N/A"
-                    },
-                    {
-                        "bVisible" : false,
-                        "bSortable" : false,
-                        "aTargets" : [2],
-                        "mData" : "id",
-                        "mRender" : function(data, type, full) {
-                            var deleteText = /*[[#{desktop.organizations.delete}]]*/ 'Delete';
-                            var $elem = $('<a>').attr('href', '#').text(deleteText).addClass('deleteOrg');
-//                            $elem.on('click', deleteOrgEvent);
-                            return $('<div>').append($elem).html();
-                        },
-                        "sDefaultContent" : "N/A"
-                    }
-                ],
-                "fnCreatedRow": function( nRow, aData, iDataIndex ) {
-                    $(nRow).data('org-id', aData.id);
-                },
-                "fnInitComplete": function() {
-                    this.fnAdjustColumnSizing(true);
-                    toggleDeleteColumn();
-                },
-                "fnDrawCallback": function () {
-                    $('.deleteOrg').on('click', deleteOrgEvent);
-                }
-            });
-
-            function toggleDeleteColumn() {
-                var isSystemAdmin = /*[[${#bools.isTrue(user.systemAdmin)}]]*/ false;
-                $orgTable.fnSetColumnVis(2, isSystemAdmin);
-            }
-
-            var deleteOrgEvent = function(e) {
-                e.preventDefault();
-
-                var title = /*[[#{desktop.organizations.deleteConfirmation.title}]]*/ 'Delete Organization';
-                var data = { 'title' : title, 'orgId' : $(this).closest('tr').data('org-id')}
-                showModal("#confirmationModal", data, fnOnDeleteOrgConfirmationModalShow, fnOnDeleteOrgConfirmationModalHide);
-            };
-
-            var fnOnDeleteOrgConfirmationModalShow = function(data) {
-                var deleteOrgUrl = /*[[@{/manager/deleteOrg}]]*/ '/manager/deleteOrg';
-                $('.modal-header h3', '#confirmationModal').text(data.title);
-                $('#confirmationModalSubmit').off('click');
-                $('#confirmationModalSubmit').on('click', function(e) {
-                    $.post(deleteOrgUrl, {"id":data.orgId}, function(result) {
-                        if (result.result) {
-                            $('#confirmationModal .modal-body .alert-error').hide();
-                            $('#confirmationModal .modal-body .alert-success').show();
-                            $orgTable.fnReloadAjax(getOrganizationsUrl);
-                            hideModal(500);
-                        } else {
-                            $('#confirmationModal .modal-body .alert-error').show();
-                            $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
-                            $('#confirmationModal .close').removeAttr('disabled');
-                        }
-                    });
-                });
-            }
-
-            var fnOnDeleteOrgConfirmationModalHide = function() {
-                $('#confirmationModal .modal-body .alert').hide();
-                $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
-                $('#confirmationModal .close').removeAttr('disabled');
-            };
-
-            function showModal(id, data, fnOnShow, fnOnHide) {
-                if (id.substr(0, 1) !== '#') {
-                    id = '#' + id;
-                }
-
-                $(id).off('show');
-                $(id).on('show', fnOnShow(data));
-
-                $(id).off('hidden');
-                $(id).on('hidden', fnOnHide());
-
-                $(id).modal();
-            }
-
-            function hideModal(delay) {
-                setTimeout(function () {
-                            $('.modal').modal('hide');
-                        }, delay
-                );
-            }
-
-        });
-        /*]]>*/
-    </script>
-
-    <div class="row-fluid">
-
-        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
+        <div th:substituteby="/includesTH :: side_menu"/>
 
         <div class="span10">
 
-            <header class="jumbotron subhead" id="overview">
-                <h1 th:text="#{desktop.organizations}">Organizations</h1>
 
-                <p class="lead" th:text="#{desktop.organizations.allOrgs}">
-                    All organizations that you have access to.
-                </p>
 
-                <div>
-                    <a id="addOrgBtn" href="manageGroupTH.html" th:href="@{/manager/addOrg}" class="btn btn-success" th:if="${user.systemAdmin}" th:inline="text"><i class="icon-plus icon-white"/> [[#{desktop.organizations.addNew}]]</a>
+
+            <div class="page-info callout"> <b class="notch"></b>
+                <span class="page-info-bold" th:text="#{desktop.organizations}">Organizations:</span> <span th:text="#{desktop.organizations.allOrgs}">All organizations that you have access to.</span>
+            </div>
+
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid page-header" style="border: none;">
+                        <div class="row-fluid page-header" th:if="${user.systemAdmin}">
+                            <a id="addOrgBtn" href="manageGroupTH.html" th:href="@{/manager/addOrg}" class="btn btn-success"><i class="icon-plus icon-white"/> <span th:text="#{desktop.organizations.addNew}">Add New Organization</span></a>
+                        </div>
+                        <div class="row-fluid">
+                            <table id="organizationTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
+                                <thead>
+                                <tr>
+                                    <th th:text="#{desktop.organizations.name}">Name</th>
+                                    <th th:text="#{desktop.organizations.edit}">Edit</th>
+                                    <th th:text="#{desktop.organizations.delete}" th:if="${#bools.isTrue(user.systemAdmin)}">Delete</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-            </header>
-
-            <section class="well">
-                <table id="organizationTable" cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered">
-                    <thead>
-                    <tr>
-                        <th th:text="#{desktop.organizations.name}">Name</th>
-                        <th th:text="#{desktop.organizations.edit}">Edit</th>
-                        <th th:text="#{desktop.organizations.delete}" th:if="${#bools.isTrue(user.systemAdmin)}">Delete</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </section>
+            </div>
 
         </div>
 
@@ -179,10 +56,134 @@
 
 <footer th:substituteby="/includesTH :: footer"></footer>
 
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-    <section th:include="/includesTH :: table_scripts"/>
-</section>
+<div th:substituteby="/includesTH :: scripts"/>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    $(document).ready(function () {
+
+        var contextPath = /*[[${#httpServletRequest.contextPath}]]*/ "";
+        var getOrganizationsUrl = /*[[@{/manager/getOrganizationsForUser}]]*/ '/manager/getOrganizationsForUser';
+
+        var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
+        var $orgTable = $('#organizationTable').dataTable( {
+            "sDom": "<'table-inline'<<'span6'l><'pull-right'f>r>t<<'span6'i><'pull-right'p>>>",
+            "sPaginationType": "bootstrap",
+            "oLanguage": {
+                "sLengthMenu": "_MENU_ " + recordsPerPage
+            },
+            "bSort": true,
+            "sAjaxSource": getOrganizationsUrl,
+            "sAjaxDataProp":"",
+            "bProcessing": true,
+            "bAutoWidth": true,
+            "aoColumnDefs" : [
+                {
+                    "aTargets" : [0],
+                    "mData" : "name",
+                    "sDefaultContent" : "N/A"
+                },
+                {
+                    "bSortable" : false,
+                    "aTargets" : [1],
+                    "mData" : "id",
+                    "mRender" : function(data, type, full) {
+                        var editOrganizationUrl = contextPath + '/manager/editOrg/';
+                        var editText = /*[[#{desktop.organizations.edit}]]*/ 'Edit';
+                        var $elem = $('<a>').attr('href', editOrganizationUrl + data).text(editText);
+                        return $('<div>').append($elem).html();
+                    },
+                    "sDefaultContent" : "N/A"
+                },
+                {
+                    "bVisible" : false,
+                    "bSortable" : false,
+                    "aTargets" : [2],
+                    "mData" : "id",
+                    "mRender" : function(data, type, full) {
+                        var deleteText = /*[[#{desktop.organizations.delete}]]*/ 'Delete';
+                        var $elem = $('<a>').attr('href', '#').text(deleteText).addClass('deleteOrg');
+//                            $elem.on('click', deleteOrgEvent);
+                        return $('<div>').append($elem).html();
+                    },
+                    "sDefaultContent" : "N/A"
+                }
+            ],
+            "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+                $(nRow).data('org-id', aData.id);
+            },
+            "fnInitComplete": function() {
+                this.fnAdjustColumnSizing(true);
+                toggleDeleteColumn();
+            },
+            "fnDrawCallback": function () {
+                $('.deleteOrg').on('click', deleteOrgEvent);
+            }
+        });
+
+        function toggleDeleteColumn() {
+            var isSystemAdmin = /*[[${#bools.isTrue(user.systemAdmin)}]]*/ false;
+            $orgTable.fnSetColumnVis(2, isSystemAdmin);
+        }
+
+        var deleteOrgEvent = function(e) {
+            e.preventDefault();
+
+            var title = /*[[#{desktop.organizations.deleteConfirmation.title}]]*/ 'Delete Organization';
+            var data = { 'title' : title, 'orgId' : $(this).closest('tr').data('org-id')}
+            showModal("#confirmationModal", data, fnOnDeleteOrgConfirmationModalShow, fnOnDeleteOrgConfirmationModalHide);
+        };
+
+        var fnOnDeleteOrgConfirmationModalShow = function(data) {
+            var deleteOrgUrl = /*[[@{/manager/deleteOrg}]]*/ '/manager/deleteOrg';
+            $('.modal-header h3', '#confirmationModal').text(data.title);
+            $('#confirmationModalSubmit').off('click');
+            $('#confirmationModalSubmit').on('click', function(e) {
+                $.post(deleteOrgUrl, {"id":data.orgId}, function(result) {
+                    if (result.result) {
+                        $('#confirmationModal .modal-body .alert-error').hide();
+                        $('#confirmationModal .modal-body .alert-success').show();
+                        $orgTable.fnReloadAjax(getOrganizationsUrl);
+                        hideModal(500);
+                    } else {
+                        $('#confirmationModal .modal-body .alert-error').show();
+                        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                        $('#confirmationModal .close').removeAttr('disabled');
+                    }
+                });
+            });
+        }
+
+        var fnOnDeleteOrgConfirmationModalHide = function() {
+            $('#confirmationModal .modal-body .alert').hide();
+            $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+            $('#confirmationModal .close').removeAttr('disabled');
+        };
+
+        function showModal(id, data, fnOnShow, fnOnHide) {
+            if (id.substr(0, 1) !== '#') {
+                id = '#' + id;
+            }
+
+            $(id).off('show');
+            $(id).on('show', fnOnShow(data));
+
+            $(id).off('hidden');
+            $(id).on('hidden', fnOnHide());
+
+            $(id).modal();
+        }
+
+        function hideModal(delay) {
+            setTimeout(function () {
+                        $('.modal').modal('hide');
+                    }, delay
+            );
+        }
+
+    });
+    /*]]>*/
+</script>
 
 </body>
 </html>

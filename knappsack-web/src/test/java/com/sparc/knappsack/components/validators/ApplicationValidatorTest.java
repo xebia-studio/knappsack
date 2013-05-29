@@ -1,7 +1,15 @@
 package com.sparc.knappsack.components.validators;
 
+import com.sparc.knappsack.components.entities.Application;
+import com.sparc.knappsack.components.entities.Group;
+import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.User;
+import com.sparc.knappsack.components.services.GroupService;
+import com.sparc.knappsack.components.services.OrganizationService;
+import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.enums.ApplicationType;
-import com.sparc.knappsack.forms.UploadApplication;
+import com.sparc.knappsack.forms.ApplicationForm;
+import com.sparc.knappsack.forms.ApplicationVersionForm;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,14 +17,16 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.image.BufferedImage;
+
 import static junit.framework.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationValidatorTest {
@@ -24,23 +34,36 @@ public class ApplicationValidatorTest {
     @Mock
     private ImageValidator mockImageValidator;
 
+    @Mock
+    private UserService mockUserService;
+
+    @Mock
+    private OrganizationService mockOrganizationService;
+
+    @Mock
+    private GroupService mockGroupService;
+
+    @Mock
+    private ApplicationVersionValidator mockApplicationVersionValidator;
+
     @InjectMocks
     private ApplicationValidator validator = new ApplicationValidator();
 
     @Mock private MockMultipartFile mockMultipartFile;
 
     private Errors errors;
-    private UploadApplication uploadApplication;
+    private ApplicationForm applicationForm;
+    private User user = mock(User.class);
 
     @Before
     public void setup() {
-        uploadApplication = new UploadApplication();
-        errors = new BeanPropertyBindingResult(uploadApplication, "uploadApplication");
+        applicationForm = new ApplicationForm();
+        errors = new BeanPropertyBindingResult(applicationForm, "applicationForm");
     }
 
     @Test
     public void testValidatorSupportsClass() {
-        assertTrue(validator.supports(uploadApplication.getClass()));
+        assertTrue(validator.supports(applicationForm.getClass()));
     }
 
     @Test
@@ -50,24 +73,42 @@ public class ApplicationValidatorTest {
 
     @Test
     public void testValid() {
-        uploadApplication.setApplicationType(ApplicationType.ANDROID);
-        uploadApplication.setCategoryId(1L);
-        uploadApplication.setDescription("test description");
-        uploadApplication.setName("name");
-        uploadApplication.setIcon(mockMultipartFile);
+        applicationForm.setApplicationType(ApplicationType.ANDROID);
+        applicationForm.setCategoryId(1L);
+        applicationForm.setDescription("test description");
+        applicationForm.setName("name");
+        applicationForm.setIcon(mockMultipartFile);
+        BufferedImage mockBufferedImage = mock(BufferedImage.class);
 
-        Mockito.when(mockImageValidator.isValidImageSize(Matchers.any(MultipartFile.class))).thenReturn(true);
-        Mockito.when(mockImageValidator.isValidImageType(Matchers.any(MultipartFile.class))).thenReturn(true);
-        Mockito.when(mockImageValidator.isValidIconDimension(Matchers.any(MultipartFile.class))).thenReturn(true);
+        when(mockImageValidator.createBufferedImage(Matchers.any(MultipartFile.class))).thenReturn(mockBufferedImage);
+        when(mockImageValidator.isValidImageSize(Matchers.any(MultipartFile.class), Matchers.anyLong())).thenReturn(true);
+        when(mockImageValidator.isValidImageType(Matchers.any(MultipartFile.class))).thenReturn(true);
+        when(mockImageValidator.isValidMinDimensions(Matchers.any(BufferedImage.class), Matchers.anyLong(), Matchers.anyLong())).thenReturn(true);
+        when(mockImageValidator.isSquare(Matchers.any(BufferedImage.class))).thenReturn(true);
+        when(mockUserService.getUserFromSecurityContext()).thenReturn(user);
+        when(mockGroupService.get(anyLong())).thenReturn(new Group());
+        doNothing().when(mockApplicationVersionValidator).validateVersionName(any(Errors.class), any(ApplicationVersionForm.class));
+        doNothing().when(mockApplicationVersionValidator).validateRecentChanges(any(Errors.class), any(ApplicationVersionForm.class));
+        doNothing().when(mockApplicationVersionValidator).validateOrganizationLimits(any(Errors.class), any(ApplicationVersionForm.class), any(Application.class), any(Organization.class));
+        doNothing().when(mockApplicationVersionValidator).validateInstallFile(any(Errors.class), any(ApplicationVersionForm.class), any(ApplicationType.class));
+        doNothing().when(mockApplicationVersionValidator).validateResign(any(ApplicationVersionForm.class), any(Group.class), any(ApplicationType.class), any(Errors.class));
 
-        validator.validate(uploadApplication, errors);
+        validator.validate(applicationForm, errors);
 
         assertFalse(errors.hasErrors());
     }
 
     @Test
     public void testAllFieldsInvalid() {
-        validator.validate(uploadApplication, errors);
+        when(mockUserService.getUserFromSecurityContext()).thenReturn(user);
+        when(mockGroupService.get(anyLong())).thenReturn(null);
+        doNothing().when(mockApplicationVersionValidator).validateVersionName(any(Errors.class), any(ApplicationVersionForm.class));
+        doNothing().when(mockApplicationVersionValidator).validateRecentChanges(any(Errors.class), any(ApplicationVersionForm.class));
+        doNothing().when(mockApplicationVersionValidator).validateOrganizationLimits(any(Errors.class), any(ApplicationVersionForm.class), any(Application.class), any(Organization.class));
+        doNothing().when(mockApplicationVersionValidator).validateInstallFile(any(Errors.class), any(ApplicationVersionForm.class), any(ApplicationType.class));
+        doNothing().when(mockApplicationVersionValidator).validateResign(any(ApplicationVersionForm.class), any(Group.class), any(ApplicationType.class), any(Errors.class));
+
+        validator.validate(applicationForm, errors);
 
         assertTrue(errors.hasErrors());
         Assert.assertEquals(errors.getErrorCount(), 4);
@@ -79,10 +120,10 @@ public class ApplicationValidatorTest {
         //Reset test
         setup();
 
-        uploadApplication.setName("");
-        uploadApplication.setDescription("");
+        applicationForm.setName("");
+        applicationForm.setDescription("");
 
-        validator.validate(uploadApplication, errors);
+        validator.validate(applicationForm, errors);
 
         assertTrue(errors.hasErrors());
         Assert.assertEquals(errors.getErrorCount(), 4);
@@ -95,17 +136,28 @@ public class ApplicationValidatorTest {
 
     @Test
     public void testInvalidIcon() {
-        uploadApplication.setApplicationType(ApplicationType.ANDROID);
-        uploadApplication.setCategoryId(1L);
-        uploadApplication.setDescription("test description");
-        uploadApplication.setName("name");
-        uploadApplication.setIcon(mockMultipartFile);
+        when(mockUserService.getUserFromSecurityContext()).thenReturn(user);
+        when(mockGroupService.get(anyLong())).thenReturn(null);
+        doNothing().when(mockApplicationVersionValidator).validateVersionName(any(Errors.class), any(ApplicationVersionForm.class));
+        doNothing().when(mockApplicationVersionValidator).validateRecentChanges(any(Errors.class), any(ApplicationVersionForm.class));
+        doNothing().when(mockApplicationVersionValidator).validateOrganizationLimits(any(Errors.class), any(ApplicationVersionForm.class), any(Application.class), any(Organization.class));
+        doNothing().when(mockApplicationVersionValidator).validateInstallFile(any(Errors.class), any(ApplicationVersionForm.class), any(ApplicationType.class));
+        doNothing().when(mockApplicationVersionValidator).validateResign(any(ApplicationVersionForm.class), any(Group.class), any(ApplicationType.class), any(Errors.class));
 
-        Mockito.when(mockImageValidator.isValidImageSize(Matchers.any(MultipartFile.class))).thenReturn(false);
-        Mockito.when(mockImageValidator.isValidImageType(Matchers.any(MultipartFile.class))).thenReturn(false);
-        Mockito.when(mockImageValidator.isValidIconDimension(Matchers.any(MultipartFile.class))).thenReturn(false);
+        applicationForm.setApplicationType(ApplicationType.ANDROID);
+        applicationForm.setCategoryId(1L);
+        applicationForm.setDescription("test description");
+        applicationForm.setName("name");
+        applicationForm.setIcon(mockMultipartFile);
 
-        validator.validate(uploadApplication, errors);
+        BufferedImage mockBufferedImage = mock(BufferedImage.class);
+
+        when(mockImageValidator.createBufferedImage(Matchers.any(MultipartFile.class))).thenReturn(mockBufferedImage);
+        when(mockImageValidator.isValidImageSize(Matchers.any(MultipartFile.class), Matchers.anyLong())).thenReturn(false);
+        when(mockImageValidator.isValidImageType(Matchers.any(MultipartFile.class))).thenReturn(false);
+        when(mockImageValidator.isValidMinDimensions(Matchers.any(BufferedImage.class), Matchers.anyLong(), Matchers.anyLong())).thenReturn(false);
+
+        validator.validate(applicationForm, errors);
 
         assertTrue(errors.hasErrors());
         Assert.assertEquals(errors.getErrorCount(), 3);
@@ -114,30 +166,41 @@ public class ApplicationValidatorTest {
 
     @Test
     public void testInvalidScreenShot() {
-        MockMultipartFile screenShot1 = Mockito.mock(MockMultipartFile.class);
-        MockMultipartFile screenShot2 = Mockito.mock(MockMultipartFile.class);
-        MockMultipartFile screenShot3 = Mockito.mock(MockMultipartFile.class);
+        when(mockUserService.getUserFromSecurityContext()).thenReturn(user);
+        when(mockGroupService.get(anyLong())).thenReturn(null);
+        doNothing().when(mockApplicationVersionValidator).validateVersionName(any(Errors.class), any(ApplicationVersionForm.class));
+        doNothing().when(mockApplicationVersionValidator).validateRecentChanges(any(Errors.class), any(ApplicationVersionForm.class));
+        doNothing().when(mockApplicationVersionValidator).validateOrganizationLimits(any(Errors.class), any(ApplicationVersionForm.class), any(Application.class), any(Organization.class));
+        doNothing().when(mockApplicationVersionValidator).validateInstallFile(any(Errors.class), any(ApplicationVersionForm.class), any(ApplicationType.class));
+        doNothing().when(mockApplicationVersionValidator).validateResign(any(ApplicationVersionForm.class), any(Group.class), any(ApplicationType.class), any(Errors.class));
 
-        uploadApplication.setApplicationType(ApplicationType.ANDROID);
-        uploadApplication.setCategoryId(1L);
-        uploadApplication.setDescription("test description");
-        uploadApplication.setName("name");
-        uploadApplication.getScreenShots().add(screenShot1);
-        uploadApplication.getScreenShots().add(screenShot2);
-        uploadApplication.getScreenShots().add(screenShot3);
+        MockMultipartFile screenShot1 = mock(MockMultipartFile.class);
+        MockMultipartFile screenShot2 = mock(MockMultipartFile.class);
+        MockMultipartFile screenShot3 = mock(MockMultipartFile.class);
 
-        Mockito.when(mockImageValidator.isValidImageSize(screenShot1)).thenReturn(true);
-        Mockito.when(mockImageValidator.isValidImageType(screenShot1)).thenReturn(true);
-        Mockito.when(mockImageValidator.isValidImageSize(screenShot2)).thenReturn(false);
-        Mockito.when(mockImageValidator.isValidImageType(screenShot2)).thenReturn(false);
-        Mockito.when(mockImageValidator.isValidImageSize(screenShot3)).thenReturn(true);
-        Mockito.when(mockImageValidator.isValidImageType(screenShot3)).thenReturn(true);
+        applicationForm.setApplicationType(ApplicationType.ANDROID);
+        applicationForm.setCategoryId(1L);
+        applicationForm.setDescription("test description");
+        applicationForm.setName("name");
+        applicationForm.getScreenshots().add(screenShot1);
+        applicationForm.getScreenshots().add(screenShot2);
+        applicationForm.getScreenshots().add(screenShot3);
 
-        validator.validate(uploadApplication, errors);
+        BufferedImage mockBufferedImage = mock(BufferedImage.class);
+
+        when(mockImageValidator.createBufferedImage(Matchers.any(MultipartFile.class))).thenReturn(mockBufferedImage);
+        when(mockImageValidator.isValidImageSize(screenShot1, 819200)).thenReturn(true);
+        when(mockImageValidator.isValidImageType(screenShot1)).thenReturn(true);
+        when(mockImageValidator.isValidImageSize(screenShot2, 819200)).thenReturn(false);
+        when(mockImageValidator.isValidImageType(screenShot2)).thenReturn(false);
+        when(mockImageValidator.isValidImageSize(screenShot3, 819200)).thenReturn(true);
+        when(mockImageValidator.isValidImageType(screenShot3)).thenReturn(true);
+
+        validator.validate(applicationForm, errors);
 
         assertTrue(errors.hasErrors());
         Assert.assertEquals(errors.getErrorCount(), 2);
-        Assert.assertEquals(errors.getFieldErrorCount("screenShots[1]"), 2);
+        Assert.assertEquals(errors.getFieldErrorCount("screenshots[1]"), 2);
     }
 
 }

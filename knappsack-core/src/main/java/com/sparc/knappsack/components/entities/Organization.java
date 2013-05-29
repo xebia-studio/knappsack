@@ -17,6 +17,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "ORGANIZATION")
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Organization extends Domain implements Notifiable {
 
     private static final long serialVersionUID = 396567098678320561L;
@@ -31,6 +32,11 @@ public class Organization extends Domain implements Notifiable {
     //This is really OneToOne, @LazyToOne wasn't working, so using @OneToMany is a workaround.
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "organization", orphanRemoval = true)
     private List<OrgStorageConfig> orgStorageConfigs = new ArrayList<OrgStorageConfig>();
+
+    @OneToOne(cascade = {CascadeType.PERSIST,CascadeType.REMOVE}, orphanRemoval = true, optional = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "CUSTOM_BRANDING_ID", nullable = true)
+//    @LazyToOne(LazyToOneOption.PROXY)
+    private CustomBranding customBranding;
 
     public List<Category> getCategories() {
         if (categories == null) {
@@ -79,6 +85,14 @@ public class Organization extends Domain implements Notifiable {
         }
 
         return storageConfigurations;
+    }
+
+    public CustomBranding getCustomBranding() {
+        return customBranding;
+    }
+
+    public void setCustomBranding(CustomBranding customBranding) {
+        this.customBranding = customBranding;
     }
 
     @Override

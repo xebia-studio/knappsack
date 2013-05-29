@@ -21,15 +21,15 @@ public class ChecklistController {
     @Autowired(required = true)
     private ManagerChecklistService managerChecklistService;
 
-    @RequestMapping(value = "/manager/checklist/")
+    @RequestMapping(value = "/manager/checklist")
     public
     @ResponseBody
     ManagerChecklist getManagerChecklist() {
         ManagerChecklist managerChecklist = new ManagerChecklist();
         Long orgId;
         User user = userService.getUserFromSecurityContext();
-        if (userService.countAdministeredOrganizations(user) == 1) {
-            orgId = userService.getAdministeredOrganizations(user).get(0).getId();
+        if (user.getActiveOrganization() != null && user.isActiveOrganizationAdmin()) {
+            orgId = user.getActiveOrganization().getId();
             managerChecklist = managerChecklistService.getManagerChecklist(orgId);
         }
 

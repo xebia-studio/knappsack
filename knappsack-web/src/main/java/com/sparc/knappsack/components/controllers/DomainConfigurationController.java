@@ -28,7 +28,7 @@ public class DomainConfigurationController extends AbstractController {
     @Autowired(required = true)
     private DomainConfigurationService domainConfigurationService;
 
-    @PreAuthorize("hasDomainConfigurationAccess(#domainId)")
+    @PreAuthorize("hasDomainConfigurationAccess(#domainId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/domainConfiguration/{domainId}", method = RequestMethod.GET)
     public String domainConfiguration(Model model, @PathVariable Long domainId) {
         Domain domain = domainService.get(domainId);
@@ -46,7 +46,7 @@ public class DomainConfigurationController extends AbstractController {
         return "manager/domainConfigurationTH";
     }
 
-    @PreAuthorize("hasDomainConfigurationAccess(#domainConfigurationForm.domainId)")
+    @PreAuthorize("hasDomainConfigurationAccess(#domainConfigurationForm.domainId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/saveDomainConfiguration", method = RequestMethod.POST)
     public String saveDomainConfiguration(Model model, @ModelAttribute DomainConfigurationForm domainConfigurationForm) {
         Domain domain = domainService.get(domainConfigurationForm.getDomainId());
@@ -77,6 +77,8 @@ public class DomainConfigurationController extends AbstractController {
         domainConfigurationForm.setId(domainConfiguration.getId());
         domainConfigurationForm.setMegabyteStorageLimit(domainConfiguration.getMegabyteStorageLimit());
         domainConfigurationForm.setUserLimit(domainConfiguration.getUserLimit());
+        domainConfigurationForm.setApplicationResignerEnabled(domainConfiguration.isApplicationResignerEnabled());
+        domainConfigurationForm.setCustomBrandingEnabled(domainConfiguration.isCustomBrandingEnabled());
 
         return domainConfigurationForm;
     }
@@ -95,6 +97,8 @@ public class DomainConfigurationController extends AbstractController {
         domainConfiguration.setDisableLimitValidations(domainConfigurationForm.isDisableLimitValidations());
         domainConfiguration.setMegabyteStorageLimit(domainConfigurationForm.getMegabyteStorageLimit());
         domainConfiguration.setUserLimit(domainConfigurationForm.getUserLimit());
+        domainConfiguration.setApplicationResignerEnabled(domainConfigurationForm.isApplicationResignerEnabled());
+        domainConfiguration.setCustomBrandingEnabled(domainConfigurationForm.isCustomBrandingEnabled());
 
         return domainConfiguration;
     }

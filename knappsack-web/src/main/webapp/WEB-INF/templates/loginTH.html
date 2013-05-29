@@ -1,256 +1,195 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com" th:with="include_login=${true},title=#{desktop.login.title},exclude_systemNotifications=${true}">
+<html xmlns:th="http://www.thymeleaf.org"
+      th:with="include_login=${true},title=#{desktop.login.title},exclude_systemNotifications=${true}">
 <head th:substituteby="/includesTH :: head"></head>
 
-<body class="login" style="padding-top: 0px;">
-
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    $(document).ready(function () {
-
-        var contextPath = /*[[${#httpServletRequest.contextPath}]]*/ "";
-        var imagePath = contextPath + '/resources/img/openid/';
-        $(providers).each(function() {
-            var anchor = $('<a>').attr({'data-provider': this.url, 'title': this.name}).addClass('openid_btn').css('background-image', 'url(' + imagePath + this.image + ')').css('background-repeat', 'no-repeat').css('background-position', 'center');
-            $('#openid_btns').append(anchor);
-        });
-
-        var activeTab = /*[[${activeTab}]]*/ 'login';
-
-        if (activeTab == 'register') {
-            $('#registrationTab a').tab('show');
-        } else if (activeTab == 'forgotPassword') {
-            $('#forgotPasswordTab a').tab('show');
-        } else {
-            $('#loginTab a').tab('show')
-        }
-
-        $('#openid_btns a').click(function(e) {
-            e.preventDefault();
-
-            var providerUrl = $(this).attr('data-provider');
-            $('#openid_identifier').val(providerUrl);
-
-            $('#openidForm').submit();
-        });
-
-        $('#openIdRememberMeCheckBox').hide();
-
-        $('#forgotPasswordForm').submit(function(e) {
-            e.preventDefault();
-
-            var url = /*[[@{/auth/forgotPassword}]]*/ '/auth/forgotPassword';
-            var data = { email : $('#forgotPasswordEmail').val()};
-            $.post(url, data);
-
-            $(this).tab('show');
-
-        });
-
-        $('a[data-toggle="tab"]').on('shown', function (e) {
-            var $target = $(e.target);
-            var selector = $target.attr('data-target');
-
-            if (!selector) {
-                selector = $target.attr('href')
-                selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') //strip for ie7
-            }
-
-            $('#tabs li.active').removeClass('active');
-
-            if (selector == '#2') {
-                $('#tabs li a[href="#2"]').parent().addClass('active');
-            } else {
-                $('#tabs li a[href="#1"]').parent().addClass('active');
-            }
-
-        });
-    });
-    /*]]>*/
-</script>
+<body class="login">
 
 <!--login -->
 
-<div class="loginForm">
-    <div class="container">
+<div class="container knappsack-container">
+    <div class="row">
+        <div class="container-fluid">
+            <ul id="tabs" class="nav nav-tabs">
+                <li id="loginTab" th:title="#{desktop.login.tab.login.title}"><a href="#1" data-toggle="tab" th:text="#{desktop.login.tab.login}">Login</a></li>
+                <li id="registrationTab" th:title="#{desktop.login.tab.register.title}"><a href="#2" data-toggle="tab" th:text="#{desktop.login.tab.register}">Register</a></li>
+                <li class="hide" id="forgotPasswordTab" th:title="#{desktop.login.tab.forgot.password.title}"><a href="#3" data-toggle="tab" th:text="#{desktop.login.tab.forgot.password}">Forgot Your Password</a></li><!-- hidden tab to maintain the navigations state -->
 
-        <div class="inner">
-            <div class="tabbable">
-                <ul id="tabs" class="nav nav-tabs">
-                    <li id="loginTab" th:title="#{desktop.login.tab.login.title}"><a href="#1" data-toggle="tab" th:text="#{desktop.login.tab.login}">Login</a></li>
-                    <li id="registrationTab" th:title="#{desktop.login.tab.register.title}"><a href="#2" data-toggle="tab" th:text="#{desktop.login.tab.register}">Register</a></li>
-                    <li class="hide" id="forgotPasswordTab" th:title="#{desktop.login.tab.forgot.password.title}"><a href="#3" data-toggle="tab" th:text="#{desktop.login.tab.forgot.password}">Forgot Your Password</a></li><!-- hidden tab to maintain the navigations state -->
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane" id="1">
+                    <div class="row-fluid page-header" style="border: none;" id="overview">
+                        <h1 class="knappsack-logo"/>
+                    </div>
+                    <div id="login-error" class="alert alert-error" th:if="${#bools.isTrue(error)}">
+                        <h2 th:text="#{errors.header}">Errors</h2>
+                        <ul>
+                            <li th:text="#{${error.messageKey}}">Input is incorrect</li>
+                        </ul>
+                    </div>
 
-                </ul>
-                <div class="tab-content">
-                    <div class="tab-pane" id="1">
-                        <header class="jumbotron subhead" id="overview">
-                            <div class="lead">
-                                <img src="../../resources/img/logo-header.png" ks:src="@{/resources/img/logo-header.png}"/>
+                    <div th:if="${registrationSuccess != null}">
+                        <div class="alert alert-success" th:if="${#bools.isTrue(registrationSuccess)}" th:inline="text">
+                            <a class="close" data-dismiss="alert" href="#" th:text="#{alert.close}">x</a>
+                            <strong th:text="#{alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.login.alert.registration.success}">Your account was successfully registered, however, it must be activated before you can start using it.  An email has been sent to you with instructions for activating your account.</span>
+                        </div>
+                        <div class="alert alert-error" th:if="${#bools.isFalse(registrationSuccess)}" th:inline="text">
+                            <a class="close" data-dismiss="alert" href="#" th:text="#{alert.close}">x</a>
+                            <strong th:text="#{alert.error.prefix}">Oh snap!</strong> <span th:text="#{desktop.login.alert.registration.error}">An error occurred while registering your account.  Please try again.</span>
+                        </div>
+                    </div>
+
+                    <form id="loginForm" action="/j_spring_security_check" th:action="@{/j_spring_security_check}" method="post" class="form-horizontal">
+                        <input type="hidden" name="action" value="verify"/>
+                        <legend th:text="#{desktop.login.overview.instructions.form}">Log in with your credentials below:</legend>
+                        <fieldset>
+                            <div class="control-group">
+                                <label class="control-label" for="j_username" th:text="#{desktop.login.loginForm.email.label}">Email</label>
+                                <div class="controls">
+                                    <input type="email" id="j_username" name="j_username" class="input-xlarge" required="required" th:title="#{desktop.login.loginForm.email.title}"/>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" for="j_password" th:text="#{desktop.login.loginForm.password.label}">Password</label>
+                                <div class="controls">
+                                    <input type="password" id="j_password" name="j_password" class="input-xlarge" required="required" th:title="#{desktop.login.loginForm.password.title}"/>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" for="rememberMeCheckBox"> </label>
+                                <div class="controls">
+                                    <label class="checkbox">
+                                        <input id="rememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked"/>
+                                        <span th:text="#{desktop.login.loginForm.rememberMe.label}">Remember me.</span></label>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button id="loginBtn" class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.loginForm.login}" th:title="#{desktop.login.loginForm.login.title}">Log in</button>
+                            </div>
+                        </fieldset>
+                    </form>
+
+                    <form id="openidForm" action="/j_spring_openid_security_check" th:action="@{/j_spring_openid_security_check}" method="post" class="form-horizontal">
+                        <legend th:text="#{desktop.login.overview.instructions.openid}">Legend</legend>
+                        <input type="hidden" name="action" value="verify"/>
+                        <input id="openIdRememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked"/>
+                        <fieldset>
+                            <div class="control-group">
+                                <div id="openid_btns" class="controls">
+                                    <a class="openid google" title="Google" data-provider="https://www.google.com/accounts/o8/id" />
+                                    <a class="openid yahoo" title="Yahoo" data-provider="http://me.yahoo.com/" />
+                                </div>
                             </div>
 
-                            <!--<p class="lead">-->
-                                <!--<span th:text="#{desktop.login.overview.instructions.form}">Log in with your credentials below:</span>-->
-                            <!--</p>-->
-                        </header>
-                        <div id="login-error" class="alert alert-error" th:if="${#bools.isTrue(error)}">
-                            <h3 th:text="#{errors.header}"/>
+                            <input id="openid_identifier" name="openid_identifier" type="hidden"/>
+                        </fieldset>
+                    </form>
+
+                    <p>
+                        <span th:text="#{desktop.login.forgotPassword.span}">Forget your password?</span> <a href="#3" class="dashed" data-toggle="tab" th:text="#{desktop.login.forgotPassword.anchor}" th:title="#{desktop.login.forgotPassword.anchor.title}">We can help.</a>
+                        <br />
+                        <span th:text="#{desktop.login.register.span}">Don't have an account?</span> <a href="#2" class="dashed" data-toggle="tab" th:text="#{desktop.login.register.anchor}" th:title="#{desktop.login.register.anchor.title}">Sign up here.</a></p>
+                </div>
+                <div class="tab-pane" id="2">
+                    <div class="row-fluid page-header" style="border: none;">
+                        <h1 class="knappsack-logo"></h1>
+                    </div>
+                    <form id="registerForm" class="form-horizontal" th:object="${registrationForm}" th:action="@{/auth/register}" action="/auth/register" method="post">
+                        <legend th:text="#{desktop.login.register.header}">Register</legend>
+                        <div id="errors"  class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                            <h2 th:text="#{errors.header}">Errors</h2>
                             <ul>
-                                <li th:text="#{${error.messageKey}}">Input is incorrect</li>
+                                <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
                             </ul>
                         </div>
-
-                        <div th:if="${registrationSuccess != null}">
-                            <div class="alert alert-success" th:if="${#bools.isTrue(registrationSuccess)}" th:inline="text">
-                                <a class="close" data-dismiss="alert" href="#" th:text="#{desktop.alert.close}">x</a>
-                                <strong th:text="#{desktop.alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.login.alert.registration.success}">Your account was successfully registered, however, it must be activated before you can start using it.  An email has been sent to you with instructions for activating your account.</span>
+                        <fieldset>
+                            <div class="control-group">
+                                <label class="control-label" for="firstName" th:text="#{desktop.login.registerForm.name.label}">Name</label>
+                                <div class="controls">
+                                    <input type="text" id="firstName" name="firstName" th:value="*{firstName}" th:placeholder="#{desktop.login.registerForm.name.first.placeholder}" placeholder="First" required="required" autofocus="autofocus" th:title="#{desktop.login.registerForm.name.first.title}" title="First name" />
+                                    <input type="text" id="lastName" name="lastName" th:value="*{lastName}" th:placeholder="#{desktop.login.registerForm.name.last.placeholder}" placeholder="Last" required="required" th:title="#{desktop.login.registerForm.name.last.title}" title="Last name" />
+                                </div>
                             </div>
-                            <div class="alert alert-error" th:if="${#bools.isFalse(registrationSuccess)}" th:inline="text">
-                                <a class="close" data-dismiss="alert" href="#" th:text="#{desktop.alert.close}">x</a>
-                                <strong th:text="#{desktop.alert.error.prefix}">Oh snap!</strong> <span th:text="#{desktop.login.alert.registration.error}">An error occurred while registering your account.  Please try again.</span>
+                            <div class="control-group">
+                                <label class="control-label" for="email" th:text="#{desktop.login.registerForm.email.label}">Email</label>
+                                <div class="controls">
+                                    <input type="email" id="email" name="email" th:value="*{email}" class="input-xlarge" required="required" th:title="#{desktop.login.registerForm.email.title}" />
+                                </div>
                             </div>
-                        </div>
+                            <div class="control-group">
+                                <label class="control-label" for="password1" th:text="#{desktop.login.registerForm.password.label}">Password</label>
+                                <div class="controls">
+                                    <input type="password"  id="password1" name="firstPassword" class="input-xlarge" required="required" th:title="#{desktop.login.registerForm.password.title}" />
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label" for="password2" th:text="#{desktop.login.registerForm.confirmPassword.label}">Confirm Password</label>
+                                <div class="controls">
+                                    <input type="password" id="password2" name="secondPassword" class="input-xlarge" required="required" th:title="#{desktop.login.registerForm.confirmPassword.title}" />
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button id="signUpBtn" class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.registerForm.register}" th:title="#{desktop.login.registerForm.register.title}" title="Register">Register</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                    <p>
+                        <span th:text="#{desktop.login.login.span}">Already a have an account?</span> <a class="dashed" href="#1" data-toggle="tab" th:text="#{desktop.login.login.anchor}" th:title="#{desktop.login.login.anchor.title}">Log in here.</a>
+                    </p>
+                    <div class="alert alert-info">
+                        <b th:text="#{alert.info.prefix}">Heads up!</b>
+                        <span th:text="#{desktop.login.invitationOnly}">The use of Knappsack is currently by invitation only.  If you have not received an invitation, you will not be able to create an account.</span>
+                    </div>
+                </div>
+                <div class="tab-pane" id="3">
+                    <div class="row-fluid page-header" style="border: none;">
+                        <h1 class="knappsack-logo"/>
+                    </div>
 
-                        <form id="loginForm" action="/j_spring_security_check" th:action="@{/j_spring_security_check}" method="post" class="form-horizontal">
-                            <input type="hidden" name="action" value="verify"/>
-                            <legend th:text="#{desktop.login.overview.instructions.form}">Log in with your credentials below:</legend>
-                            <fieldset>
-                                <div class="control-group">
-                                    <label class="control-label" for="j_username" th:text="#{desktop.login.loginForm.email.label}">Email</label>
-                                    <div class="controls">
-                                        <input type="email" id="j_username" name="j_username" class="input-xlarge" required="required" th:title="#{desktop.login.loginForm.email.title}"/>
-                                    </div>
-                                </div>
-                                <div class="control-group">
-                                    <label class="control-label" for="j_password" th:text="#{desktop.login.loginForm.password.label}">Password</label>
-                                    <div class="controls">
-                                        <input type="password" id="j_password" name="j_password" class="input-xlarge" required="required" th:title="#{desktop.login.loginForm.password.title}"/>
-                                    </div>
-                                </div>
-                                <div class="control-group">
-                                    <label class="control-label" for="rememberMeCheckBox"> </label>
-                                    <div class="controls">
-                                        <label class="checkbox">
-                                            <input id="rememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked"/>
-                                            <span th:text="#{desktop.login.loginForm.rememberMe.label}">Remember me.</span></label>
-                                    </div>
-                                </div>
-                                <div class="form-actions">
-                                    <button id="loginBtn" class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.loginForm.login}" th:title="#{desktop.login.loginForm.login.title}">Log in</button>
-                                </div>
-                            </fieldset>
-                        </form>
-
-                        <form id="openidForm" action="/j_spring_openid_security_check" th:action="@{/j_spring_openid_security_check}" method="post" class="form-horizontal">
-                            <legend th:text="#{desktop.login.overview.instructions.openid}">Legend</legend>
-                            <input type="hidden" name="action" value="verify"/>
-                            <input id="openIdRememberMeCheckBox" type='checkbox' name='_spring_security_remember_me' checked="checked"/>
-                            <fieldset>
-                                <div class="control-group">
-                                    <div id="openid_btns" class="controls">
-                                    </div>
-                                </div>
-
-                                <input id="openid_identifier" name="openid_identifier" type="hidden"/>
-                            </fieldset>
-                        </form>
-
-                        <p>
-                            <span th:text="#{desktop.login.forgotPassword.span}">Forget your password?</span> <a href="#3" data-toggle="tab" th:text="#{desktop.login.forgotPassword.anchor}" th:title="#{desktop.login.forgotPassword.anchor.title}">We can help.</a>
+                    <header class="jumbotron subhead" id="forgotPasswordOverview">
+                        <h2 th:text="#{desktop.login.forgotPassword.header}">Forgot your password?</h2>
+                        <div class="lead">
+                            <span th:text="#{desktop.login.forgotPassword.instructions.line1}">To reset your password, please enter the email associated with your account below.</span>
                             <br />
-                            <span th:text="#{desktop.login.register.span}">Don't have an account?</span> <a href="#2" data-toggle="tab" th:text="#{desktop.login.register.anchor}" th:title="#{desktop.login.register.anchor.title}">Sign up here.</a></p>
-                    </div>
-                    <div class="tab-pane" id="2">
-                        <header class="jumbotron subhead" id="registerOverview">
-                            <h2 th:text="#{desktop.login.register.header}">Register</h2>
-                        </header>
-                        <form id="registerForm" class="form-horizontal" th:object="${registrationForm}" th:action="@{/auth/register}" action="/auth/register" method="post">
-                            <div id="errors"  class="alert alert-error" th:if="${#fields.hasErrors('*')}">
-                                <h3 th:text="#{errors.header}"/>
-                                <ul>
-                                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
-                                </ul>
-                            </div>
-                            <fieldset>
-                                <div class="control-group">
-                                    <label class="control-label" for="firstName" th:text="#{desktop.login.registerForm.name.label}">Name</label>
-                                    <div class="controls">
-                                        <input type="text" id="firstName" name="firstName" th:value="*{firstName}" th:placeholder="#{desktop.login.registerForm.name.first.placeholder}" placeholder="First" required="required" autofocus="autofocus" th:title="#{desktop.login.registerForm.name.first.title}" title="First name" />
-                                        <input type="text" id="lastName" name="lastName" th:value="*{lastName}" th:placeholder="#{desktop.login.registerForm.name.last.placeholder}" placeholder="Last" required="required" th:title="#{desktop.login.registerForm.name.last.title}" title="Last name" />
-                                    </div>
-                                </div>
-                                <div class="control-group">
-                                    <label class="control-label" for="email" th:text="#{desktop.login.registerForm.email.label}">Email</label>
-                                    <div class="controls">
-                                        <input type="email" id="email" name="email" th:value="*{email}" class="input-xlarge" required="required" th:title="#{desktop.login.registerForm.email.title}" />
-                                    </div>
-                                </div>
-                                <div class="control-group">
-                                    <label class="control-label" for="password1" th:text="#{desktop.login.registerForm.password.label}">Password</label>
-                                    <div class="controls">
-                                        <input type="password"  id="password1" name="firstPassword" class="input-xlarge" required="required" th:title="#{desktop.login.registerForm.password.title}" />
-                                    </div>
-                                </div>
-                                <div class="control-group">
-                                    <label class="control-label" for="password2" th:text="#{desktop.login.registerForm.confirmPassword.label}">Confirm Password</label>
-                                    <div class="controls">
-                                        <input type="password" id="password2" name="secondPassword" class="input-xlarge" required="required" th:title="#{desktop.login.registerForm.confirmPassword.title}" />
-                                    </div>
-                                </div>
-                                <div class="form-actions">
-                                    <button id="signUpBtn" class="btn btn-large btn-primary" href="#" th:text="#{desktop.login.registerForm.register}" th:title="#{desktop.login.registerForm.register.title}" title="Register">Register</button>
-                                </div>
-                            </fieldset>
-                        </form>
-                        <p>
-                            <span th:text="#{desktop.login.login.span}">Already a have an account?</span> <a href="#1" data-toggle="tab" th:text="#{desktop.login.login.anchor}" th:title="#{desktop.login.login.anchor.title}">Log in here.</a>
-                        </p>
-                        <div class="alert alert-info">
-                            <b th:text="#{desktop.alert.info.prefix}">Heads up!</b>
-                            <span th:text="#{desktop.login.invitationOnly}">The use of Knappsack is currently by invitation only.  If you have not received an invitation, you will not be able to create an account.</span>
+                            <span th:text="#{desktop.login.forgotPassword.instructions.line2}">A temporary password will be sent to this address.</span>
                         </div>
-                    </div>
-                    <div class="tab-pane" id="3">
-                        <header class="jumbotron subhead" id="forgotPasswordOverview">
-                            <h2 th:text="#{desktop.login.forgotPassword.header}">Forgot your password?</h2>
-                            <div class="lead">
-                                <span th:text="#{desktop.login.forgotPassword.instructions.line1}">To reset your password, please enter the email associated with your account below.</span>
-                                <br />
-                                <span th:text="#{desktop.login.forgotPassword.instructions.line2}">A temporary password will be sent to this address.</span>
+                    </header>
+
+                    <br />
+
+                    <form id="forgotPasswordForm" action="#" href="#4" class="form-horizontal">
+                        <fieldset>
+                            <div class="control-group">
+                                <label class="control-label" for="forgotPasswordEmail" th:text="#{desktop.login.forgotPasswordForm.email.label}">Email</label>
+                                <div class="controls">
+                                    <input type="email" id="forgotPasswordEmail" class="input-xlarge" required="required" autofocus="autofocus" th:title="#{desktop.login.forgotPasswordForm.email.title}" title="Email" />
+                                </div>
                             </div>
-                        </header>
-
-                        <br />
-
-                        <form id="forgotPasswordForm" action="#" href="#4" class="form-horizontal">
-                            <fieldset>
-                                <div class="control-group">
-                                    <label class="control-label" for="forgotPasswordEmail" th:text="#{desktop.login.forgotPasswordForm.email.label}">Email</label>
-                                    <div class="controls">
-                                        <input type="email" id="forgotPasswordEmail" class="input-xlarge" required="required" autofocus="autofocus" th:title="#{desktop.login.forgotPasswordForm.email.title}" title="Email" />
-                                    </div>
-                                </div>
-                                <div class="form-actions">
-                                    <button id="forgotPasswordFormSubmit" class="btn btn-large btn-primary" th:text="#{desktop.login.forgotPasswordForm.submit}" th:title="#{desktop.login.forgotPasswordForm.submit.title}" title="Submit">Submit</button>&nbsp;
-                                </div>
-                            </fieldset>
-                        </form>
-                        <p>Already a have an account? <a href="#1" data-toggle="tab">Login here.</a><br />
-                            Don't have an account? <a href="#2" data-toggle="tab">Sign up here.</a></p>
+                            <div class="form-actions">
+                                <button id="forgotPasswordFormSubmit" class="btn btn-large btn-primary" th:text="#{desktop.login.forgotPasswordForm.submit}" th:title="#{desktop.login.forgotPasswordForm.submit.title}" title="Submit">Submit</button>&nbsp;
+                            </div>
+                        </fieldset>
+                    </form>
+                    <p>Already a have an account? <a class="dashed" href="#1" data-toggle="tab">Login here.</a><br />
+                        Don't have an account? <a class="dashed" href="#2" data-toggle="tab">Sign up here.</a></p>
+                </div>
+                <div class="tab-pane" id="4">
+                    <div class="row-fluid page-header" style="border: none;">
+                        <h1 class="knappsack-logo"/>
                     </div>
-                    <div class="tab-pane" id="4">
-                        <header class="jumbotron subhead" id="forgotPasswordSuccessOverview">
-                            <h2 th:text="#{desktop.login.forgotPasswordSuccess.header}">Forgot your Password</h2>
-                        </header>
+                    <div class="row-fluid" id="forgotPasswordSuccessOverview">
+                        <h2 th:text="#{desktop.login.forgotPasswordSuccess.header}">Forgot your Password</h2>
+                    </div>
+                    <div class="row-fluid">
                         <p class="lead">
                             <span th:text="#{desktop.login.forgotPasswordSuccess.span}">Thank you. Your password has been reset. Please check your email for your new password and </span>
-                            <a href="#1" data-toggle="tab" th:text="#{desktop.login.forgotPasswordSuccess.login.anchor}" th:title="#{desktop.login.forgotPasswordSuccess.login.anchor.title}" title="Log in">log in here</a>
+                            <a class="dashed" href="#1" data-toggle="tab" th:text="#{desktop.login.forgotPasswordSuccess.login.anchor}" th:title="#{desktop.login.forgotPasswordSuccess.login.anchor.title}" title="Log in">log in here</a>
                         </p>
                     </div>
                 </div>
-
             </div>
+
         </div>
     </div>
 
@@ -258,9 +197,20 @@
 
 <footer th:substituteby="/includesTH :: footer"></footer>
 
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-</section>
+<script th:substituteby="/includesTH :: scripts"></script>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    (function() {
+        ks.params.activeTab = /*[[${activeTab}]]*/ 'login';
+        ks.params.forgotPasswordURL = /*[[@{/auth/forgotPassword}]]*/ '/auth/forgotPassword';
+
+        $(document).ready(function () {
+            $(document).trigger('knappsack.login-page', ks.params);
+        });
+    })();
+    /*]]>*/
+</script>
 
 </body>
 </html>

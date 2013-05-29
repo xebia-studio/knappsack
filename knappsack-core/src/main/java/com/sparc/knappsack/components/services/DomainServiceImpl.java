@@ -60,6 +60,20 @@ public class DomainServiceImpl implements DomainService {
     }
 
     @Override
+    public boolean isApplicationResignerEnabled(Domain domain) {
+        boolean isEnabled = false;
+
+        if (domain != null) {
+            DomainEntityService domainEntityService = domainEntityServiceFactory.getDomainEntityService(domain.getDomainType());
+            if (domainEntityService != null) {
+                isEnabled = domainEntityService.isApplicationResignerEnabled(domain);
+            }
+        }
+
+        return isEnabled;
+    }
+
+    @Override
     public Domain getDomainForRegion(Long regionId) {
         Domain domain = null;
 

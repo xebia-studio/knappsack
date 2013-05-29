@@ -1,17 +1,12 @@
 package com.sparc.knappsack.components.validators;
 
-import com.sparc.knappsack.components.entities.Application;
-import com.sparc.knappsack.components.entities.ApplicationVersion;
-import com.sparc.knappsack.components.entities.Group;
-import com.sparc.knappsack.components.entities.Organization;
-import com.sparc.knappsack.components.services.ApplicationService;
-import com.sparc.knappsack.components.services.ApplicationVersionService;
-import com.sparc.knappsack.components.services.GroupService;
-import com.sparc.knappsack.components.services.OrganizationService;
+import com.sparc.knappsack.components.entities.*;
+import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.ApplicationType;
-import com.sparc.knappsack.forms.UploadApplicationVersion;
+import com.sparc.knappsack.forms.ApplicationVersionForm;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -25,101 +20,111 @@ public class ApplicationVersionValidator implements Validator {
     private static final String RECENT_CHANGES_FIELD = "recentChanges";
     private static final String APP_STATE_FIELD = "appState";
     private static final String APP_FILE_FIELD = "appFile";
+    private static final String KEY_VAULT_ENTRY_FIELD = "keyVaultEntryId";
 
-    @Autowired
+    @Qualifier("applicationVersionService")
+    @Autowired(required = true)
     private ApplicationVersionService applicationVersionService;
 
-    @Autowired
+    @Qualifier("applicationService")
+    @Autowired(required = true)
     private ApplicationService applicationService;
 
-    @Autowired
-    private GroupService groupService;
-
-    @Autowired
+    @Qualifier("organizationService")
+    @Autowired(required = true)
     private OrganizationService organizationService;
+
+    @Qualifier("keyVaultEntryService")
+    @Autowired(required = true)
+    private KeyVaultEntryService keyVaultEntryService;
+
+    @Qualifier("userService")
+    @Autowired(required = true)
+    private UserService userService;
 
     @Override
     public boolean supports(Class<?> clazz) {
-        return UploadApplicationVersion.class.isAssignableFrom(clazz);
+        return ApplicationVersionForm.class.isAssignableFrom(clazz);
     }
 
     @Override
     public void validate(Object target, Errors errors) {
-        UploadApplicationVersion version = (UploadApplicationVersion) target;
+        ApplicationVersionForm version = (ApplicationVersionForm) target;
 
         Application application = applicationService.get(version.getParentId());
+        User user = userService.getUserFromSecurityContext();
 
+        validateOrganizationLimits(errors, version, application, user.getActiveOrganization());
+        validateVersionName(errors, version);
+        validateRecentChanges(errors, version);
+        validateAppState(errors, version);
+        validateInstallFile(errors, version, application.getApplicationType());
+
+        validateResign(version, application.getOwnedGroup(), application.getApplicationType(), errors);
+    }
+
+    protected void validateOrganizationLimits(Errors errors, ApplicationVersionForm version, Application parentApplication, Organization organization) {
         if(!version.isEditing()) {
-            validateApplicationVersionLimit(version, application, errors);
-            Group group = groupService.get(version.getGroupId());
-            validateGroupStorageLimit(group, version.getAppFile().getSize(), errors);
-            validateOrganizationStorageLimit(group.getOrganization(), version.getAppFile().getSize(), errors);
-        }
-
-        if (version.getVersionName() == null || !StringUtils.hasText(version.getVersionName())) {
-            errors.rejectValue(VERSION_NAME_FIELD, "applicationVersionValidator.emptyVersion");
-        }
-
-        if (version.getRecentChanges() == null || !StringUtils.hasText(version.getRecentChanges())) {
-            errors.rejectValue(RECENT_CHANGES_FIELD, "applicationVersionValidator.emptyRecentChanges");
-        }
-
-        if (version.getAppState() == null) {
-            errors.rejectValue(APP_STATE_FIELD, "applicationVersionValidator.emptyAppState");
-        }
-
-        if (version.isEditing()) {
-            ApplicationVersion currentVersion = applicationVersionService.get(version.getId());
-            if(!AppState.ORGANIZATION_PUBLISH.equals(currentVersion.getAppState()) && AppState.ORGANIZATION_PUBLISH.equals(version.getAppState())) {
-                errors.rejectValue(APP_STATE_FIELD, "applicationVersionValidator.invalidAppState");
+            if (parentApplication != null) {
+                validateApplicationVersionLimit(parentApplication, organization, errors);
             }
+            validateOrganizationStorageLimit(organization, version.getAppFile().getSize(), errors);
+        }
+    }
 
+    protected void validateInstallFile(Errors errors, ApplicationVersionForm version, ApplicationType parentApplicationType) {
+        if (version.isEditing()) {
             if (version.getAppFile() != null && !version.getAppFile().isEmpty()) {
-                validateExtension(version, application, errors);
+                validateExtension(version, parentApplicationType, errors);
             }
         } else {
             if (version.getAppFile() == null || version.getAppFile().isEmpty()) {
                 errors.rejectValue(APP_FILE_FIELD, "applicationVersionValidator.emptyInstallFile");
             } else {
-                validateExtension(version, application, errors);
+                validateExtension(version, parentApplicationType, errors);
             }
+        }
+    }
 
+    protected void validateAppState(Errors errors, ApplicationVersionForm version) {
+        if (version.getAppState() == null) {
+            errors.rejectValue(APP_STATE_FIELD, "applicationVersionValidator.emptyAppState");
+        }
+
+        // Cannot set version to org publish through ApplicationVersionForm unless already set to org publish
+        if (version.isEditing()) {
+            ApplicationVersion currentVersion = applicationVersionService.get(version.getId());
+            if(!AppState.ORGANIZATION_PUBLISH.equals(currentVersion.getAppState()) && AppState.ORGANIZATION_PUBLISH.equals(version.getAppState())) {
+                errors.rejectValue(APP_STATE_FIELD, "applicationVersionValidator.invalidAppState");
+            }
+        } else {
             if(AppState.ORGANIZATION_PUBLISH.equals(version.getAppState())) {
                 errors.rejectValue(APP_STATE_FIELD, "applicationVersionValidator.invalidAppState");
             }
         }
     }
 
-    private void validateApplicationVersionLimit(UploadApplicationVersion uploadApplicationVersion, Application parentApplication, Errors errors) {
-        Group group = groupService.get(uploadApplicationVersion.getGroupId());
-        if(group.getDomainConfiguration().isDisabledDomain()) {
-            errors.reject("applicationVersionValidator.group.disabled");
+    protected void validateRecentChanges(Errors errors, ApplicationVersionForm version) {
+        if (version.getRecentChanges() == null || !StringUtils.hasText(version.getRecentChanges())) {
+            errors.rejectValue(RECENT_CHANGES_FIELD, "applicationVersionValidator.emptyRecentChanges");
         }
+    }
 
-        if(!group.getDomainConfiguration().isDisableLimitValidations() && applicationService.isApplicationVersionLimit(parentApplication, group)) {
-            errors.reject("applicationVersionValidator.group.limit");
+    protected void validateVersionName(Errors errors, ApplicationVersionForm version) {
+        if (version.getVersionName() == null || !StringUtils.hasText(version.getVersionName())) {
+            errors.rejectValue(VERSION_NAME_FIELD, "applicationVersionValidator.emptyVersion");
+        } else if (!version.isEditing() && applicationVersionService.doesVersionExistForApplication(version.getParentId(), version.getVersionName())) {
+            errors.rejectValue(VERSION_NAME_FIELD, "applicationVersionValidator.versionNameExists");
         }
+    }
 
-        Organization organization = group.getOrganization();
+    private void validateApplicationVersionLimit(Application parentApplication, Organization organization, Errors errors) {
         if(organization.getDomainConfiguration().isDisabledDomain()) {
-            errors.reject("applicationVersionValidator.organization.disabled");
+            errors.reject("applicationVersionValidator.group.disabled");
         }
 
         if(!organization.getDomainConfiguration().isDisableLimitValidations() && applicationService.isApplicationVersionLimit(parentApplication, organization)) {
             errors.reject("applicationVersionValidator.organization.limit");
-        }
-    }
-
-    private void validateGroupStorageLimit(Group group, long installationFileSize, Errors errors) {
-        if(group.getDomainConfiguration().isDisableLimitValidations()) {
-            return;
-        }
-        double installFileSizeMB = installationFileSize / MEGABYTE_CONVERSION;
-
-        double totalAmount = groupService.getTotalMegabyteStorageAmount(group);
-        long limit = group.getDomainConfiguration().getMegabyteStorageLimit();
-        if((totalAmount + installFileSizeMB) > limit) {
-            errors.reject("applicationVersionValidator.group.storageLimit");
         }
     }
 
@@ -135,28 +140,67 @@ public class ApplicationVersionValidator implements Validator {
         }
     }
 
-    private void validateExtension(UploadApplicationVersion appVersion, Application parentApplication, Errors errors) {
+    private void validateExtension(ApplicationVersionForm appVersion, ApplicationType parentApplicationType, Errors errors) {
         String fileName = appVersion.getAppFile().getOriginalFilename();
         boolean isValid = false;
 
-        ApplicationType type = parentApplication.getApplicationType();
-        if (type.equals(ApplicationType.ANDROID)) {
+        if (parentApplicationType.equals(ApplicationType.ANDROID)) {
             isValid = fileName.toLowerCase().endsWith(".apk");
-        } else if (type.equals(ApplicationType.IOS) || type.equals(ApplicationType.IPAD) || type.equals(ApplicationType.IPHONE)) {
+        } else if (ApplicationType.IOS.equals(parentApplicationType) || parentApplicationType.equals(ApplicationType.IPAD) || parentApplicationType.equals(ApplicationType.IPHONE)) {
             isValid = fileName.toLowerCase().endsWith(".ipa");
-        } else if (type.equals(ApplicationType.CHROME)) {
+        } else if (ApplicationType.CHROME.equals(parentApplicationType)) {
             isValid = fileName.toLowerCase().endsWith(".crx");
-        } else if (type.equals(ApplicationType.FIREFOX)) {
+        } else if (ApplicationType.FIREFOX.equals(parentApplicationType)) {
             isValid = fileName.toLowerCase().endsWith(".xpi");
-        } else if (type.equals(ApplicationType.BLACKBERRY)) {
+        } else if (ApplicationType.BLACKBERRY.equals(parentApplicationType)) {
             isValid = fileName.toLowerCase().endsWith(".jar") || fileName.toLowerCase().endsWith(".alx") ||
-                      fileName.toLowerCase().endsWith(".zip") || fileName.toLowerCase().endsWith(".jad");
-        } else if (type.equals(ApplicationType.WINDOWSPHONE7)) {
+                    fileName.toLowerCase().endsWith(".zip") || fileName.toLowerCase().endsWith(".jad");
+        } else if (ApplicationType.WINDOWSPHONE7.equals(parentApplicationType)) {
             isValid = fileName.toLowerCase().endsWith(".xap");
+        } else if (ApplicationType.OTHER.equals(parentApplicationType)) {
+            isValid = true;
         }
 
         if(!isValid) {
             errors.rejectValue(APP_FILE_FIELD, "applicationVersionValidator.invalidApplicationType");
         }
+    }
+
+    protected void validateResign(ApplicationVersionForm appVersion, Group parentGroup, ApplicationType parentApplicationType, Errors errors) {
+        //Having the keyVaultEntry ID set specifies that the user wants the application resigned.
+        if (appVersion.getKeyVaultEntryId() != null && appVersion.getKeyVaultEntryId() > 0) {
+            KeyVaultEntry keyVaultEntry = keyVaultEntryService.get(appVersion.getKeyVaultEntryId());
+            boolean isValid = false;
+            if (keyVaultEntry != null) {
+
+                //Check if keyVaultEntry parent domain matches the parent domain of the application version.
+                if (keyVaultEntry.getParentDomain() != null && keyVaultEntry.getParentDomain().equals(parentGroup)) {
+                    isValid = true;
+                }
+
+                if (!isValid) {
+                    //Check if the parent domain of the application version matches any child domain of the keyVaultEntry.
+                    for (Domain domain : keyVaultEntry.getChildDomains()) {
+                        if (domain.equals(parentGroup)) {
+                            isValid = true;
+                            break;
+                        }
+                    }
+                }
+
+                //Check if KeyVaultEntry supports to correct applicationType
+                if (isValid && !ApplicationType.getAllInGroup(keyVaultEntry.getApplicationType()).contains(parentApplicationType)) {
+                    isValid = false;
+                }
+            }
+
+            if (!isValid) {
+                errors.rejectValue(KEY_VAULT_ENTRY_FIELD, "applicationVersionValidator.invalidKeyVaultEntry");
+            }
+        }
+    }
+
+    private String createErrorFieldName(String prefix, String fieldName) {
+        return StringUtils.hasText(prefix) ? String.format("%s.%s", StringUtils.trimAllWhitespace(prefix), fieldName) : fieldName;
     }
 }

@@ -1,22 +1,27 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <title th:remove="all">Knappsack domain request notification</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    </head>
-    <body>
-        <p th:text="#{greeting(${name})}">
-            Hello, Peter Static!
-        </p>
-        <p th:inline="text">
-            User <b>[[${request.user.fullName}]]</b> ([[${request.user.email}]]) is requesting access to group <b>[[${request.domain.name}]]</b>.  Please navigate to the below url to accept or decline this group request.
-        </p>
-        <p>
-            <a th:href="${url}" th:text="${url}"/>
-        </p>
-        <p>
-            Regards, <br />
-            &emsp; <em>The Knappsack Team</em>
-        </p>
-    </body>
+<head>
+    <title th:remove="all">Knappsack domain request notification</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+</head>
+<body>
+
+<div th:include="email-headerTH :: email-header"/>
+
+<p th:text="#{greeting(${name})}">
+    Hello, Peter Static!
+</p>
+
+<p th:inline="text">
+    User <b>[[${request.user.fullName}]]</b> ([[${request.user.email}]]) is requesting access to group <b>[[${request.domain.name}]]</b>.
+    Please navigate to the below url to accept or decline this group request.
+</p>
+
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+
+<div th:include="email-footerTH :: email-footer"/>
+
+</body>
 </html>

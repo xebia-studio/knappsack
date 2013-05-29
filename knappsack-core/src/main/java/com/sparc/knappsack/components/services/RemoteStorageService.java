@@ -15,6 +15,12 @@ public interface RemoteStorageService extends StorageService {
     String getUrl(AppFile appFile, int secondsToExpire);
 
     /**
+     * @param path String - path to append to URL
+     * @return String - the build URL as a String
+     */
+    String buildPublicUrl(String path);
+
+    /**
      * @param orgStorageConfig OrgStorageConfig - used to get the bandwidth tied to this Organization
      * @param start Date - get the bandwidth used beginning with this date
      * @param end Date - get the bandwidth used between the start date and this date

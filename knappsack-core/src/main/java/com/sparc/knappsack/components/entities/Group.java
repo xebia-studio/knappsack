@@ -2,6 +2,7 @@ package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.DomainType;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -16,7 +17,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "ORG_GROUP")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Group extends Domain {
 
     private static final long serialVersionUID = -7673360751084836586L;

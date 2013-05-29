@@ -1,6 +1,7 @@
 package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.UserRole;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.springframework.security.core.GrantedAuthority;
 
 import javax.persistence.*;
@@ -11,7 +12,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "ROLE")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_ONLY)
 public class Role extends BaseEntity implements GrantedAuthority {
 
     private static final long serialVersionUID = -117212611936641518L;

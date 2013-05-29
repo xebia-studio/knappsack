@@ -7,27 +7,28 @@ import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import org.springframework.security.access.expression.SecurityExpressionRoot;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionOperations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.FilterInvocation;
+import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
+public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot implements MethodSecurityExpressionOperations {
 
-    private GroupService groupService;
+    private Object filterObject;
+    private Object returnObject;
+    private Object target;
 
     private UserService userService;
-
     private ApplicationVersionService applicationVersionService;
-
-    private CategoryService categoryService;
-
+    private ApplicationService applicationService;
+    private KeyVaultEntryService keyVaultEntryService;
     private DomainService domainService;
-
     private DomainUserRequestService domainUserRequestService;
-
     private DomainRequestService domainRequestService;
+    private SingleUseTokenRepository singleUseTokenRepository;
 
     /**
      * @param authentication Authentication
@@ -58,16 +59,49 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
     }
 
     @SuppressWarnings("unused")
+    public boolean isOrganizationAdminForActiveOrganization() {
+        User user = getUser();
+        if (user != null) {
+            Organization organization = user.getActiveOrganization();
+            if (organization != null) {
+                if (isUserInDomain(organization, UserRole.ROLE_ORG_ADMIN)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isOrganizationAdminWithResignerEnabled() {
+        User user = getUser();
+        if (user != null) {
+            Organization organization = user.getActiveOrganization();
+            if (organization != null) {
+                if (isUserInDomain(organization, UserRole.ROLE_ORG_ADMIN) && domainService.isApplicationResignerEnabled(organization)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("unused")
     public boolean hasAccessToApplicationVersion(Long applicationVersionId) {
         User user = getUser();
         if(user == null) {
             return false;
         }
 
-        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(user);
-        for (ApplicationVersion applicationVersion : applicationVersions) {
-            if(applicationVersion.getId().equals(applicationVersionId)) {
-                return true;
+        ApplicationVersion applicationVersion = applicationVersionService.get(applicationVersionId);
+        if (applicationVersion != null && applicationVersion.getApplication() != null) {
+            List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(user, applicationVersion.getApplication().getId(), null);
+            for (ApplicationVersion version : applicationVersions) {
+                if(applicationVersion.getId().equals(applicationVersionId)) {
+                    return true;
+                }
             }
         }
 
@@ -81,10 +115,12 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
             return false;
         }
 
-        List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(user);
-        for (ApplicationVersion applicationVersion : applicationVersions) {
-            if(applicationVersion.getApplication().getId().equals(applicationId)) {
-                return true;
+        Application application = applicationService.get(applicationId);
+
+        if (application != null) {
+            List<Application> applications = userService.getApplicationsForUser(user);
+            if (applications != null && applications.size() > 0) {
+                return applications.contains(application);
             }
         }
 
@@ -134,7 +170,8 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
         if (domain != null) {
             switch (domain.getDomainType()) {
                 case GROUP:
-                    return isUserInDomain(domain, UserRole.ROLE_ORG_ADMIN) || user.isSystemAdmin();
+                    return false;
+//                    return isUserInDomain(domain, UserRole.ROLE_ORG_ADMIN) || user.isSystemAdmin();
                 case ORGANIZATION:
                     return user.isSystemAdmin();
             }
@@ -169,19 +206,53 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
     }
 
     @SuppressWarnings("unused")
+    public boolean isValidIOSToken(String token) {
+        if (!StringUtils.hasText(token)) {
+            return false;
+        }
+
+        SingleUseToken singleUseToken = singleUseTokenRepository.getToken(token);
+
+        if (singleUseToken != null && (singleUseToken.getDate().getTime() + 300*1000 >= System.currentTimeMillis())) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("unused")
     public boolean hasAccessToCategory(Long categoryId, ApplicationType applicationType) {
+        if (categoryId == null || categoryId <= 0) {
+            return true;
+        }
+
         User user = getUser();
         if (user == null) {
             return false;
         }
 
-        for (Category category : userService.getCategoriesForUser(user, applicationType)) {
+        for (Category category : userService.getCategoriesForUser(user, applicationType, null)) {
             if (category.getId().equals(categoryId)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean canEditKeyVaultEntry(Long id) {
+        KeyVaultEntry keyVaultEntry = keyVaultEntryService.get(id);
+        if (keyVaultEntry == null) {
+            return false;
+        }
+
+        Domain domain = keyVaultEntry.getParentDomain();
+        if (domain == null) {
+            return false;
+        }
+
+        return isDomainAdmin(domain.getId()) && domainService.isApplicationResignerEnabled(domain);
     }
 
     @SuppressWarnings("unused")
@@ -213,8 +284,52 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
         return isDomainAdmin(domain);
     }
 
+    public boolean hasValidIOSToken() {
+        return true;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isUserInDomain(Long id) {
+        return isUserInDomain(domainService.get(id));
+    }
+
     private boolean isUserInDomain(Long id, UserRole... userRoles) {
         return isUserInDomain(domainService.get(id), userRoles);
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isUserInOrganization(Long id) {
+        User user = getUser();
+        if (user == null) {
+            return false;
+        }
+
+        List<Organization> organizations = userService.getOrganizations(user, null);
+        for (Organization organization : organizations) {
+            if(organization.getId().equals(id)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isUserInDomain(Domain domain) {
+        if (domain != null) {
+            User user = getUser();
+
+            if (user != null) {
+                for (UserDomain userDomain : user.getUserDomains()) {
+                    if (domain.equals(userDomain.getDomain())) {
+                        return true;
+                    } else if (DomainType.GROUP.equals(domain.getDomainType()) && isOrganizationAdminForGroup((Group) domain)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private boolean isUserInDomain(Domain domain, UserRole... userRoles) {
@@ -236,20 +351,20 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
         return false;
     }
 
-    public void setGroupService(GroupService groupService) {
-        this.groupService = groupService;
-    }
-
     public void setUserService(UserService userService) {
         this.userService = userService;
+    }
+
+    public void setApplicationService(ApplicationService applicationService) {
+        this.applicationService = applicationService;
     }
 
     public void setApplicationVersionService(ApplicationVersionService applicationVersionService) {
         this.applicationVersionService = applicationVersionService;
     }
 
-    public void setCategoryService(CategoryService categoryService) {
-        this.categoryService = categoryService;
+    public void setKeyVaultEntryService(KeyVaultEntryService keyVaultEntryService) {
+        this.keyVaultEntryService = keyVaultEntryService;
     }
 
     public void setDomainService(DomainService domainService) {
@@ -264,7 +379,35 @@ public class CustomMethodSecurityExpressionRoot extends SecurityExpressionRoot {
         this.domainRequestService = domainRequestService;
     }
 
+    public void setSingleUseTokenRepository(SingleUseTokenRepository singleUseTokenRepository) {
+        this.singleUseTokenRepository = singleUseTokenRepository;
+    }
+
     private User getUser() {
         return userService.getUserFromSecurityContext();
+    }
+
+    public void setFilterObject(Object filterObject) {
+        this.filterObject = filterObject;
+    }
+
+    public Object getFilterObject() {
+        return filterObject;
+    }
+
+    public void setReturnObject(Object returnObject) {
+        this.returnObject = returnObject;
+    }
+
+    public Object getReturnObject() {
+        return returnObject;
+    }
+
+    void setThis(Object target) {
+        this.target = target;
+    }
+
+    public Object getThis() {
+        return target;
     }
 }

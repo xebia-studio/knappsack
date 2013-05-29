@@ -48,7 +48,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             Role userRole = roleService.getRoleByAuthority(UserRole.ROLE_USER.toString());
             userRoles.add(userRole);
 
-            user = new User(userModel.getEmail(), passwordEncoder.encodePassword(userModel.getPassword(), userModel.getEmail()), userModel.getEmail(), userModel.getFirstName(), userModel.getLastName(), userRoles);
+            user = new User(userModel.getEmail(), passwordEncoder.encodePassword(userModel.getPassword(), userModel.getEmail().toLowerCase().trim()), userModel.getEmail(), userModel.getFirstName(), userModel.getLastName(), userRoles);
             user.setPasswordExpired(useTemporaryPassword);
             //If this is the first user in the application, set them as a Knappsack administrator
             if (userService.countAll() == 0) {

@@ -8,59 +8,6 @@
 
 <div class="container">
 
-    <script type="text/javascript" th:inline="javascript">
-        /*<![CDATA[*/
-
-        $(window).load(function() {
-            $('img.delay-image').each(function(index, value) {
-                var $elem = $(this);
-                $elem.attr('src', $elem.data('img-url'));
-            });
-        });
-
-        $(document).ready(function () {
-
-            var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
-
-            $('.striphtml').striphtml();
-
-            var $applicationsTable = $('table').dataTable( {
-                "sDom": "<'table-inline'<'row'<'span6'l><'floatright'f>r>t<'row'<'span6'i><'floatright'p>>",
-                "sPaginationType": "bootstrap",
-                "iDisplayLength": 5,
-                "oLanguage": {
-                    "sLengthMenu": '<select>'+
-                            '<option value="5">5</option>'+
-                            '<option value="10">10</option>'+
-                            '<option value="25">25</option>'+
-                            '<option value="50">50</option>'+
-                            '<option value="-1">All</option>'+
-                            '</select> ' + recordsPerPageText
-                },
-                "aoColumns": [
-                    { "bSortable": false, "bSearchable": false, "sWidth": "100%"},
-                    { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%" },
-                    { "bSortable": false, "bSearchable": true, "bVisible": false, "sWidth": "0%" }
-                ],
-                "bAutoWidth": false
-            });
-
-            $('table').show();
-
-            $applicationsTable.$('tr').on('click', function() {
-                var url = /*[[@{/detail/}]]*/ '/detail/';
-                url += $(this).attr('data-id');
-                window.location = url;
-            });
-
-            var tablePlaceholderText = /*[[#{desktop.category.results.table.search.placeholder}]]*/ 'Application Name or Type'
-
-            $('.dataTables_filter input').attr("placeholder", tablePlaceholderText);
-
-        });
-        /*]]>*/
-    </script>
-
     <header class="jumbotron subhead" id="overview">
         <h1 th:text="#{desktop.category.results.overview.header}">Applications</h1>
 
@@ -105,10 +52,26 @@
 
 <footer th:substituteby="/includesTH :: footer"></footer>
 
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-    <section th:include="/includesTH :: table_scripts"/>
-</section>
+<div th:substituteby="/includesTH :: scripts"/>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    (function() {
+        $(window).load(function() {
+            $('img.delay-image').each(function(index, value) {
+                var $elem = $(this);
+                $elem.attr('src', $elem.data('img-url'));
+            });
+        });
+
+        ks.params.tablePlaceholderText = /*[[#{desktop.category.results.table.search.placeholder}]]*/ 'Application Name or Type';
+
+        $(document).ready(function () {
+            $(document).trigger('knappsack.category_results-page', ks.params);
+        });
+    })();
+    /*]]>*/
+</script>
 
 </body>
 </html>

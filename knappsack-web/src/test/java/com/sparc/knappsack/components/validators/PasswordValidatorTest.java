@@ -138,4 +138,19 @@ public class PasswordValidatorTest {
         assertTrue(errors.getErrorCount() == 3);
     }
 
+    @Test
+    public void testNewPasswordMatchesOriginal() {
+        Mockito.when(mockPasswordEncoder.isPasswordValid(Matchers.anyString(), Matchers.anyString(), Matchers.anyString())).thenReturn(true);
+        Mockito.when(mockUserService.getUserFromSecurityContext()).thenReturn(user);
+
+        passwordForm.setOriginalPassword("originalPassword");
+        passwordForm.setFirstNewPassword("originalPassword");
+        passwordForm.setSecondNewPassword("originalPassword");
+
+        passwordValidator.validate(passwordForm, errors);
+
+        assertTrue(errors.hasErrors());
+        assertTrue(errors.getErrorCount() == 1);
+    }
+
 }

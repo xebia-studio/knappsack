@@ -3,40 +3,52 @@ package com.sparc.knappsack.components.controllers;
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.ApplicationVersion;
 import com.sparc.knappsack.components.entities.Group;
+import com.sparc.knappsack.components.entities.KeyVaultEntry;
 import com.sparc.knappsack.components.services.ApplicationService;
 import com.sparc.knappsack.components.services.ApplicationVersionControllerService;
 import com.sparc.knappsack.components.services.ApplicationVersionService;
-import com.sparc.knappsack.components.services.GroupService;
+import com.sparc.knappsack.components.services.KeyVaultEntryService;
 import com.sparc.knappsack.components.validators.ApplicationVersionValidator;
 import com.sparc.knappsack.enums.AppState;
+import com.sparc.knappsack.exceptions.ApplicationVersionResignException;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
+import com.sparc.knappsack.forms.ApplicationVersionForm;
 import com.sparc.knappsack.forms.Result;
-import com.sparc.knappsack.forms.UploadApplicationVersion;
+import com.sparc.knappsack.models.InternationalizedObject;
+import com.sparc.knappsack.models.KeyVaultEntryModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.*;
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Controller
 public class ApplicationVersionController extends AbstractController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Qualifier("applicationVersionValidator")
-    @Autowired
+    @Autowired(required = true)
     private ApplicationVersionValidator applicationVersionValidator;
 
     @Qualifier("applicationService")
-    @Autowired
+    @Autowired(required = true)
     private ApplicationService applicationService;
 
     @Autowired(required = true)
@@ -46,9 +58,13 @@ public class ApplicationVersionController extends AbstractController {
     @Autowired(required = true)
     private ApplicationVersionControllerService applicationVersionControllerService;
 
-    @Qualifier("groupService")
-    @Autowired
-    private GroupService groupService;
+    @Qualifier("keyVaultEntryService")
+    @Autowired(required = true)
+    private KeyVaultEntryService keyVaultEntryService;
+
+    @Qualifier("messageSource")
+    @Autowired(required = true)
+    private MessageSource messageSource;
 
     @InitBinder("version")
     protected void initBinder(WebDataBinder binder) {
@@ -77,44 +93,60 @@ public class ApplicationVersionController extends AbstractController {
 
     @PreAuthorize("canEditApplication(#parentId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/addVersion/{parentId}", method = RequestMethod.GET)
-    public String addApplicationVersion(Model model, @PathVariable Long parentId) {
+    public String addApplicationVersion(final HttpServletRequest request, Model model, @PathVariable Long parentId) {
 
         checkRequiredEntity(applicationService, parentId);
 
         Application application = applicationService.get(parentId);
+
         Group group = application.getOwnedGroup();
 
-        if (group != null) {
-            model.addAttribute("parentApplicationId", application.getId());
-            model.addAttribute("parentApplicationName", application.getName());
-            model.addAttribute("parentGroupId", group.getId());
-            model.addAttribute("parentGroupName", group.getName());
+        model.addAttribute("parentApplicationId", application.getId());
+        model.addAttribute("parentApplicationName", application.getName());
 
-            if (!model.containsAttribute("version")) {
-                UploadApplicationVersion version = new UploadApplicationVersion();
-                version.setParentId(parentId);
-                version.setGroupId(group.getId());
-                version.setStorageConfigurationId(application.getStorageConfiguration().getId());
+        if (!model.containsAttribute("version")) {
+            ApplicationVersionForm version = new ApplicationVersionForm();
+            version.setParentId(parentId);
+            version.setEditing(false);
 
-                model.addAttribute("version", version);
-            }
-
-            model.addAttribute("currentGuestGroupIds", new ArrayList<Group>());
-            List<Group> groups = new ArrayList<Group>(group.getOrganization().getGroups());
-            groups.remove(group);
-            model.addAttribute("groups", groups);
-            model.addAttribute("appStates", AppState.values());
-            model.addAttribute("isEdit", false);
-
-            return "manager/manageApplicationVersionTH";
-        } else {
-            throw new EntityNotFoundException(String.format("Group Entity not found for Application: %s", application.getId()));
+            model.addAttribute("version", version);
         }
+
+        model.addAttribute("currentGuestGroupIds", new ArrayList<Group>());
+        List<Group> groups = new ArrayList<Group>(group.getOrganization().getGroups());
+        groups.remove(group);
+        model.addAttribute("groups", groups);
+        model.addAttribute("isEdit", false);
+
+        // Create a List of all KeyVaultEntries which are available for the given application.
+        List<KeyVaultEntryModel> keyVaultEntryModels = new ArrayList<KeyVaultEntryModel>();
+        for (KeyVaultEntry keyVaultEntry : keyVaultEntryService.getAllForDomainAndApplicationType(group, application.getApplicationType())) {
+            KeyVaultEntryModel keyVaultEntryModel = keyVaultEntryService.convertToModel(keyVaultEntry);
+            if (keyVaultEntry != null) {
+                keyVaultEntryModels.add(keyVaultEntryModel);
+            }
+        }
+        model.addAttribute("keyVaultEntries", keyVaultEntryModels);
+
+        List<InternationalizedObject> appStates = new ArrayList<InternationalizedObject>();
+        for (AppState appState : AppState.values()) {
+            try {
+                appStates.add(new InternationalizedObject(appState, messageSource.getMessage(appState.getMessageKey(), null, request.getLocale())));
+            } catch (NoSuchMessageException ex) {
+                log.error(String.format("No message for appState: %s", appState.name()), ex);
+
+                // Put the applicationType name so that the application doesn't error out.
+                appStates.add(new InternationalizedObject(appState, appState.name()));
+            }
+        }
+        model.addAttribute("appStates", appStates);
+
+        return "manager/manageApplicationVersionTH";
     }
 
     @PreAuthorize("canEditApplication(#parentId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/editVersion/{parentId}/{versionId}", method = RequestMethod.GET)
-    public String editApplicationVersion(Model model, @PathVariable Long parentId, @PathVariable Long versionId) {
+    public String editApplicationVersion(final HttpServletRequest request, Model model, @PathVariable Long parentId, @PathVariable Long versionId) {
         checkRequiredEntity(applicationVersionService, versionId);
         checkRequiredEntity(applicationService, parentId);
 
@@ -125,34 +157,30 @@ public class ApplicationVersionController extends AbstractController {
             model.addAttribute("parentApplicationId", application.getId());
             model.addAttribute("parentApplicationName", application.getName());
 
-            model.addAttribute("parentGroupId", group.getId());
-            model.addAttribute("parentGroupName", group.getName());
-
-            UploadApplicationVersion uploadApplicationVersion;
+            ApplicationVersionForm applicationVersionForm;
             if (model.containsAttribute("version")) {
-                uploadApplicationVersion = (UploadApplicationVersion) model.asMap().get("version");
+                applicationVersionForm = (ApplicationVersionForm) model.asMap().get("version");
             } else {
-                uploadApplicationVersion = new UploadApplicationVersion();
+                applicationVersionForm = new ApplicationVersionForm();
             }
 
-            uploadApplicationVersion.setId(version.getId());
-            uploadApplicationVersion.setRecentChanges(version.getRecentChanges());
-            uploadApplicationVersion.setVersionName(version.getVersionName());
-            uploadApplicationVersion.setParentId(parentId);
-            uploadApplicationVersion.setAppState((version.getAppState()));
-            uploadApplicationVersion.setStorageConfigurationId(application.getStorageConfiguration().getId());
+            applicationVersionForm.setId(version.getId());
+            applicationVersionForm.setRecentChanges(version.getRecentChanges());
+            applicationVersionForm.setVersionName(version.getVersionName());
+            applicationVersionForm.setParentId(parentId);
+            applicationVersionForm.setAppState(version.getAppState());
 
             if (version.getInstallationFile() != null) {
                 MockMultipartFile multipartFile = new MockMultipartFile(version.getInstallationFile().getName(), version.getInstallationFile().getName(), version.getInstallationFile().getType(), new byte[0]);
-                uploadApplicationVersion.setAppFile(multipartFile);
+                applicationVersionForm.setAppFile(multipartFile);
             }
 
             if (version.getProvisioningProfile() != null) {
                 MockMultipartFile multipartFile = new MockMultipartFile(version.getProvisioningProfile().getName(), version.getProvisioningProfile().getName(), version.getProvisioningProfile().getType(), new byte[0]);
-                uploadApplicationVersion.setProvisioningProfile(multipartFile);
+                applicationVersionForm.setProvisioningProfile(multipartFile);
             }
 
-            model.addAttribute("version", uploadApplicationVersion);
+            model.addAttribute("version", applicationVersionForm);
 
             //Put this app versions guest groups on the model so we can highlight them in the multi-select box
             List<Group> currentGuestGroups = version.getGuestGroups();
@@ -162,15 +190,36 @@ public class ApplicationVersionController extends AbstractController {
                     currentGuestGroupIds.add(guestGroup.getId());
                 }
             }
+            applicationVersionForm.setGuestGroupIds(new ArrayList<Long>(currentGuestGroupIds));
             model.addAttribute("currentGuestGroupIds", currentGuestGroupIds);
-            model.addAttribute("groupId", group.getId());
             //We don't want the group that owns the application in the list of guest groups
             List<Group> groups = new ArrayList<Group>(group.getOrganization().getGroups());
             groups.remove(group);
             model.addAttribute("groups", groups);
-            model.addAttribute("appStates", Arrays.asList(AppState.values()));
-
             model.addAttribute("isEdit", true);
+
+            // Create a List of all KeyVaultEntries which are available for the given application.
+            List<KeyVaultEntryModel> keyVaultEntryModels = new ArrayList<KeyVaultEntryModel>();
+            for (KeyVaultEntry keyVaultEntry : keyVaultEntryService.getAllForDomainAndApplicationType(group, application.getApplicationType())) {
+                KeyVaultEntryModel keyVaultEntryModel = keyVaultEntryService.convertToModel(keyVaultEntry);
+                if (keyVaultEntry != null) {
+                    keyVaultEntryModels.add(keyVaultEntryModel);
+                }
+            }
+            model.addAttribute("keyVaultEntries", keyVaultEntryModels);
+
+            List<InternationalizedObject> appStates = new ArrayList<InternationalizedObject>();
+            for (AppState appState : AppState.values()) {
+                try {
+                    appStates.add(new InternationalizedObject(appState, messageSource.getMessage(appState.getMessageKey(), null, request.getLocale())));
+                } catch (NoSuchMessageException ex) {
+                    log.error(String.format("No message for appState: %s", appState.name()), ex);
+
+                    // Put the applicationType name so that the application doesn't error out.
+                    appStates.add(new InternationalizedObject(appState, appState.name()));
+                }
+            }
+            model.addAttribute("appStates", appStates);
 
             return "manager/manageApplicationVersionTH";
         } else {
@@ -204,33 +253,68 @@ public class ApplicationVersionController extends AbstractController {
 //        return result;
 //    }
 
-    @PreAuthorize("canEditApplication(#uploadApplicationVersion.parentId) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("canEditApplication(#applicationVersionForm.parentId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadVersion", method = RequestMethod.POST)
-    public String create(Model model, @ModelAttribute("version") @Validated UploadApplicationVersion uploadApplicationVersion, BindingResult bindingResult) {
+    public String create(final HttpServletRequest request, Model model, @ModelAttribute("version") @Validated ApplicationVersionForm applicationVersionForm, BindingResult bindingResult, final RedirectAttributes redirectAttributes) {
+        Long parentId = applicationVersionForm.getParentId();
+
         if (bindingResult.hasErrors()) {
-            if (uploadApplicationVersion.isEditing()) {
-                return editApplicationVersion(model, uploadApplicationVersion.getParentId(), uploadApplicationVersion.getId());
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.version", bindingResult);
+            redirectAttributes.addFlashAttribute("version", applicationVersionForm);
+
+            if (applicationVersionForm.getId() == null || applicationVersionForm.getId() <= 0) {
+                return String.format("redirect:/manager/addVersion/%s", parentId, applicationVersionForm.getId());
+            } else {
+                return String.format("redirect:/manager/editVersion/%s/%s", parentId, applicationVersionForm.getId());
             }
-            return addApplicationVersion(model, uploadApplicationVersion.getParentId());
         }
 
-        Long parentId = uploadApplicationVersion.getParentId();
+        ApplicationVersion savedApplicationVersion = null;
+        try {
+            savedApplicationVersion = applicationVersionControllerService.saveApplicationVersion(applicationVersionForm, true);
+        } catch (ApplicationVersionResignException e) {
+            log.info(e.getMessage());
+            String[] codes = {"desktop.manageApplicationVersion.resignError.generic"};
+            ObjectError error = new ObjectError("version", codes, null, null);
+            bindingResult.addError(error);
 
-        //TODO: error handling
-        boolean success = applicationVersionControllerService.saveApplicationVersion(uploadApplicationVersion, true);
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.version", bindingResult);
+            redirectAttributes.addFlashAttribute("version", applicationVersionForm);
 
-        return "redirect:/manager/editApplication/" + parentId;
+            if (applicationVersionForm.getId() == null || applicationVersionForm.getId() <= 0) {
+                return String.format("redirect:/manager/addVersion/%s", parentId, applicationVersionForm.getId());
+            } else {
+                return String.format("redirect:/manager/editVersion/%s/%s", parentId, applicationVersionForm.getId());
+            }
+        }
+
+        if (savedApplicationVersion == null || savedApplicationVersion.getId() == null && savedApplicationVersion.getId() <= 0) {
+            bindingResult.reject("desktop.manageApplicationVersion.error.generic");
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.version", bindingResult);
+            redirectAttributes.addFlashAttribute("version", applicationVersionForm);
+
+            if (applicationVersionForm.getId() == null || applicationVersionForm.getId() <= 0) {
+                return String.format("redirect:/manager/addVersion/%s", parentId, applicationVersionForm.getId());
+            } else {
+                return String.format("redirect:/manager/editVersion/%s/%s", parentId, applicationVersionForm.getId());
+            }
+        }
+
+        redirectAttributes.addFlashAttribute("updateSuccess", true);
+        return String.format("redirect:/manager/editVersion/%s/%s", parentId, savedApplicationVersion.getId());
     }
 
     @PreAuthorize("canEditApplication(#parentId) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/deleteVersion/{parentId}/{versionId}")
-    public String deleteVersion(@PathVariable Long parentId, @PathVariable Long versionId) {
+    public String deleteVersion(@PathVariable Long parentId, @PathVariable Long versionId, final RedirectAttributes redirectAttributes) {
         checkRequiredEntity(applicationService, parentId);
         checkRequiredEntity(applicationVersionService, versionId);
 
         applicationVersionService.delete(versionId);
 
-        return "redirect:/manager/editApplication/" + parentId;
+        redirectAttributes.addFlashAttribute("deleteSuccess", !applicationVersionService.doesEntityExist(versionId));
+
+        return "redirect:/manager/addVersion/" + parentId;
     }
 
 }

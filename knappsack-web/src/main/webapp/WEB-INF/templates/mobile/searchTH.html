@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="title='Knappsack'">
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='${orgName}'">
 <head th:substituteby="/mobile/includesTH :: mobileHead"></head>
 <body>
 <div id="searchPage" data-role="page">
@@ -37,9 +37,7 @@
                     $('#searchResultsList li').remove();
 
                     $(shownApplications).each(function(iterator, element) {
-                        var detailURL = /*[[@{/detail/}]]*/ "/detail/";
-                        var defaultIconUrl = /*[[@{/resources/img/default_icon.png}]]*/ '/resources/img/default_icon.png';
-                        detailURL += element.id;
+                        var detailURL = ks.contextPath + '/detail/' + element.id;
 
                         var anchor = $('<a>').attr('href', detailURL).attr('data-transition', 'slide');
                         if (element.icon != null) {
@@ -49,7 +47,7 @@
                         } else {
                             $(anchor).append($('<div>').addClass('li-floater')
                                     .append($('<div>').addClass('thumb thumb-shadow')
-                                    .append($('<img>').attr('src', defaultIconUrl).addClass('li-thumbnail'))));
+                                    .append($('<h1>').addClass('default_icon').addClass('li-thumbnail'))));
                         }
                         var description = document.createElement('span')
                         $(description).text(element.description).striphtml();
@@ -100,60 +98,14 @@
                 $('#noResults').show();
             });
 
-//            function onSearchSuccess(data) {
-//
-//                if (data.length == 0) {
-//                    listObjects = [];
-//                    $('#searchResultsList li').remove();
-//                    $('#searchResultsList').listview('refresh');
-//                    $('#noResults').show();
-//                    return;
-//                } else {
-//                    $('#noResults').hide();
-//                }
-//
-//                if (data.length != $('#searchResultsList > ul > li').size()) {
-//                    $('#searchResultsList li').remove();
-//
-//                    for (x in data) {
-//                        var detailURL = /*[[@{/detail/}]]*/ "/detail/";
-//                        var defaultIconUrl = /*[[@{/resources/img/default_icon.png}]]*/ '/resources/img/default_icon.png';
-//                        detailURL += data[x].id;
-//
-//                        var anchor = $('<a>').attr('href', detailURL).attr('data-transition', 'slide');
-//                        if (data[x].icon != null) {
-//                            $(anchor).append($('<div>').addClass('li-floater')
-//                                    .append($('<div>').addClass('thumb thumb-shadow')
-//                                    .append($('<img>').attr('src', data[x].icon.url).addClass('li-thumbnail'))));
-//                        } else {
-//                            $(anchor).append($('<div>').addClass('li-floater')
-//                                    .append($('<div>').addClass('thumb thumb-shadow')
-//                                    .append($('<img>').attr('src', defaultIconUrl).addClass('li-thumbnail'))));
-//                        }
-//                        $('#searchResultsList').append(
-//                                $('<li>').append(
-//                                        $(anchor)
-//                                                .append($('<h3>').html(data[x].name))
-//                                                .append($('<p>').html(data[x].description))
-//
-//                                )
-//                        );
-//                    }
-//
-//                    $('#searchResultsList').listview('refresh');
-//                }
-//
-//                $.mobile.hidePageLoadingMsg();
-//            }
-
         });
         /*]]>*/
     </script>
 
     <div data-role="header" data-id="mainHeader" class="header">
-        <a id="backBtn" th:href="@{/home}" data-icon="back" data-direction="reverse" th:text="#{mobile.search.back}">Back</a>
+        <a id="backBtn" data-rel="back" th:href="@{/home}" data-icon="back" data-direction="reverse" th:text="#{mobile.search.back}">Back</a>
 
-        <h1>Knappsack</h1>
+        <h1 th:text="${orgName}">Knappsack</h1>
     </div>
 
     <div id="searchDiv" data-role="content">

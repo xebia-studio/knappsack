@@ -2,13 +2,14 @@ package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.SystemNotificationSeverity;
 import com.sparc.knappsack.enums.SystemNotificationType;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 import java.util.Date;
 
 @Entity
 @Table(name = "SYSTEM_NOTIFICATION")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class SystemNotification extends BaseEntity {
 
     @Id

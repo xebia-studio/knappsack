@@ -11,6 +11,8 @@ public interface StorageConfigurationDao extends Dao<StorageConfiguration> {
      */
     List<StorageConfiguration> getAll();
 
+    <T extends StorageConfiguration> T get(Long id, Class<T> storageConfigurationClass);
+
     /**
      * @param name String
      * @return StorageConfiguration with the given name

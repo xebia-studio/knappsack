@@ -1,6 +1,7 @@
 package com.sparc.knappsack.components.dao;
 
 import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.User;
 
 import java.util.Date;
 import java.util.List;
@@ -45,9 +46,10 @@ public interface OrganizationDao extends Dao<Organization> {
 
     /**
      * @param orgId Long - count all users belonging to this organization
+     * @param includeGroups - Whether group users should be included in the total count
      * @return long - the total amount of users belonging to this organization
      */
-    long countOrganizationUsers(Long orgId);
+    long countOrganizationUsers(Long orgId, boolean includeGroups);
 
     /**
      * @param orgId Long - count all application belonging to this organization
@@ -60,4 +62,12 @@ public interface OrganizationDao extends Dao<Organization> {
      * @return long - the total amount of application versions belonging to this organization
      */
     long countOrganizationAppVersions(Long orgId);
+
+    /**
+     * @param user
+     * @return List of all Organizations which the user is an admin (ROLE_ORG_ADMIN)
+     */
+    List<Organization> getAdministeredOrganizationsForUser(User user);
+
+    Organization getForGroupId(long groupId);
 }

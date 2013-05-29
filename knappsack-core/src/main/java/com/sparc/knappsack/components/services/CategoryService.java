@@ -31,10 +31,21 @@ public interface CategoryService extends EntityService<Category> {
 
     /**
      * @param category Category
+     */
+    public void deleteIcon(Category category);
+
+    /**
+     * @param category Category
+     * @param
      * @return CategoryModel - return a CategoryModel with data populated from the Category
      */
-    CategoryModel createCategoryModel(Category category);
+    CategoryModel createCategoryModel(Category category, boolean includeIcon);
 
     List<Category> createDefaultCategories(Long organizationId);
+
+    /**
+     * @param category Category
+     */
+    void delete(Category category);
 
 }

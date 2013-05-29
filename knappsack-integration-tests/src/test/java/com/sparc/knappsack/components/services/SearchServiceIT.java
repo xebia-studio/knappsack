@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
-import java.util.UUID;
 
 import static junit.framework.Assert.assertTrue;
 
@@ -39,13 +38,13 @@ public class SearchServiceIT extends AbstractServiceTests {
 
     @Test
     public void searchNoResultsTest() {
-        List<ApplicationModel> applicationModels = searchService.searchApplications("", getUser(), ApplicationType.ANDROID);
+        List<ApplicationModel> applicationModels = searchService.searchApplications("", getUserWithSecurityContext(), ApplicationType.ANDROID);
         assertTrue(applicationModels.size() == 0);
     }
 
     @Test
     public void searchTest() {
-        User user = getUser(getUser(), UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
+        User user = getUser(getUserWithSecurityContext(), UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_USER);
         List<ApplicationModel> applicationModels = searchService.searchApplications("Test", user, ApplicationType.ANDROID);
         assertTrue(applicationModels.size() == 2);
     }

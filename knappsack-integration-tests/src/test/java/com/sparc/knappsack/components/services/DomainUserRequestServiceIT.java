@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.assertTrue;
 
@@ -33,7 +32,7 @@ public class DomainUserRequestServiceIT extends AbstractServiceTests {
     @Test
     public void updateTest() {
 
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         Group group = getGroup(user, UserRole.ROLE_ORG_USER, UserRole.ROLE_GROUP_ADMIN);
 
         DomainUserRequest domainUserRequest = new DomainUserRequest();

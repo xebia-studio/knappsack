@@ -4,7 +4,7 @@ import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.StorageType;
-import com.sparc.knappsack.forms.UploadApplication;
+import com.sparc.knappsack.forms.ApplicationForm;
 import com.sparc.knappsack.models.ApplicationModel;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -29,13 +28,6 @@ public class ApplicationServiceIT extends AbstractServiceTests {
 
     @Autowired(required = true)
     private OrganizationService organizationService;
-
-    @Autowired(required = true)
-    private CategoryService categoryService;
-
-    @Autowired(required = true)
-    private StorageConfigurationService storageConfigurationService;
-
     @Test
     public void addTest() {
         Application application = getApplication();
@@ -103,7 +95,7 @@ public class ApplicationServiceIT extends AbstractServiceTests {
     @Test
     public void createApplicationModelTest() {
         Application application = getApplication();
-        ApplicationModel applicationModel = applicationService.createApplicationModel(application.getId());
+        ApplicationModel applicationModel = applicationService.createApplicationModel(application.getId(), false);
         assertNotNull(applicationModel);
         assertTrue(applicationModel.getName().equals("Test Application"));
         assertTrue(applicationModel.getApplicationType().equals(application.getApplicationType()));
@@ -113,14 +105,13 @@ public class ApplicationServiceIT extends AbstractServiceTests {
     @Test
     public void saveApplicationTest() {
         Application application = getApplication();
-        UploadApplication uploadApplication = new UploadApplication();
-        uploadApplication.setApplicationType(application.getApplicationType());
-        uploadApplication.setCategoryId(application.getCategory().getId());
-        uploadApplication.setStorageConfigurationId(application.getStorageConfiguration().getId());
-        uploadApplication.setName("New Application");
-        uploadApplication.setDescription(application.getDescription());
-        uploadApplication.setGroupId(application.getCategory().getOrganization().getGroups().get(0).getId());
-        Application newApplication = applicationService.saveApplication(uploadApplication);
+        ApplicationForm applicationForm = new ApplicationForm();
+        applicationForm.setApplicationType(application.getApplicationType());
+        applicationForm.setCategoryId(application.getCategory().getId());
+        applicationForm.setName("New Application");
+        applicationForm.setDescription(application.getDescription());
+        applicationForm.setGroupId(application.getCategory().getOrganization().getGroups().get(0).getId());
+        Application newApplication = applicationService.saveApplication(applicationForm);
         Assert.assertNotNull(newApplication);
     }
 

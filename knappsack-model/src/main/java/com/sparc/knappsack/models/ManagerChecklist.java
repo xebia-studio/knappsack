@@ -93,7 +93,7 @@ public class ManagerChecklist {
     }
 
     public String getInviteOrganizationUsersURL() {
-        return "/manager/inviteUser/" + organizationId;
+        return "/manager/inviteUser";
     }
 
     public String getCreateGroupURL() {
@@ -101,7 +101,7 @@ public class ManagerChecklist {
     }
 
     public String getCreateApplicationURL() {
-        return "/manager/addApplication/" + groupId;
+        return "/manager/addApplication?grp=" + groupId;
     }
 
     public String getCreateApplicationVersionURL() {

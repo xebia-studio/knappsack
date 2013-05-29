@@ -1,6 +1,5 @@
 package com.sparc.knappsack.components.services;
 
-import com.sparc.knappsack.components.entities.DomainRequest;
 import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.models.DomainModel;
@@ -15,6 +14,8 @@ public interface DomainEntityService<Domain> {
     List<DomainModel> getAssignableDomainModelsForDomainRequest(Domain domain);
 
     List<User> getAllUsersForRole(Domain domain, UserRole userRole);
+
+    boolean isApplicationResignerEnabled(Domain domain);
 
     boolean isDomainAdmin(Domain domain, User user);
 

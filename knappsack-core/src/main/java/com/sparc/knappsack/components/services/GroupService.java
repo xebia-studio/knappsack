@@ -29,11 +29,13 @@ public interface GroupService extends EntityService<Group>, DomainEntityService<
 
     void removeUserFromGroup(Long groupId, Long userId);
 
-    int getTotalUsers(Group group);
+    long getTotalUsers(Group group);
 
-    int getTotalApplications(Group group);
+    long getTotalPendingInvitations(Group group);
 
-    int getTotalApplicationVersions(Group group);
+    long getTotalApplications(Group group);
+
+    long getTotalApplicationVersions(Group group);
 
     double getTotalMegabyteStorageAmount(Group group);
 
@@ -42,12 +44,6 @@ public interface GroupService extends EntityService<Group>, DomainEntityService<
      * @return boolean true if the group is at the maximum number of applications allowed.
      */
     boolean isApplicationLimit(Group group);
-
-    /**
-     * @param group Group - check to see if this group has reached the maximum number of users allowed.
-     * @return boolean true if the group is at the maximum number of users allowed.
-     */
-    boolean isUserLimit(Group group);
 
     GroupModel createGroupModel(Long groupId);
 

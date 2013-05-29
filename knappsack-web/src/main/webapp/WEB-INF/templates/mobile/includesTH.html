@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knsappsack.com">
+<html xmlns:th="http://www.thymeleaf.org">
 
 <head th:fragment="mobileHead">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
@@ -8,63 +8,50 @@
     <meta name="HandheldFriendly" content="true"/>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <link rel="shortcut icon" href="../../../resources/img/favicon.png" ks:href="@{/resources/img/favicon.png}"/>
-    <link rel="apple-touch-icon" sizes="57x57" href="../../../resources/img/apple_touch_icon_57x57.png" ks:href="@{/resources/img/apple_touch_icon_57x57.png}" />
-    <link rel="apple-touch-icon" sizes="72x72" href="../../../resources/img/apple_touch_icon_72x72.png" ks:href="@{/resources/img/apple_touch_icon_72x72.png}" />
-    <link rel="apple-touch-icon" sizes="114x114" href="../../../resources/img/apple_touch_icon_114x114.png" ks:href="@{/resources/img/apple_touch_icon_114x114.png}" />
-    <link rel="apple-touch-icon" sizes="144x144" href="../../../resources/img/apple_touch_icon_144x144.png" ks:href="@{/resources/img/apple_touch_icon_144x144.png}" />
 
-    <link rel="stylesheet" href="../../../resources/css/jquery.mobile-1.2.0.min.css" ks:href="@{/resources/css/jquery.mobile-1.2.0.min.css}"/>
-    <link rel="stylesheet" href="../../../resources/css/custom-mobile_1.min.css" ks:href="@{/resources/css/custom-mobile_1.min.css}"/>
-
-    <script src="../../../resources/js/jquery-1.7.1.min.js" ks:src="@{/resources/js/jquery-1.7.1.min.js}"></script>
-    <script src="../../../resources/js/knappsack_3.min.js" ks:src="@{/resources/js/knappsack_3.min.js}"></script>
-    <script type="text/javascript" src="../../../resources/js/openid.min.js" ks:src="@{/resources/js/openid.min.js}"></script>
-    <script th:inline="javascript">
+    <script th:src="@{/static/jawr_loader.js}" type="text/javascript"></script>
+    <script type="text/javascript" th:inline="javascript">
         /*<![CDATA[*/
-        $(document).live("mobileinit", function() {
-            $.mobile.defaultPageTransition = "slide";
-//            $.mobile.ignoreContentEnabled = true;
-        });
+        JAWR.loader.style('/bundles/mobile.css');
 
-//        $(function() {
-//            $("div[data-role*='page']").live('pagehide', function(event, ui) {
-//                if ($(this).is(".page-no-cache")) {
-//                    $(this).remove();
-//                }
-//            });
-//        });
-        /*]]>*/
-    </script>
-
-    <link type="text/css" rel="stylesheet" href='../../../resources/css/login-mobile.min.css' ks:href="@{/resources/css/login-mobile.min.css}"/>
-    <link type="text/css" rel="stylesheet" href="../../../resources/css/add2home-2.0.5.min.css" ks:href="@{/resources/css/add2home-2.0.5.min.css}"/>
-
-    <script src="../../../resources/js/jquery.mobile-1.2.0.min.js" ks:src="@{/resources/js/jquery.mobile-1.2.0.min.js}"></script>
-
-    <title th:text="${title}">Knappsack</title>
-
-</head>
-
-<body>
-
-<div th:fragment="pageSpecificImports">
-    <link type="text/css" rel="stylesheet" href="../../../resources/css/flexslider.min.css" ks:href="@{/resources/css/flexslider.min.css}" th:if="${include_detail}"/>
-
-    <script type="text/javascript" th:if="${include_home}">
         var addToHomeConfig = {
             startDelay:500,
             touchIcon:true,
             animationIn:'bubble',
             animationOut:'fade',
-            lifespan:10000
+            lifespan:10000,
+            autostart:false
         };
-    </script>
-    <script type="text/javascript" src="../../../resources/js/add2home-2.0.5.min.js" ks:src="@{/resources/js/add2home-2.0.5.min.js}" th:if="${include_home}"></script>
-    <script type="text/javascript" src="../../../resources/js/jquery.flexslider.min.js" ks:src="@{/resources/js/jquery.flexslider.min.js}" th:if="${include_detail}"></script>
-    <script type="text/javascript" src="../../../resources/js/jquery.validate.min.js" ks:src="@{/resources/js/jquery.validate.min.js}"></script>
 
-</div>
+        JAWR.loader.script('/bundles/knappsack.js')
+        JAWR.loader.script('/bundles/mobile.js');
+
+        $(document).live("mobileinit", function() {
+            $.mobile.defaultPageTransition = "slide";
+            $.mobile.ajaxEnabled = false;
+            ks.contextPath = /*[[${#httpServletRequest.contextPath}]]*/ '';
+        });
+        /*]]>*/
+    </script>
+    <script type="text/javascript">
+
+    </script>
+
+    <!-- Typekit -->
+    <script type="text/javascript" src="//use.typekit.net/gae0wog.js"></script>
+    <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+
+    <link rel="shortcut icon" href="../../../resources/img/favicon.png" th:href="@{/static/resources/img/favicon.png}"/>
+    <link rel="apple-touch-icon" sizes="57x57" href="../../../resources/img/apple_touch_icon_57x57.png" th:href="@{/static/resources/img/apple_touch_icon_57x57.png}" />
+    <link rel="apple-touch-icon" sizes="72x72" href="../../../resources/img/apple_touch_icon_72x72.png" th:href="@{/static/resources/img/apple_touch_icon_72x72.png}" />
+    <link rel="apple-touch-icon" sizes="114x114" href="../../../resources/img/apple_touch_icon_114x114.png" th:href="@{/static/resources/img/apple_touch_icon_114x114.png}" />
+    <link rel="apple-touch-icon" sizes="144x144" href="../../../resources/img/apple_touch_icon_144x144.png" th:href="@{/static/resources/img/apple_touch_icon_144x144.png}" />
+
+    <title th:text="${orgName}">Knappsack</title>
+
+</head>
+
+<body>
 
 </body>
 </html>

@@ -5,6 +5,19 @@
 
     <context:property-placeholder location="classpath:properties/mail.properties" ignore-unresolvable="true"/>
 
+    <beans profile="production">
+        <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+            <property name="host" value="${prod.mail.server.host}" />
+            <property name="port" value="${prod.mail.server.port}" />
+            <property name="protocol" value="${prod.mail.server.protocol}" />
+            <property name="username" value="${SesSMTPUsername}" />
+            <property name="password" value="${SesSMTPPassword}" />
+            <property name="javaMailProperties">
+                <util:properties location="classpath:properties/javamail.properties" />
+            </property>
+        </bean>
+    </beans>
+
     <beans profile="dev">
         <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
             <property name="host" value="${dev.mail.server.host}" />

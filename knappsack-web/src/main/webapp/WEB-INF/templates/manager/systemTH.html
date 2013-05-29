@@ -1,14 +1,231 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="active='systemNav',title=#{desktop.manager.title}">
+<html xmlns:th="http://www.thymeleaf.org" th:with="adminSystemNavActive=${true},title=#{desktop.manager.title}">
 
 <head th:substituteby="/includesTH :: head"></head>
 
-<body class="lightnav">
+<body>
 
-<div th:substituteby="/includesTH :: header"/>
+<div class="container knappsack-container">
 
-<div class="container-fluid">
+    <div th:substituteby="/includesTH :: header"/>
+
+    <div class="row">
+
+        <div th:substituteby="/includesTH :: side_menu"/>
+
+        <div class="span10">
+
+            <div class="page-info callout" th:if="${#bools.isFalse(isEdit)}"> <b class="notch"></b>
+                <span class="page-info-bold"><span th:text="#{desktop.manager.system.header.overview}">Manage Knappsack</span><span>:</span></span> <span th:text="#{desktop.manager.system.header.lead}"></span>
+            </div>
+
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid page-header first" style="border: none;">
+                        <ul id="tab" class="nav nav-tabs">
+                            <li class="active tab">
+                                <a id="metricsTab" href="#metrics" th:text="#{desktop.manager.system.tab.metrics}" data-toggle="tab">Metrics</a>
+                            </li>
+                            <li class="tab">
+                                <a id="notificationsTab" href="#notifications" th:text="#{desktop.manager.system.tab.notifications}" data-toggle="tab">Notifications</a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <div id="metrics" class="tab-pane active">
+                                <div class="row-fluid">
+                                    <div class="page-header">
+                                        <h1 th:text="#{desktop.manager.system.metrics}">Metrics</h1>
+                                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.organizationCount}">Organizations:</span> <b th:text="${organizationCount}"/></span>
+                                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.applicationCount}">Applications:</span> <b th:text="${applicationCount}"/></span>
+                                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.userCount}">Users:</span> <b th:text="${userCount}"/></span>
+                                    </div>
+                                </div>
+                                <div class="row-fluid">
+                                    <form class="form-inline">
+                                        <label class="inline">
+                                            <b th:text="#{desktop.manager.system.minDate.label}">Min Date:</b> <input type="text" id="datepicker_min" class="date-filter" th:placeholder="#{desktop.manager.system.minDate.placeholder}" placeholder="mm/dd/yyyy" th:title="#{desktop.manager.system.minDate.title}" title="Min Date" style="width: auto;"/>
+                                        </label>
+                                        <label class="inline">
+                                            <b th:text="#{desktop.manager.system.maxDate.label}">Max Date:</b> <input type="text" id="datepicker_max" class="date-filter" th:placeholder="#{desktop.manager.system.maxDate.placeholder}" placeholder="mm/dd/yyyy" th:title="#{desktop.manager.system.maxDate.title}" title="Max Date" style="width: auto;"/>
+                                        </label>
+
+                                        <button id="exportExcelBtn" class="btn btn-success" disabled="disabled" th:title="#{desktop.manager.system.excelExport.button.title}" title="Export to Excel"><i class="icon-download icon-white"/>&nbsp;<span th:text="#{desktop.manager.system.excelExport.button}">Export to Excel</span></button>
+
+                                    </form>
+                                </div>
+                                <div>
+                                    <table id="orgsTable" class="table table-striped table-bordered">
+                                        <thead>
+                                        <tr>
+                                            <th th:text="#{desktop.manager.system.orgTable.header.name}">Name</th>
+                                            <th class="date" th:text="#{desktop.manager.system.orgTable.header.createDate}">Date Created</th>
+                                            <th th:text="#{desktop.manager.system.orgTable.header.paymentPlan}">Payment Plan</th>
+                                            <th th:text="#{desktop.manager.system.orgTable.header.status}">Status</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div id="notifications" class="tab-pane">
+                                <div class="row-fluid">
+                                    <div id="notificationUpdateSuccess" class="alert alert-success" th:if="${#bools.isTrue(notificationUpdateSuccess)}">
+                                        <a class="close" data-dismiss="alert" href="#">x</a>
+                                        <strong th:text="#{alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.manager.system.systemNotificationUpdate.success}">System Notification updated successfully.</span>
+                                    </div>
+                                    <span class="label" th:text="#{desktop.manager.system.systemNotification.labelInfo}">Note: Click on a row to edit or delete the System Notification.</span>
+                                    <table id="systemNotificationsTable" class="table table-striped table-bordered" style="width: 100%;">
+                                        <thead>
+                                        <tr>
+                                            <th class="datetime" th:text="#{desktop.manager.system.systemNotificationTable.header.startDate}">Start Date</th>
+                                            <th class="datetime" th:text="#{desktop.manager.system.systemNotificationTable.header.endDate}">End Date</th>
+                                            <th th:text="#{desktop.manager.system.systemNotificationTable.header.type}">Type</th>
+                                            <th th:text="#{desktop.manager.system.systemNotificationTable.header.severity}">Severity</th>
+                                            <th th:text="#{desktop.manager.system.systemNotificationTable.header.allPages}">All Pages?</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <hr />
+                                <div class="row-fluid">
+                                    <div class="span7">
+                                        <form id="notificationsForm" th:object="${systemNotificationForm}" th:action="@{/manager/saveSystemNotification}" action="/manager/saveSystemNotification" method="POST" style="width: 100%">
+                                            <div id="notificationFormErrors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                                                <h2 th:text="#{errors.header}">Errors</h2>
+                                                <ul>
+                                                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                                                </ul>
+                                            </div>
+                                            <input type="hidden" id="systemNotificationId" th:field="*{id}"/>
+                                            <div>
+                                                <div style="display: inline-block;">
+                                                    <label class="control-label" for="systemNotificationStartDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.startDate.label}">Start Date</span></label>
+                                                    <input id="systemNotificationStartDate" class="datetime_picker required" type="datetime" th:field="*{startDate}" required="required" placeholder="mm/dd/yyyy hh:mm" style="width: auto;"/>
+                                                </div>
+                                                <div style="display: inline-block;">
+                                                    <label class="control-label" for="systemNotificationEndDate"><span th:text="#{desktop.manager.system.systemNotification.endDate.label}">End Date</span></label>
+                                                    <input id="systemNotificationEndDate" class="datetime_picker" type="datetime" th:field="*{endDate}" placeholder="mm/dd/yyyy hh:mm" style="width: auto;"/>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div style="display: inline-block;">
+                                                    <label class="control-label" for="systemNotificationEndDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.notificationType.label}">Type</span></label>
+                                                    <select id="systemNotificationType" th:field="*{notificationType}" required="required" style="width: auto;">
+                                                        <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                        <option th:each="systemNotificationType : ${systemNotificationTypes}"
+                                                                th:value="${systemNotificationType}"
+                                                                th:text="${systemNotificationType}"></option>
+                                                    </select>
+                                                </div>
+                                                <div style="display: inline-block;">
+                                                    <label class="control-label" for="systemNotificationEndDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.notificationSeverity.label}">Severity</span></label>
+                                                    <select id="systemNotificationSeverity" th:field="*{notificationSeverity}" required="required" style="width: auto;">
+                                                        <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                        <option th:each="systemNotificationSeverity : ${systemNotificationSeverityTypes}"
+                                                                th:value="${systemNotificationSeverity}"
+                                                                th:text="${systemNotificationSeverity}"></option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <textarea id="systemNotificationMessage" th:field="*{message}" style="width: 80%;"/>
+                                            <div>
+                                                <label class="checkbox" for="systemNotificationAllPages"><input type="checkbox" id="systemNotificationAllPages" th:field="*{allPages}"/> <b><span th:text="#{desktop.manager.system.systemNotification.allPages.label}">Show this notification on all pages?</span></b></label>
+                                            </div>
+                                            <div class="form-actions">
+                                                <button id="saveBtn" type="submit" class="btn btn-primary" th:text="#{desktop.manager.system.systemNotification.save}">Save</button>
+                                                <button id="cancelSystemNotificationBtn" class="btn btn-warning"><i class="icon-white icon-remove"/>&nbsp;Cancel</button>
+                                                <button id="deleteSystemNotificationBtn" class="btn btn-danger" style="display: none;"><i class="icon-white icon-trash"/>&nbsp;Delete</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="span5">
+                                        <dl>
+                                            <dt th:text="#{desktop.manager.system.systemNotification.startDate.label}">Start Date</dt>
+                                            <dd th:text="#{desktop.manager.system.systemNotification.startDate.help}">The date and time for which you want the notification to start being shown.  Format: mm/dd/yyyy hh:mm. The date entered should be in your local timezone.</dd>
+                                            <dt th:text="#{desktop.manager.system.systemNotification.endDate.label}">End Date</dt>
+                                            <dd th:text="#{desktop.manager.system.systemNotification.endDate.help}">The date and time for which you want the notification to stop being shown.  An empty value means the notification will never automatically stop being shown.  Format: mm/dd/yyyy hh:mm. The date entered should be in your local timezone.</dd>
+                                            <dt th:text="#{desktop.manager.system.systemNotification.notificationType.label}">Type</dt>
+                                            <dd th:text="#{desktop.manager.system.systemNotification.notificationType.help}">The type of notification.  If the notification is not set to show on all pages then this will be used to determine which pages the notification should be shown on.</dd>
+                                            <dt th:text="#{desktop.manager.system.systemNotification.notificationSeverity.label}">Severity</dt>
+                                            <dd th:text="#{desktop.manager.system.systemNotification.notificationSeverity.help}">The severity of the notification.  This will determine color of the alert box.</dd>
+                                            <dt th:text="#{desktop.manager.system.systemNotification.allPages.label}">All Pages?</dt>
+                                            <dd th:text="#{desktop.manager.system.systemNotification.allPages.help}">Should this notification be displayed on all pages?  Unchecked means it would only be displayed on the home page or pages based on the Notification Type.</dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="progressModal" class="modal fade hide" style="display: none;">
+    <div class="modal-body">
+        <div class="alert alert-info">
+            <b th:text="#{alert.info.prefix}">Heads up!</b>
+            <span th:text="#{desktop.manager.system.progressModal.info}">This may take several moments to complete depending on the size of the data.</span>
+        </div>
+
+        <div class="progress progress-striped active">
+            <div class="bar" style="width: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="organizationModal" class="modal hide fade" style="display: none;">
+    <div class="modal-header">
+        <a class="close" data-dismiss="modal" th:text="#{alert.close}">x</a>
+        <h3 th:text="#{desktop.includes.confirmation.modal.title}">Title</h3>
+    </div>
+    <div class="modal-body">
+
+        <div>
+            <b th:text="#{desktop.manager.system.organizationModal.dateCreated}">Date Created:</b> <span id="modalCreateDate"/>
+        </div>
+        <div>
+            <b th:text="#{desktop.manager.system.organizationModal.customerId}">Customer ID:</b> <span id="modalCustomerId"/>
+        </div>
+        <div>
+            <b th:text="#{desktop.manager.system.organizationModal.paymentPlan}">Payment Plan:</b> <span id="modalPaymentPlan"/>
+        </div>
+        <div>
+            <b th:text="#{desktop.manager.system.organizationModal.status}">Status:</b> <span id="modalCustomerStatus"/>
+        </div>
+
+        <hr/>
+
+        <header>
+            <h4 th:text="#{desktop.manager.system.organizationModal.header.admins}">Admins</h4>
+        </header>
+        <table id="adminTable" class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th th:text="#{desktop.manager.system.organizationModal.adminTable.header.name}">Name</th>
+                <th th:text="#{desktop.manager.system.organizationModal.adminTable.header.email}">Email</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="modal-footer">
+        <a id="modalCancel" href="#" class="btn" data-dismiss="modal">Close</a>
+    </div>
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<div th:substituteby="/includesTH :: scripts"/>
 
 <script type="text/javascript" th:inline="javascript">
 /*<![CDATA[*/
@@ -28,10 +245,10 @@ $(document).ready(function () {
     var $systemNotificationForm = /*[[${systemNotificationForm}]]*/ {};
     if ($systemNotificationForm != undefined) {
         if ($systemNotificationForm.startDate != undefined) {
-            $('#systemNotificationStartDate').val(formatDateTime($systemNotificationForm.startDate.time));
+            $('#systemNotificationStartDate').val(ks.formatDateTime($systemNotificationForm.startDate.time));
         }
         if ($systemNotificationForm.endDate != undefined) {
-            $('#systemNotificationEndDate').val(formatDateTime($systemNotificationForm.endDate.time));
+            $('#systemNotificationEndDate').val(ks.formatDateTime($systemNotificationForm.endDate.time));
         }
     }
 
@@ -42,7 +259,7 @@ $(document).ready(function () {
         "html": true
     });
 
-    var minDate = formatDate(new Date().getTime());
+    var minDate = ks.formatDate(new Date().getTime());
     $('#datepicker_min').val(minDate);
     var maxDate = '';
     $('#datepicker_min').on('change', function() {
@@ -68,7 +285,7 @@ $(document).ready(function () {
 
     var fnOnOrgModalShow = function(data) {
         $('.modal-header h3', "#organizationModal").text(data.name);
-        $('#modalCreateDate').text(formatDate(data.createDate));
+        $('#modalCreateDate').text(ks.formatDate(data.createDate));
         $('#modalCustomerId').text(data.customer.externalId);
         $('#modalPaymentPlan').text(data.customer.subscription.paymentPlanModel.name);
         $('#modalCustomerStatus').text(data.customer.subscription.status);
@@ -77,7 +294,7 @@ $(document).ready(function () {
             adminTable.fnReloadAjax(buildOrgAdminsUrl(data.id));
         } else {
             adminTable = $('#adminTable').dataTable( {
-                "sDom": "<<''l><'floatright'f>r>t<<''i><'floatright'p>>",
+                "sDom": "<<''l><'pull-right'f>r>t<<''i><'pull-right'p>>",
                 "sPaginationType": "bootstrap",
                 "oLanguage": {
                     "sLengthMenu": '<select>'+
@@ -122,7 +339,7 @@ $(document).ready(function () {
     };
 
     var $orgsTable = $('#orgsTable').dataTable( {
-        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sDom": "<'table-inline'<<'span6'l><'pull-right'f>r>t<<'span6'i><'pull-right'p>>>",
         "sPaginationType": "bootstrap",
         "oLanguage": {
             "sLengthMenu": "_MENU_ " + recordsPerPageText
@@ -150,7 +367,7 @@ $(document).ready(function () {
                 "aTargets" : [1],
                 "mData" : "createDate",
                 "mRender" : function(data, type, full) {
-                    return formatDate(data);
+                    return ks.formatDate(data);
                 }
             },
             {
@@ -190,7 +407,7 @@ $(document).ready(function () {
     });
 
     var $systemNotificationsTable = $('#systemNotificationsTable').dataTable( {
-        "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+        "sDom": "<'table-inline'<<'span6'l><'pull-right'f>r>t<<'span6'i><'pull-right'p>>>",
         "sPaginationType": "bootstrap",
         "oLanguage": {
             "sLengthMenu": "_MENU_ " + recordsPerPageText
@@ -206,7 +423,7 @@ $(document).ready(function () {
                 "aTargets" : [0],
                 "mData" : "startDate",
                 "mRender" : function(data, type, full) {
-                    return formatDateTime(data);
+                    return ks.formatDateTime(data);
                 },
                 "sDefaultContent" : "N/A"
             },
@@ -214,7 +431,7 @@ $(document).ready(function () {
                 "aTargets" : [1],
                 "mData" : "endDate",
                 "mRender" : function(data, type, full) {
-                    return formatDateTime(data);
+                    return ks.formatDateTime(data);
                 },
                 "sDefaultContent" : "N/A"
             },
@@ -244,8 +461,8 @@ $(document).ready(function () {
 
                 $('#systemNotificationId').val(aData.id);
                 toggleSystemNotificationDeleteBtn();
-                $('#systemNotificationStartDate').val(formatDateTime(aData.startDate));
-                $('#systemNotificationEndDate').val(formatDateTime(aData.endDate));
+                $('#systemNotificationStartDate').val(ks.formatDateTime(aData.startDate));
+                $('#systemNotificationEndDate').val(ks.formatDateTime(aData.endDate));
                 $('#systemNotificationType').val(aData.notificationType);
                 $('#systemNotificationSeverity').val(aData.notificationSeverity);
                 $('#systemNotificationAllPages').prop('checked', aData.allPages);
@@ -347,27 +564,6 @@ $(document).ready(function () {
         return orgAdminsUrl + "?" + $.param({'orgId' : orgId});
     }
 
-    function formatDate(milliseconds) {
-        if (milliseconds != undefined && milliseconds >= 0) {
-            var date = new Date(milliseconds);
-            return ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" + ("0" + date.getUTCDate()).slice(-2) + "/" + date.getFullYear();
-        }
-    }
-
-    function formatDateTimeToUTC(milliseconds) {
-        if (milliseconds != undefined && milliseconds >= 0) {
-            var date = new Date(milliseconds);
-            return ("0" + (date.getUTCMonth()+1)).slice(-2) + "/" + ("0" + date.getUTCDate()).slice(-2) + "/" + date.getFullYear() + " " + ("0" + date.getUTCHours()).slice(-2) + ":" + ("0" + date.getUTCMinutes()).slice(-2);
-        }
-    }
-
-    function formatDateTime(milliseconds) {
-        if (milliseconds != undefined && milliseconds >= 0) {
-            var date = new Date(milliseconds);
-            return ("0" + (date.getMonth()+1)).slice(-2) + "/" + ("0" + date.getDate()).slice(-2) + "/" + date.getFullYear() + " " + ("0" + date.getHours()).slice(-2) + ":" + ("0" + date.getMinutes()).slice(-2);
-        }
-    }
-
     function showModal(id, data, fnOnShow, fnOnHide) {
         if (id.substr(0, 1) !== '#') {
             id = '#' + id;
@@ -395,8 +591,8 @@ $(document).ready(function () {
         var startDate = new Date(startDateStr);
         var endDate = new Date(endDateStr);
 
-        $('#systemNotificationStartDate').val(formatDateTimeToUTC(startDate.getTime()));
-        $('#systemNotificationEndDate').val(formatDateTimeToUTC(endDate.getTime()));
+        $('#systemNotificationStartDate').val(ks.formatDateTimeToUTC(startDate.getTime()));
+        $('#systemNotificationEndDate').val(ks.formatDateTimeToUTC(endDate.getTime()));
 
         return true;
     });
@@ -462,224 +658,6 @@ $(document).ready(function () {
 });
 /*]]>*/
 </script>
-
-<div class="row-fluid">
-
-    <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
-
-    <div class="span10">
-
-        <header class="jumbotron subhead" id="overview">
-            <h1 style="text-align: left" th:text="#{desktop.manager.system.header.overview}">Manage Knappsack</h1>
-        </header>
-
-        <div class="tabbable">
-
-            <ul id="tab" class="nav nav-tabs">
-                <li class="active tab">
-                    <a href="#metrics" th:text="#{desktop.manager.system.tab.metrics}" data-toggle="tab">Metrics</a>
-                </li>
-                <li class="tab">
-                    <a href="#notifications" th:text="#{desktop.manager.system.tab.notifications}" data-toggle="tab">Notifications</a>
-                </li>
-            </ul>
-
-            <div class="tab-content">
-                <div id="metrics" class="tab-pane active">
-                    <div class="row-fluid">
-                        <h3 th:text="#{desktop.manager.system.metrics}"></h3>
-                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.organizationCount}">Organizations:</span> <b th:text="${organizationCount}"/></span>
-                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.applicationCount}">Applications:</span> <b th:text="${applicationCount}"/></span>
-                        <span style="display:block"><span th:text="#{desktop.manager.system.metrics.userCount}">Users:</span> <b th:text="${userCount}"/></span>
-                        <hr />
-
-                        <form class="form-inline">
-                            <label class="inline">
-                                <b th:text="#{desktop.manager.system.minDate.label}">Min Date:</b> <input type="text" id="datepicker_min" class="date-filter" th:placeholder="#{desktop.manager.system.minDate.placeholder}" placeholder="mm/dd/yyyy" th:title="#{desktop.manager.system.minDate.title}" title="Min Date" style="width: auto;"/>
-                            </label>
-                            <label class="inline">
-                                <b th:text="#{desktop.manager.system.maxDate.label}">Max Date:</b> <input type="text" id="datepicker_max" class="date-filter" th:placeholder="#{desktop.manager.system.maxDate.placeholder}" placeholder="mm/dd/yyyy" th:title="#{desktop.manager.system.maxDate.title}" title="Max Date" style="width: auto;"/>
-                            </label>
-
-                            <button id="exportExcelBtn" class="btn btn-success" disabled="disabled" th:title="#{desktop.manager.system.excelExport.button.title}" title="Export to Excel"><i class="icon-download icon-white"/>&nbsp;<span th:text="#{desktop.manager.system.excelExport.button}">Export to Excel</span></button>
-
-                        </form>
-
-                        <table id="orgsTable" class="table table-striped table-bordered">
-                            <thead>
-                            <tr>
-                                <th th:text="#{desktop.manager.system.orgTable.header.name}">Name</th>
-                                <th class="date" th:text="#{desktop.manager.system.orgTable.header.createDate}">Date Created</th>
-                                <th th:text="#{desktop.manager.system.orgTable.header.paymentPlan}">Payment Plan</th>
-                                <th th:text="#{desktop.manager.system.orgTable.header.status}">Status</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="notifications" class="tab-pane">
-                    <div class="row-fluid">
-                        <div id="notificationUpdateSuccess" class="alert alert-success" th:if="${#bools.isTrue(notificationUpdateSuccess)}">
-                            <a class="close" data-dismiss="alert" href="#">x</a>
-                            <strong th:text="#{desktop.alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.manager.system.systemNotificationUpdate.success}">System Notification updated successfully.</span>
-                        </div>
-                        <span class="label label-info" th:text="#{desktop.manager.system.systemNotification.labelInfo}">Note: Click on a row to edit or delete the System Notification.</span>
-                        <table id="systemNotificationsTable" class="table table-striped table-bordered" style="width: 100%;">
-                            <thead>
-                            <tr>
-                                <th class="datetime" th:text="#{desktop.manager.system.systemNotificationTable.header.startDate}">Start Date</th>
-                                <th class="datetime" th:text="#{desktop.manager.system.systemNotificationTable.header.endDate}">End Date</th>
-                                <th th:text="#{desktop.manager.system.systemNotificationTable.header.type}">Type</th>
-                                <th th:text="#{desktop.manager.system.systemNotificationTable.header.severity}">Severity</th>
-                                <th th:text="#{desktop.manager.system.systemNotificationTable.header.allPages}">All Pages?</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                    <hr />
-                    <div class="row-fluid">
-                        <div class="span7">
-                            <form id="notificationsForm" th:object="${systemNotificationForm}" th:action="@{/manager/saveSystemNotification}" action="/manager/saveSystemNotification" method="POST" style="width: 100%">
-                                <div id="notificationFormErrors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
-                                    <h1 th:text="#{errors.header}"></h1>
-                                    <ul>
-                                        <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
-                                    </ul>
-                                </div>
-                                <input type="hidden" id="systemNotificationId" th:field="*{id}"/>
-                                <div>
-                                    <div style="display: inline-block;">
-                                        <label class="control-label" for="systemNotificationStartDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.startDate.label}">Start Date</span></label>
-                                        <input id="systemNotificationStartDate" class="datetime_picker required" type="datetime" th:field="*{startDate}" required="required" placeholder="mm/dd/yyyy hh:mm" style="width: auto;"/>
-                                    </div>
-                                    <div style="display: inline-block;">
-                                        <label class="control-label" for="systemNotificationEndDate"><span th:text="#{desktop.manager.system.systemNotification.endDate.label}">End Date</span></label>
-                                        <input id="systemNotificationEndDate" class="datetime_picker" type="datetime" th:field="*{endDate}" placeholder="mm/dd/yyyy hh:mm" style="width: auto;"/>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div style="display: inline-block;">
-                                        <label class="control-label" for="systemNotificationEndDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.notificationType.label}">Type</span></label>
-                                        <select id="systemNotificationType" th:field="*{notificationType}" required="required" style="width: auto;">
-                                            <option value="" th:text="#{select.option.default}">--Please Select--</option>
-                                            <option th:each="systemNotificationType : ${systemNotificationTypes}"
-                                                    th:value="${systemNotificationType}"
-                                                    th:text="${systemNotificationType}"></option>
-                                        </select>
-                                    </div>
-                                    <div style="display: inline-block;">
-                                        <label class="control-label" for="systemNotificationEndDate"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.system.systemNotification.notificationSeverity.label}">Severity</span></label>
-                                        <select id="systemNotificationSeverity" th:field="*{notificationSeverity}" required="required" style="width: auto;">
-                                            <option value="" th:text="#{select.option.default}">--Please Select--</option>
-                                            <option th:each="systemNotificationSeverity : ${systemNotificationSeverityTypes}"
-                                                    th:value="${systemNotificationSeverity}"
-                                                    th:text="${systemNotificationSeverity}"></option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <textarea id="systemNotificationMessage" th:field="*{message}" style="width: 100%;"/>
-                                <div>
-                                    <label class="checkbox" for="systemNotificationAllPages"><input type="checkbox" id="systemNotificationAllPages" th:field="*{allPages}"/> <b><span th:text="#{desktop.manager.system.systemNotification.allPages.label}">Show this notification on all pages?</span></b></label>
-                                </div>
-                                <hr/>
-                                <button type="submit" class="btn btn-primary" th:text="#{desktop.manager.system.systemNotification.save}">Save</button>
-                                <button id="cancelSystemNotificationBtn" class="btn btn-warning"><i class="icon-white icon-remove"/>&nbsp;Cancel</button>
-                                <button id="deleteSystemNotificationBtn" class="btn btn-danger" style="display: none;"><i class="icon-white icon-trash"/>&nbsp;Delete</button>
-                            </form>
-                        </div>
-                        <div class="span5 well">
-                            <dl>
-                                <dt th:text="#{desktop.manager.system.systemNotification.startDate.label}">Start Date</dt>
-                                <dd th:text="#{desktop.manager.system.systemNotification.startDate.help}">The date and time for which you want the notification to start being shown.  Format: mm/dd/yyyy hh:mm. The date entered should be in your local timezone.</dd>
-                                <dt th:text="#{desktop.manager.system.systemNotification.endDate.label}">End Date</dt>
-                                <dd th:text="#{desktop.manager.system.systemNotification.endDate.help}">The date and time for which you want the notification to stop being shown.  An empty value means the notification will never automatically stop being shown.  Format: mm/dd/yyyy hh:mm. The date entered should be in your local timezone.</dd>
-                                <dt th:text="#{desktop.manager.system.systemNotification.notificationType.label}">Type</dt>
-                                <dd th:text="#{desktop.manager.system.systemNotification.notificationType.help}">The type of notification.  If the notification is not set to show on all pages then this will be used to determine which pages the notification should be shown on.</dd>
-                                <dt th:text="#{desktop.manager.system.systemNotification.notificationSeverity.label}">Severity</dt>
-                                <dd th:text="#{desktop.manager.system.systemNotification.notificationSeverity.help}">The severity of the notification.  This will determine color of the alert box.</dd>
-                                <dt th:text="#{desktop.manager.system.systemNotification.allPages.label}">All Pages?</dt>
-                                <dd th:text="#{desktop.manager.system.systemNotification.allPages.help}">Should this notification be displayed on all pages?  Unchecked means it would only be displayed on the home page or pages based on the Notification Type.</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-</div>
-
-<div id="progressModal" class="modal fade hide" style="display: none;">
-    <div class="modal-body">
-        <div class="alert alert-info">
-            <b th:text="#{desktop.alert.info.prefix}">Heads up!</b>
-            <span th:text="#{desktop.manager.system.progressModal.info}">This may take several moments to complete depending on the size of the data.</span>
-        </div>
-
-        <div class="progress progress-striped active">
-            <div class="bar" style="width: 100%;"></div>
-        </div>
-    </div>
-</div>
-
-<div id="organizationModal" class="modal hide fade" style="display: none;">
-    <div class="modal-header">
-        <a class="close" data-dismiss="modal" th:text="#{desktop.alert.close}">x</a>
-        <h3 th:text="#{desktop.includes.confirmation.modal.title}">Title</h3>
-    </div>
-    <div class="modal-body">
-
-        <div>
-            <b th:text="#{desktop.manager.system.organizationModal.dateCreated}">Date Created:</b> <span id="modalCreateDate"/>
-        </div>
-        <div>
-            <b th:text="#{desktop.manager.system.organizationModal.customerId}">Customer ID:</b> <span id="modalCustomerId"/>
-        </div>
-        <div>
-            <b th:text="#{desktop.manager.system.organizationModal.paymentPlan}">Payment Plan:</b> <span id="modalPaymentPlan"/>
-        </div>
-        <div>
-            <b th:text="#{desktop.manager.system.organizationModal.status}">Status:</b> <span id="modalCustomerStatus"/>
-        </div>
-
-        <hr/>
-
-        <header>
-            <h4 th:text="#{desktop.manager.system.organizationModal.header.admins}">Admins</h4>
-        </header>
-        <table id="adminTable" class="table table-striped table-bordered">
-            <thead>
-            <tr>
-                <th th:text="#{desktop.manager.system.organizationModal.adminTable.header.name}">Name</th>
-                <th th:text="#{desktop.manager.system.organizationModal.adminTable.header.email}">Email</th>
-            </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-    <div class="modal-footer">
-        <a id="modalCancel" href="#" class="btn" data-dismiss="modal">Close</a>
-    </div>
-</div>
-
-<div th:substituteBy="/includesTH :: confirmation_modal"></div>
-
-<footer th:substituteby="/includesTH :: footer"></footer>
-
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-    <section th:include="/includesTH :: inputmask_scripts"/>
-    <script th:substituteby="/includesTH :: blockui_script"></script>
-    <script th:substituteby="/includesTH :: cookie_script"></script>
-    <section th:include="/includesTH :: table_scripts"/>
-    <section th:include="/includesTH :: wysiwyg_scripts"/>
-</section>
 
 </body>
 </html>

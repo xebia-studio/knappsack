@@ -85,7 +85,7 @@ public class ProfileController extends AbstractController {
         return "redirect:/profile/changePassword?success=" + success;
     }
 
-    @RequestMapping(value = "/resetPassword", method = RequestMethod.GET)
+    @RequestMapping(value = "/resetPassword", method = RequestMethod.POST)
     public
     @ResponseBody
     Result forgotPassword(WebRequest request) {

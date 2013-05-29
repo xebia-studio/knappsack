@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.1.xsd">
+
+
+    <beans profile="production">
+        <!--<context:property-placeholder location="classpath:/properties/sqs.properties" ignore-unresolvable="true"/>-->
+
+        <bean id="sqsEmailServiceWorker" class="com.sparc.knappsack.components.services.SQSEmailServiceWorker">
+            <property name="awsAccessKey" value="${AWS_ACCESS_KEY_ID}"/>
+            <property name="awsSecretKey" value="${AWS_SECRET_KEY}"/>
+            <property name="sqsQueueName" value="${SqsEmailQueue}"/>
+        </bean>
+    </beans>
+
+    <!--<beans profile="dev">-->
+        <!--<context:property-placeholder location="classpath:/properties/sqs.properties" ignore-unresolvable="true"/>-->
+
+        <!--<bean id="sqsEmailServiceWorker" class="com.sparc.knappsack.components.services.SQSEmailServiceWorker">-->
+            <!--<property name="awsAccessKey" value="${AWS_ACCESS_KEY_ID}"/>-->
+            <!--<property name="awsSecretKey" value="${AWS_SECRET_KEY}"/>-->
+            <!--<property name="sqsQueueName" value="${dev.sqs.email.queue.name}"/>-->
+        <!--</bean>-->
+    <!--</beans>-->
+
+    <beans profile="production">
+        <task:annotation-driven executor="taskExecutor" scheduler="taskScheduler"/>
+
+        <task:executor id="taskExecutor" pool-size="5" queue-capacity="0" rejection-policy="DISCARD"/>
+        <task:scheduler id="taskScheduler" pool-size="1"/>
+    </beans>
+
+</beans>

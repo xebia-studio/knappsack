@@ -12,6 +12,9 @@
                 <beans:prop key="LOCAL">
                     localStorageService
                 </beans:prop>
+                <beans:prop key="AMAZON_S3">
+                    s3StorageService
+                </beans:prop>
             </beans:props>
         </beans:property>
     </beans:bean>
@@ -25,6 +28,23 @@
                 </beans:prop>
                 <beans:prop key="GROUP">
                     groupService
+                </beans:prop>
+            </beans:props>
+        </beans:property>
+    </beans:bean>
+
+    <beans:bean id="keyVaultServiceFactory" class="org.springframework.beans.factory.config.ServiceLocatorFactoryBean">
+        <beans:property name="serviceLocatorInterface" value="com.sparc.knappsack.components.services.KeyVaultServiceFactory"/>
+        <beans:property name="serviceMappings">
+            <beans:props>
+                <beans:prop key="IPHONE">
+                    iosKeyVaultService
+                </beans:prop>
+                <beans:prop key="IPAD">
+                    iosKeyVaultService
+                </beans:prop>
+                <beans:prop key="IOS">
+                    iosKeyVaultService
                 </beans:prop>
             </beans:props>
         </beans:property>
@@ -77,6 +97,56 @@
                 </beans:prop>
                 <beans:prop key="ORGANIZATION_REGISTRATION">
                     organizationRegistrationEvent
+                </beans:prop>
+                <beans:prop key="APPLICATION_VERSION_RESIGN_COMPLETE">
+                    applicationVersionResignCompleteEvent
+                </beans:prop>
+            </beans:props>
+        </beans:property>
+    </beans:bean>
+
+    <beans:bean id="sqsEventDeliveryFactory" class="org.springframework.beans.factory.config.ServiceLocatorFactoryBean">
+        <beans:property name="serviceLocatorInterface" value="com.sparc.knappsack.components.events.sqs.SQSEventDeliveryFactory"/>
+        <beans:property name="serviceMappings">
+            <beans:props>
+                <beans:prop key="APPLICATION_VERSION_STATE_CHANGED">
+                    sqsApplicationVersionStateChangedEvent
+                </beans:prop>
+                <beans:prop key="USER_INVITE">
+                    sqsUserInviteEvent
+                </beans:prop>
+                <beans:prop key="USER_ACCOUNT_ACTIVATION">
+                    sqsUserActivationEvent
+                </beans:prop>
+                <beans:prop key="USER_ACCOUNT_ACTIVATION_SUCCESS">
+                    sqsUserAccountActivationSuccessEvent
+                </beans:prop>
+                <beans:prop key="DOMAIN_ACCESS_REQUEST">
+                    sqsDomainAccessRequestEvent
+                </beans:prop>
+                <beans:prop key="DOMAIN_USER_ACCESS_REQUEST">
+                    sqsDomainUserAccessRequestEvent
+                </beans:prop>
+                <beans:prop key="USER_PASSWORD_RESET">
+                    sqsUserPasswordResetEvent
+                </beans:prop>
+                <beans:prop key="DOMAIN_USER_ACCESS_REQUEST_CONFIRMATION">
+                    sqsDomainUserAccessRequestConfirmationEvent
+                </beans:prop>
+                <beans:prop key="APPLICATION_VERSION_ORGANIZATION_PUBLISH_REQUEST">
+                    sqsApplicationVersionPublishRequestEvent
+                </beans:prop>
+                <beans:prop key="ORGANIZATION_REGISTRATION">
+                    sqsOrganizationRegistrationEvent
+                </beans:prop>
+                <beans:prop key="BANDWIDTH_LIMIT_REACHED">
+                    sqsBandwidthLimitEvent
+                </beans:prop>
+                <beans:prop key="APPLICATION_VERSION_RESIGN_COMPLETE">
+                    sqsApplicationVersionResignCompleteEvent
+                </beans:prop>
+                <beans:prop key="APPLICATION_VERSION_ERROR">
+                    sqsApplicationVersionErrorEvent
                 </beans:prop>
             </beans:props>
         </beans:property>

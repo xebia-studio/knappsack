@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/activate")
@@ -28,8 +29,12 @@ public class ActivationController extends AbstractController {
     private EventDeliveryFactory eventDeliveryFactory;
 
     @RequestMapping(method = RequestMethod.GET)
-    public String showActivatePage(Model model, @RequestParam(required = false) boolean error) {
+    public String showActivatePage(Model model, @RequestParam(required = false) Boolean error) {
         User user = userService.getUserFromSecurityContext();
+
+        if (user.isActivated()) {
+            return "redirect:/home";
+        }
 
         if (user.isActivated()) {
             model.addAttribute("activated", true);
@@ -37,24 +42,32 @@ public class ActivationController extends AbstractController {
             model.addAttribute("activated", false);
         }
 
-        model.addAttribute("error", error);
+        if (error != null) {
+            model.addAttribute("error", error);
+        }
 
         return "activateTH";
     }
 
     @RequestMapping(value = "/{code}", method = RequestMethod.GET)
-    public String activate(@PathVariable String code) {
+    public String activate(@PathVariable String code, final RedirectAttributes redirectAttributes) {
         User user = userService.getUserFromSecurityContext();
+
+        if (user.isActivated()) {
+            return "redirect:/home";
+        }
 
         if (userService.activate(user.getId(), code)) {
             userService.updateSecurityContext(userService.get(user.getId()));
             EventDelivery deliveryMechanism = eventDeliveryFactory.getEventDelivery(EventType.USER_ACCOUNT_ACTIVATION_SUCCESS);
             if (deliveryMechanism != null) {
-                 deliveryMechanism.sendNotifications(user);
+                deliveryMechanism.sendNotifications(user);
             }
-            return "redirect:/activate";
+            redirectAttributes.addFlashAttribute("activationSuccess", true);
+            return "redirect:/home";
         } else {
-            return "redirect:/activate?error=true";
+            redirectAttributes.addFlashAttribute("error", true);
+            return "redirect:/activate";
         }
     }
 

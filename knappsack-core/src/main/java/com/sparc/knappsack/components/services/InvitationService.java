@@ -4,10 +4,14 @@ import com.sparc.knappsack.components.entities.Domain;
 import com.sparc.knappsack.components.entities.Invitation;
 import com.sparc.knappsack.components.entities.Role;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.forms.BatchInvitationForm;
+import com.sparc.knappsack.forms.InvitationForm;
 import com.sparc.knappsack.forms.InviteeForm;
+import com.sparc.knappsack.models.Contact;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Set;
 
 public interface InvitationService extends EntityService<Invitation> {
 
@@ -18,6 +22,10 @@ public interface InvitationService extends EntityService<Invitation> {
     Invitation createInvitation(InviteeForm inviteeForm, Long domainID);
 
     Invitation createInvitation(String inviteeEmail, UserRole userRole, Long domainId);
+
+    List<Invitation> createInvitations(InvitationForm invitationForm);
+
+    List<Invitation> createInvitations(BatchInvitationForm batchInvitationForm);
 
     /**
      * @param domainId Long - the ID of the domain that the user is invited to
@@ -32,15 +40,31 @@ public interface InvitationService extends EntityService<Invitation> {
     long countAll(Long domainId);
 
     /**
+     * @param organizationId Long - the ID of the organization to search on
+     * @return long - a count of all invitations currently in the system for the organization and child groups
+     */
+    long countAllForOrganizationIncludingGroups(Long organizationId);
+
+    /**
+     * @param emails Emails to search on
+     * @param organizationId ID of organization to search on
+     * @param includeGroups Whether or not invitations for groups of the Organization should be includes
+     * @return The number of emails in the list provided which do NOT have existing invitations
+     */
+    long countEmailsWithoutInvitationsForOrganization(Set<String> emails, Long organizationId, boolean includeGroups);
+
+    List<Invitation> getAllForEmailsAndDomains(List<String> emails, List<Long> domainIds);
+
+    /**
      * @param email String - the email address of the invited user
      * @param domainId Long - the ID of the domain that the user is invited to
      * @return List of Invitations - the user may have multiple invitations for the same domain as long as the roles are different
      */
     List<Invitation> getAll(String email, Long domainId);
 
-    List<InviteeForm> parseContactsGoogle(MultipartFile contactsFile);
+    List<Contact> parseContactsGoogle(MultipartFile contactsFile);
 
-    List<InviteeForm> parseContactsOutlook(MultipartFile contactsFile);
+    List<Contact> parseContactsOutlook(MultipartFile contactsFile);
 
     long deleteAll(Long domainId);
 

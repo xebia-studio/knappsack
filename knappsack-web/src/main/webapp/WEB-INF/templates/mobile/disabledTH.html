@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='${orgName}'">
+<head th:substituteby="/mobile/includesTH :: mobileHead"></head>
+<body>
+<div data-role="page" id="disabledPage">
+
+    <script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).on('pageshow', '#disabledPage', function(event) {
+            addToHome.show();
+            $("#activeOrganizationDiv").hide();
+
+            getActiveOrganizationList();
+
+            $("#activeOrganizationSelect").on("change", function () {
+                var orgId = $(this).val();
+                var activeOrgURL = /*[[@{/activeOrganization/}]]*/ '/activeOrganization';
+                activeOrgURL = activeOrgURL + orgId;
+                window.location = activeOrgURL;
+            });
+        });
+
+        function getActiveOrganizationList() {
+            var organizationsUrl = /*[[@{/activeOrganizations}]]*/ '/activeOrganizations';
+            $.getJSON(organizationsUrl, function (organizations) {
+                $("#activeOrganizationSelect").empty();
+
+                for (var i = 0; i < organizations.length; i++) {
+                    var activeOrgURL = /*[[@{/activeOrganization/}]]*/ '/activeOrganization';
+                    var currentActiveOrg = /*[[${#bools.isTrue(user.activeOrganization)} ? ${#objects.nullSafe(user.activeOrganization.id,'')} : '0']]*/ '0';
+                    activeOrgURL = activeOrgURL + organizations[i].id;
+
+                    $("#activeOrganizationSelect").append($("<option value='" + organizations[i].id + "' " + (currentActiveOrg == organizations[i].id ? "selected" : "") + ">" + organizations[i].name + "</option>"))
+                }
+
+                if (organizations.length == 0) {
+                    var noOrgMessage = /*[[#{mobile.disabled.noOrganizations}]]*/ 'No organization available';
+                    $("#activeOrganizationSelect").append($("<option value='0' selected)>" + noOrgMessage + "</option>"));
+                }
+
+                if (organizations.length == 1) {
+                    $("#activeOrganizationDiv").hide();
+                } else {
+                    $("#activeOrganizationDiv").show();
+                }
+
+                $("#activeOrganizationSelect").selectmenu("refresh", true);
+            });
+        }
+        /*]]>*/
+    </script>
+
+    <div data-role="header" data-id="mainHeader" class="header">
+        <h1 th:text="${orgName}">Knappsack</h1>
+    </div>
+
+    <div data-role="content">
+        <span th:text="#{mobile.disabled.message}">We're sorry, this organization is currently disabled.</span>
+
+    <form>
+        <div id="activeOrganizationDiv" data-role="fieldcontain" >
+            <label for="activeOrganizationSelect" th:text="#{mobile.disabled.organization}">Organization:</label>
+            <select name="activeOrganizationSelect" id="activeOrganizationSelect"></select>
+        </div>
+    </form>
+
+    <div>
+        <ul data-role="listview" data-inset="true" data-filter="false">
+            <li><a th:href="@{/auth/logout}" data-ajax="false" th:text="#{mobile.home.logout}">Logout</a></li>
+        </ul>
+    </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

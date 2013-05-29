@@ -1,38 +1,43 @@
 package com.sparc.knappsack.components.controllers;
 
-import com.sparc.knappsack.components.entities.*;
-import com.sparc.knappsack.components.services.DomainUserRequestService;
-import com.sparc.knappsack.components.services.GroupService;
-import com.sparc.knappsack.components.services.UserDomainService;
-import com.sparc.knappsack.components.services.UserService;
+import com.sparc.knappsack.components.entities.DomainUserRequest;
+import com.sparc.knappsack.components.entities.Group;
+import com.sparc.knappsack.components.entities.User;
+import com.sparc.knappsack.components.entities.UserDomain;
+import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.components.validators.GroupValidator;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.enums.Status;
 import com.sparc.knappsack.enums.UserRole;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.GroupForm;
 import com.sparc.knappsack.forms.Result;
-import com.sparc.knappsack.models.DomainStatisticsModel;
-import com.sparc.knappsack.models.DomainUserRequestModel;
-import com.sparc.knappsack.models.GroupModel;
-import com.sparc.knappsack.models.UserModel;
+import com.sparc.knappsack.models.*;
+import com.sparc.knappsack.models.api.v1.Application;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-public class GroupController extends AbstractController{
+public class GroupController extends AbstractController {
     private static final Logger log = LoggerFactory.getLogger(GroupController.class);
 
     @Autowired(required = true)
@@ -51,15 +56,21 @@ public class GroupController extends AbstractController{
     @Autowired(required = true)
     private GroupValidator groupValidator;
 
+    @Qualifier("applicationService")
+    @Autowired(required = true)
+    private ApplicationService applicationService;
+
+    @Qualifier("messageSource")
+    @Autowired(required = true)
+    private MessageSource messageSource;
+
     @InitBinder("group")
     protected void initBinder(WebDataBinder binder) {
         binder.setValidator(groupValidator);
     }
 
     @RequestMapping(value = "/manager/viewGroups", method = RequestMethod.GET)
-    public String viewGroups(Model model) {
-//        User user = userService.getUserFromSecurityContext();
-//        model.addAttribute("groups", userService.getGroups(user));
+    public String viewGroups() {
         return "manager/groupsTH";
     }
 
@@ -71,7 +82,7 @@ public class GroupController extends AbstractController{
             model.addAttribute("group", new GroupForm());
         }
         User user = userService.getUserFromSecurityContext();
-        model.addAttribute("organizations", userService.getOrganizations(user));
+        model.addAttribute("organizations", user.getActiveOrganization());
 
         return "manager/manageGroupTH";
     }
@@ -88,12 +99,6 @@ public class GroupController extends AbstractController{
             groupService.mapGroupToGroupForm(existingGroup, groupForm);
             model.addAttribute("group", groupForm);
             model.addAttribute("accessCode", existingGroup.getUuid());
-
-            model.addAttribute("applications", existingGroup.getOwnedApplications());
-
-            List<Organization> organizations = new ArrayList<Organization>();
-            organizations.add(existingGroup.getOrganization());
-            model.addAttribute("organizations", organizations);
 
             List<DomainUserRequest> requests = requestService.getAll(existingGroup.getId(), Status.PENDING);
             List<DomainUserRequestModel> pendingRequests = new ArrayList<DomainUserRequestModel>();
@@ -154,7 +159,7 @@ public class GroupController extends AbstractController{
         return result;
     }
 
-    @PreAuthorize("isOrganizationAdmin(#groupForm.organizationId) or isDomainAdmin(#groupForm.id) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("(#groupForm.id != null ? isDomainAdmin(#groupForm.id) : isOrganizationAdminForActiveOrganization()) or hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/manager/uploadGroup", method = RequestMethod.POST)
     public String uploadGroup(Model model, @ModelAttribute("group") @Validated GroupForm groupForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -168,7 +173,7 @@ public class GroupController extends AbstractController{
             Group group = groupService.createGroup(groupForm);
             if (group == null || group.getId() == null || group.getId() <= 0) {
                 String[] codes = {"desktop.manager.group.create.error"};
-                ObjectError error = new ObjectError("organizationForm", codes, null, null);
+                ObjectError error = new ObjectError("groupForm", codes, null, null);
                 bindingResult.addError(error);
                 return addGroup(model);
             }
@@ -208,11 +213,75 @@ public class GroupController extends AbstractController{
 
         List<GroupModel> models = new ArrayList<GroupModel>();
 
-        for (Group group : userService.getGroups(user)) {
+        for (Group group : userService.getAdministeredGroups(user, SortOrder.ASCENDING)) {
             models.add(groupService.createGroupModelWithOrganization(group, false, false));
         }
 
         return models;
+    }
+
+    @PreAuthorize("isOrganizationAdminForActiveOrganization() or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/createGroup", method = RequestMethod.POST)
+    public @ResponseBody Result createGroupAJAX(final HttpServletRequest request, @RequestParam(required = true) String name) {
+        Result result = new Result();
+
+        GroupForm groupForm = new GroupForm();
+        groupForm.setName(StringUtils.trimTrailingWhitespace(name));
+
+        boolean isValid = false;
+
+        // Validate
+        Errors errors = new BeanPropertyBindingResult(groupForm, "groupForm");
+        groupValidator.validate(groupForm, errors);
+        if (!errors.hasErrors()) {
+            isValid = true;
+        }
+
+        // Only attempt to create group if validation passed
+        if (isValid) {
+            Group group = groupService.createGroup(groupForm);
+
+            // Check if group was actually created or not
+            if (group == null || group.getId() == null || group.getId() <= 0) {
+                // Add generic error
+                errors.reject("groupValidator.generic");
+                result.setResult(false);
+            } else {
+                // Group created successfully so add groupModel to result
+                result.setResult(true);
+                result.setValue(groupService.createGroupModel(group));
+            }
+        }
+
+        // If result is false then loop over errors and add Internationalized objects to result
+        if (!result.getResult()) {
+            result.setValue(new ArrayList<InternationalizedObject>());
+            for (ObjectError error : errors.getAllErrors()) {
+                try {
+                    ((List)result.getValue()).add(new InternationalizedObject(error.getCode(), messageSource.getMessage(error.getCode(), null, request.getLocale())));
+                } catch (NoSuchMessageException ex) {
+                    log.error(String.format("No message for error with code: %s", error.getCode()), ex);
+
+                    // Put the applicationType name so that the application doesn't error out.
+                    ((List)result.getValue()).add(new InternationalizedObject(error.getCode(), error.getCode()));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @PreAuthorize("isDomainAdmin(#groupId) or hasRole('ROLE_ADMIN')")
+    @RequestMapping(value = "/manager/getOwnedApplicationsForGroup", method = RequestMethod.GET)
+    public @ResponseBody List<Application> getOwnedApplicationsForGroup(@RequestParam(value = "grp", required = true) Long groupId) {
+        List<Application> applicationModels = new ArrayList<Application>();
+
+        Group group = groupService.get(groupId);
+        if (group == null) {
+            return applicationModels;
+        }
+
+        return applicationService.getApplicationModels(group.getOwnedApplications(), Application.class);
     }
 
     private DomainStatisticsModel getDomainStatisticsModel(Group group) {
@@ -220,6 +289,7 @@ public class GroupController extends AbstractController{
         domainStatisticsModel.setTotalApplications(groupService.getTotalApplications(group));
         domainStatisticsModel.setTotalApplicationVersions(groupService.getTotalApplicationVersions(group));
         domainStatisticsModel.setTotalUsers(groupService.getTotalUsers(group));
+        domainStatisticsModel.setTotalPendingInvitations(groupService.getTotalPendingInvitations(group));
         domainStatisticsModel.setTotalMegabyteStorageAmount(groupService.getTotalMegabyteStorageAmount(group));
 
         return domainStatisticsModel;

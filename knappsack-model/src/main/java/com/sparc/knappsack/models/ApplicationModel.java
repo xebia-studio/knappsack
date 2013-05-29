@@ -13,9 +13,7 @@ public class ApplicationModel {
     private ApplicationType applicationType;
     private List<ApplicationVersionModel> versions;
     private ImageModel icon;
-    private List<ImageModel> screenShots = new ArrayList<ImageModel>();
-    private Long groupId;
-    private String groupName;
+    private List<ImageModel> screenshots = new ArrayList<ImageModel>();
     private boolean canUserEdit;
 
     public Long getId() {
@@ -66,28 +64,12 @@ public class ApplicationModel {
         this.icon = icon;
     }
 
-    public List<ImageModel> getScreenShots() {
-        return screenShots;
+    public List<ImageModel> getScreenshots() {
+        return screenshots;
     }
 
-    public void setScreenShots(List<ImageModel> screenShots) {
-        this.screenShots = screenShots;
-    }
-
-    public Long getGroupId() {
-        return groupId;
-    }
-
-    public void setGroupId(Long groupId) {
-        this.groupId = groupId;
-    }
-
-    public String getGroupName() {
-        return groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
+    public void setScreenshots(List<ImageModel> screenshots) {
+        this.screenshots = screenshots;
     }
 
     public boolean isCanUserEdit() {

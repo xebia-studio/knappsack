@@ -1,11 +1,13 @@
 package com.sparc.knappsack.components.entities;
 
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import javax.persistence.*;
 
 @Entity
 @Table(name = "APPLICATION_VERSION_USER_STATISTIC")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class ApplicationVersionUserStatistic extends BaseEntity {
 
     private static final long serialVersionUID = -8010813761341730769L;

@@ -2,6 +2,7 @@ package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.Language;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.LazyToOne;
 import org.hibernate.annotations.LazyToOneOption;
 
@@ -17,7 +18,7 @@ import java.util.Set;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "DOMAIN")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public abstract class Domain extends BaseEntity {
 
     private static final long serialVersionUID = -2087765722987616566L;
@@ -38,6 +39,16 @@ public abstract class Domain extends BaseEntity {
     @JoinColumn(name = "DOMAIN_CONFIGURATION_ID", nullable = false)
     @LazyToOne(LazyToOneOption.PROXY)
     private DomainConfiguration domainConfiguration;
+
+    @OneToMany(cascade = {CascadeType.ALL}, mappedBy = "parentDomain", orphanRemoval = true)
+    private List<KeyVaultEntry> keyVaultEntries;
+
+    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.REFRESH})
+    @JoinTable(
+            name="KEY_VAULT_ENTRY_CHILD_DOMAIN",
+            joinColumns={@JoinColumn(name="DOMAIN_ID", referencedColumnName="ID")},
+            inverseJoinColumns={@JoinColumn(name="KEY_VAULT_ENTRY_ID", referencedColumnName="ID")})
+    private List<KeyVaultEntry> childKeyVaultEntries;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "domain", orphanRemoval = true, targetEntity = Invitation.class)
     private List<Invitation> invitations;
@@ -72,11 +83,33 @@ public abstract class Domain extends BaseEntity {
     }
 
     public DomainConfiguration getDomainConfiguration() {
-        return domainConfiguration;
+        return initializeAndUnproxy(domainConfiguration);
     }
 
     public void setDomainConfiguration(DomainConfiguration domainConfiguration) {
         this.domainConfiguration = domainConfiguration;
+    }
+
+    public List<KeyVaultEntry> getKeyVaultEntries() {
+        if (keyVaultEntries == null) {
+            keyVaultEntries = new ArrayList<KeyVaultEntry>();
+        }
+        return keyVaultEntries;
+    }
+
+    public void setKeyVaultEntries(List<KeyVaultEntry> keyVaultEntries) {
+        this.keyVaultEntries = keyVaultEntries;
+    }
+
+    public List<KeyVaultEntry> getChildKeyVaultEntries() {
+        if (childKeyVaultEntries == null) {
+            childKeyVaultEntries = new ArrayList<KeyVaultEntry>();
+        }
+        return childKeyVaultEntries;
+    }
+
+    public void setChildKeyVaultEntries(List<KeyVaultEntry> childKeyVaultEntries) {
+        this.childKeyVaultEntries = childKeyVaultEntries;
     }
 
     public List<Invitation> getInvitations() {

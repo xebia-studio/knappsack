@@ -4,11 +4,120 @@
 
 <head th:substituteby="/includesTH :: head"></head>
 
-<body class="lightNav">
+<body>
 
-<div th:substituteby="/includesTH :: header"></div>
+<div class="container knappsack-container">
 
-<div class="container-fluid">
+    <div th:substituteby="/includesTH :: header"/>
+
+    <div class="row">
+
+        <div th:substituteby="/includesTH :: side_menu"/>
+
+        <div class="span10">
+
+
+
+
+            <div class="page-info callout"> <b class="notch"></b>
+                <span class="page-info-bold"><span th:text="#{desktop.invitees.requestsPending}">Requests Pending</span><span>:</span></span>
+            </div>
+
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid page-header first" style="border: none;">
+                        <ul class="breadcrumb">
+                            <li>
+                                <a th:href="@{'/manager/editOrg/' + ${domainId}}" th:text="${domainName}"
+                                   th:if="${domainType} eq 'ORGANIZATION'"></a>
+                                <a th:href="@{'/manager/editGroup/' + ${domainId}}" th:text="${domainName}"
+                                   th:if="${domainType} eq 'GROUP'"></a>
+                                <span class="divider">/</span>
+                            </li>
+                            <li class="active">
+                                <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.invitees.invitesPending}">Requests
+                                    Pending</a>
+                            </li>
+                        </ul>
+
+                        <table id="requestsTable" border="0" class="table table-striped table-bordered">
+                            <thead>
+                            <tr>
+                                <!--<th><input type="checkbox" class="check-all"/></th>-->
+                                <th th:text="#{desktop.requests.email}">Email</th>
+                                <th th:text="#{desktop.requests.region}">Region</th>
+                                <th th:text="#{desktop.requests.info}">Info</th>
+                                <th th:text="#{desktop.requests.domain}">Domain</th>
+                                <th th:text="#{desktop.requests.decline}">Decline</th>
+                                <th th:text="#{desktop.requests.approve}">Approve</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="domainRequest,iterStat : ${domainRequests}"
+                                th:attr="data-request-id=${domainRequest.id}"
+                                th:id="'request-row-' + ${domainRequest.id}">
+                                <!--<td><input class="check" type="checkbox"/></td>-->
+                                <td th:text="${domainRequest.emailAddress}">Email</td>
+                                <td th:text="${domainRequest.region.name}">Region</td>
+                                <td>
+                                    <p>Name: <span th:text="${domainRequest.firstName + ' ' + domainRequest.lastName}">Name</span></p>
+
+                                    <p>Address: <span th:text="${domainRequest.address}">Address</span></p>
+
+                                    <p>Phone Number: <span th:text="${domainRequest.phoneNumber}">Phone Number</span></p>
+
+                                    <p>Company: <span th:text="${domainRequest.companyName}">Company Name</span></p>
+
+                                    <p>Device: <span th:text="#{${domainRequest.deviceType.messageKey}}">Device Type</span></p>
+
+                                    <p>Languages: <span th:each="language,iterStat : ${domainRequest.languages}" th:text="${iterStat.last} ? #{${language.messageKey}} : #{${language.messageKey}} + ', '">Langagues</span></p>
+                                </td>
+                                <form class="actionForm" action="#">
+                                    <td class="select-td">
+                                        <select multiple="multiple" class="domainSelect" required="required">
+                                            <option th:each="domain : ${domainRequest.assignableDomains}" th:value="${domain.id}"
+                                                    th:text="${domain.name}"></option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn declineRequest" th:value="*{iterStat.index}" href="#"
+                                                th:text="#{desktop.requests.decline}">Decline</button>
+                                    </td>
+                                    <td>
+                                        <button type="submit" class="btn btn-primary acceptRequest" th:value="*{iterStat.index}" href="#"
+                                                th:text="#{desktop.requests.approve}">Approve</button>
+                                    </td>
+                                </form>
+                            </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+<div id="requestErrorModal" class="modal hide fade in">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h3>This is a Modal Heading</h3>
+    </div>
+    <div class="modal-body">
+        <h4>Text in a modal</h4>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Okay</a>
+    </div>
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<div th:substituteby="/includesTH :: scripts"/>
 
 <script type="text/javascript" th:inline="javascript">
     /*<![CDATA[*/
@@ -20,7 +129,7 @@
         var recordsPerPage = /*[[#{desktop.table.records.per.page}]]*/ "records per page";
 
         var $requestsTable = $('#requestsTable').dataTable({
-            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+            "sDom": "<'table-inline'<<'span6'l><'pull-right'f>r>t<<'span6'i><'pull-right'p>>>",
             "sPaginationType": "bootstrap",
             "oLanguage": {
                 "sLengthMenu": "_MENU_ " + recordsPerPage
@@ -128,104 +237,6 @@
     });
     /*]]>*/
 </script>
-
-<div class="row-fluid">
-
-    <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"></div>
-
-    <div class="span10 manager-body">
-        <ul class="breadcrumb">
-            <li>
-                <a th:href="@{'/manager/editOrg/' + ${domainId}}" th:text="${domainName}"
-                   th:if="${domainType} eq 'ORGANIZATION'"></a>
-                <a th:href="@{'/manager/editGroup/' + ${domainId}}" th:text="${domainName}"
-                   th:if="${domainType} eq 'GROUP'"></a>
-                <span class="divider">/</span>
-            </li>
-            <li class="active">
-                <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.invitees.invitesPending}">Requests
-                    Pending</a>
-            </li>
-        </ul>
-
-        <div>
-            <table id="requestsTable" border="0" class="table table-striped table-bordered">
-                <thead>
-                <tr>
-                    <!--<th><input type="checkbox" class="check-all"/></th>-->
-                    <th th:text="#{desktop.requests.email}">Email</th>
-                    <th th:text="#{desktop.requests.region}">Region</th>
-                    <th th:text="#{desktop.requests.info}">Info</th>
-                    <th th:text="#{desktop.requests.domain}">Domain</th>
-                    <th th:text="#{desktop.requests.decline}">Decline</th>
-                    <th th:text="#{desktop.requests.approve}">Approve</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="domainRequest,iterStat : ${domainRequests}"
-                    th:attr="data-request-id=${domainRequest.id}"
-                    th:id="'request-row-' + ${domainRequest.id}">
-                    <!--<td><input class="check" type="checkbox"/></td>-->
-                    <td th:text="${domainRequest.emailAddress}">Email</td>
-                    <td th:text="${domainRequest.region.name}">Region</td>
-                    <td>
-                        <p>Name: <span th:text="${domainRequest.firstName + ' ' + domainRequest.lastName}">Name</span></p>
-
-                        <p>Address: <span th:text="${domainRequest.address}">Address</span></p>
-
-                        <p>Phone Number: <span th:text="${domainRequest.phoneNumber}">Phone Number</span></p>
-
-                        <p>Company: <span th:text="${domainRequest.companyName}">Company Name</span></p>
-
-                        <p>Device: <span th:text="#{${domainRequest.deviceType.messageKey}}">Device Type</span></p>
-
-                        <p>Languages: <span th:each="language,iterStat : ${domainRequest.languages}" th:text="${iterStat.last} ? #{${language.messageKey}} : #{${language.messageKey}} + ', '">Langagues</span></p>
-                    </td>
-                    <form class="actionForm" action="#">
-                        <td class="select-td">
-                            <select multiple="multiple" class="domainSelect" required="required">
-                                <option th:each="domain : ${domainRequest.assignableDomains}" th:value="${domain.id}"
-                                        th:text="${domain.name}"></option>
-                            </select>
-                        </td>
-                        <td>
-                            <button type="button" class="btn declineRequest" th:value="*{iterStat.index}" href="#"
-                                    th:text="#{desktop.requests.decline}">Decline</button>
-                        </td>
-                        <td>
-                            <button type="submit" class="btn btn-primary acceptRequest" th:value="*{iterStat.index}" href="#"
-                                    th:text="#{desktop.requests.approve}">Approve</button>
-                        </td>
-                    </form>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div th:substituteBy="/includesTH :: confirmation_modal"></div>
-<div id="requestErrorModal" class="modal hide fade in">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3>This is a Modal Heading</h3>
-    </div>
-    <div class="modal-body">
-        <h4>Text in a modal</h4>
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Okay</a>
-    </div>
-</div>
-
-</div>
-
-<footer th:substituteby="/includesTH :: footer"></footer>
-
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"></section>
-    <section th:include="/includesTH :: table_scripts"></section>
-</section>
 
 </body>
 </html>

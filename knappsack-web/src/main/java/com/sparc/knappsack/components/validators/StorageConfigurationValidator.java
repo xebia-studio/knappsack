@@ -1,11 +1,14 @@
 package com.sparc.knappsack.components.validators;
 
+import com.sparc.knappsack.components.entities.S3StorageConfiguration;
 import com.sparc.knappsack.components.entities.StorageConfiguration;
 import com.sparc.knappsack.components.services.StorageConfigurationService;
+import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.forms.StorageForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -15,6 +18,9 @@ public class StorageConfigurationValidator implements Validator {
     private static final String NAME_FIELD = "name";
     private static final String BASE_LOCATION_FIELD = "baseLocation";
     private static final String STORAGE_TYPE_FIELD = "storageType";
+    private static final String BUCKET_NAME_FIELD = "bucketName";
+    private static final String ACCESS_KEY_FIELD = "accessKey";
+    private static final String SECRET_KEY_FIELD = "secretKey";
 
     @Qualifier("storageConfigurationService")
     @Autowired(required = true)
@@ -29,6 +35,9 @@ public class StorageConfigurationValidator implements Validator {
     public void validate(Object target, Errors errors) {
         StorageForm storageForm = (StorageForm) target;
         validateStorage(storageForm, errors);
+        if (StorageType.AMAZON_S3.equals(storageForm.getStorageType())) {
+            validateS3Storage(storageForm, errors);
+        }
     }
 
     private void validateStorage(StorageForm storageForm, Errors errors) {
@@ -66,6 +75,30 @@ public class StorageConfigurationValidator implements Validator {
                 storageForm.setStorageType(storageConfiguration.getStorageType());
                 errors.rejectValue(STORAGE_TYPE_FIELD, "storageConfigurationValidator.storageType.edited");
             }
+        }
+    }
+
+
+
+    private void validateS3Storage(StorageForm storageForm, Errors errors) {
+        if(storageForm.isEditing()) {
+            StorageConfiguration storageConfiguration = storageConfigurationService.get(storageForm.getId());
+            if(storageConfiguration instanceof S3StorageConfiguration && !((S3StorageConfiguration)storageConfiguration).getBucketName().equals(storageForm.getBucketName())) {
+                storageForm.setBucketName(((S3StorageConfiguration) storageConfiguration).getBucketName());
+                errors.rejectValue(BUCKET_NAME_FIELD, "storageConfigurationValidator.bucketName.edited");
+            }
+        }
+
+        if (!StringUtils.hasText(storageForm.getBucketName())) {
+            errors.rejectValue(BUCKET_NAME_FIELD, "storageConfigurationValidator.bucketName.empty");
+        }
+
+        if (!StringUtils.hasText(storageForm.getAccessKey())) {
+            errors.rejectValue(ACCESS_KEY_FIELD, "storageConfigurationValidator.accessKey.empty");
+        }
+
+        if (!StringUtils.hasText(storageForm.getSecretKey())) {
+            errors.rejectValue(SECRET_KEY_FIELD, "storageConfigurationValidator.secretKey.empty");
         }
     }
 }

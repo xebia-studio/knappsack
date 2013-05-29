@@ -2,8 +2,10 @@ package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.ApplicationType;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.enums.UserRole;
+import com.sparc.knappsack.forms.OrganizationForm;
 import com.sparc.knappsack.models.OrganizationModel;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +37,9 @@ public class OrganizationServiceIT extends AbstractServiceTests {
 
     @Test
     public void updateTest() {
-        OrganizationModel organizationModel = getOrganizationModel();
+        OrganizationForm organizationForm = getOrganizationForm();
 
-        organizationService.createOrganization(organizationModel);
+        organizationService.createOrganization(organizationForm);
         Organization organization = organizationService.getByName("Test Organization");
         organization.setName("New Organization");
         organizationService.update(organization);
@@ -47,24 +49,24 @@ public class OrganizationServiceIT extends AbstractServiceTests {
 
     @Test
     public void createOrganizationTest() {
-        OrganizationModel organizationModel = getOrganizationModel();
+        OrganizationForm organizationForm = getOrganizationForm();
 
-        organizationService.createOrganization(organizationModel);
+        organizationService.createOrganization(organizationForm);
         Organization organization = organizationService.getByName("Test Organization");
         assertNotNull(organization);
     }
 
     @Test
     public void editOrganizationTest() {
-        OrganizationModel organizationModel = getOrganizationModel();
+        OrganizationForm organizationForm = getOrganizationForm();
 
-        organizationService.createOrganization(organizationModel);
+        organizationService.createOrganization(organizationForm);
         Organization organization = organizationService.getByName("Test Organization");
 
-        OrganizationModel newOrganizationModel = new OrganizationModel();
-        newOrganizationModel.setName("Test Organization 2");
-        newOrganizationModel.setId(organization.getId());
-        organizationService.editOrganization(newOrganizationModel);
+        OrganizationForm newOrganizationForm = new OrganizationForm();
+        newOrganizationForm.setName("Test Organization 2");
+        newOrganizationForm.setId(organization.getId());
+        organizationService.editOrganization(newOrganizationForm);
         Organization updatedOrganization = organizationService.getByName("Test Organization 2");
         assertNotNull(updatedOrganization);
         assertEquals(organization.getId(), updatedOrganization.getId());
@@ -94,64 +96,65 @@ public class OrganizationServiceIT extends AbstractServiceTests {
         assertFalse(retrievedOrganization.getDomainConfiguration().isDisabledDomain());
     }
 
-    @Test
-    public void deleteOrganization() {
-        Organization organization = getOrganization();
-
-        Category category = new Category();
-        category.setOrganization(organization);
-        category.setDescription("Test Category");
-        category.setName("Test Category");
-        category.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
-
-        categoryService.add(category);
-
-        AppFile categoryIcon = new AppFile();
-        categoryIcon.setName("Category Icon");
-        categoryIcon.setRelativePath("relativePath");
-        categoryIcon.setStorable(category);
-        category.setIcon(categoryIcon);
-
-        organization.getCategories().add(category);
-
-        categoryService.update(category);
-
-        Group group = new Group();
-        group.setName("Test Group");
-        group.setOrganization(organization);
-
-        organization.getGroups().add(group);
-
-        groupService.add(group);
-
-        Application application = new Application();
-        application.setApplicationType(ApplicationType.CHROME);
-        application.setCategory(category);
-        application.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
-        application.setOwnedGroup(group);
-        List<Application> applications = new ArrayList<Application>();
-        applications.add(application);
-
-        group.setOwnedApplications(applications);
-
-        applicationService.add(application);
-
-        Organization retrievedOrganization = organizationService.getByName("Test Organization");
-        assertNotNull(applicationService.get(application.getId()));
-        assertNotNull(retrievedOrganization);
-        assertNotNull(retrievedOrganization.getId());
-        organizationService.delete(retrievedOrganization.getId());
-        retrievedOrganization = organizationService.getByName("Test Organization");
-        assertNull(retrievedOrganization);
-        assertTrue(groupService.getAll().isEmpty());
-        assertNull(applicationService.get(application.getId()));
-    }
+//    @Test
+//    public void deleteOrganization() {
+//        Organization organization = getOrganization();
+//
+//        Category category = new Category();
+//        category.setOrganization(organization);
+//        category.setDescription("Test Category");
+//        category.setName("Test Category");
+//        category.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
+//
+//        categoryService.add(category);
+//
+//        AppFile categoryIcon = new AppFile();
+//        categoryIcon.setName("Category Icon");
+//        categoryIcon.setRelativePath("relativePath");
+//        categoryIcon.setStorable(category);
+//        category.setIcon(categoryIcon);
+//
+//        organization.getCategories().add(category);
+//
+//        categoryService.update(category);
+//
+//        Group group = new Group();
+//        group.setName("Test Group");
+//        group.setOrganization(organization);
+//
+//        organization.getGroups().add(group);
+//
+//        groupService.add(group);
+//
+//        Application application = new Application();
+//        application.setApplicationType(ApplicationType.CHROME);
+//        application.setCategory(category);
+//        application.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
+//        application.setOwnedGroup(group);
+//        List<Application> applications = new ArrayList<Application>();
+//        applications.add(application);
+//
+//        group.setOwnedApplications(applications);
+//
+//        applicationService.add(application);
+//
+//        Organization retrievedOrganization = organizationService.getByName("Test Organization");
+//        assertNotNull(applicationService.get(application.getId()));
+//        assertNotNull(retrievedOrganization);
+//        assertNotNull(retrievedOrganization.getId());
+//        organizationService.delete(retrievedOrganization.getId());
+//        retrievedOrganization = organizationService.getByName("Test Organization");
+//        assertNull(retrievedOrganization);
+//        assertTrue(groupService.getAll().isEmpty());
+//        assertNull(applicationService.get(application.getId()));
+//    }
 
     @Test
     public void modelToEntityMappingTest() {
-        OrganizationModel organizationModel = getOrganizationModel();
 
-        organizationService.createOrganization(organizationModel);
+        OrganizationForm organizationForm = getOrganizationForm();
+
+        organizationService.createOrganization(organizationForm);
         Organization organization = organizationService.getByName("Test Organization");
 
         OrganizationModel newOrganizationModel = new OrganizationModel();
@@ -162,31 +165,31 @@ public class OrganizationServiceIT extends AbstractServiceTests {
 
     @Test
     public void removeUserFromOrganizationTest() {
-        OrganizationModel organizationModel = getOrganizationModel();
+        OrganizationForm organizationForm = getOrganizationForm();
 
-        organizationService.createOrganization(organizationModel);
+        organizationService.createOrganization(organizationForm);
         Organization organization = organizationService.getByName("Test Organization");
         assertNotNull(organization);
 
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.add(user);
         user = userService.getByEmail(user.getEmail());
         assertNotNull(user);
         userService.addUserToOrganization(user, organization.getId(), UserRole.ROLE_ORG_USER);
-        List<Organization> organizations = userService.getOrganizations(user);
+        List<Organization> organizations = userService.getOrganizations(user, SortOrder.ASCENDING);
         assertTrue(organizations.size() == 1);
         organizationService.removeUserFromOrganization(organization.getId(), user.getId());
-        organizations = userService.getOrganizations(user);
+        organizations = userService.getOrganizations(user, SortOrder.ASCENDING);
         assertTrue(organizations.size() == 0);
     }
 
-    private OrganizationModel getOrganizationModel() {
-        OrganizationModel organizationModel = new OrganizationModel();
-        organizationModel.setStoragePrefix("test_prefix");
-        organizationModel.setName("Test Organization");
-        organizationModel.setStorageConfigurationId(getStorageConfiguration().getId());
+    private OrganizationForm getOrganizationForm() {
+        OrganizationForm organizationForm = new OrganizationForm();
+        organizationForm.setStoragePrefix("test_prefix");
+        organizationForm.setName("Test Organization");
+        organizationForm.setStorageConfigurationId(getStorageConfiguration().getId());
 
-        return organizationModel;
+        return organizationForm;
     }
 
     private StorageConfiguration getStorageConfiguration() {

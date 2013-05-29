@@ -4,7 +4,6 @@ public class GroupForm {
 
     private Long id;
     private String name;
-    private Long organizationId;
 
     public Long getId() {
         return id;
@@ -22,11 +21,4 @@ public class GroupForm {
         this.name = name;
     }
 
-    public Long getOrganizationId() {
-        return organizationId;
-    }
-
-    public void setOrganizationId(Long organizationId) {
-        this.organizationId = organizationId;
-    }
 }

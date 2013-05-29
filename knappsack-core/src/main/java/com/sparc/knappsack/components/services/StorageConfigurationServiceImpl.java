@@ -17,7 +17,7 @@ import java.util.List;
 @Service("storageConfigurationService")
 public class StorageConfigurationServiceImpl implements StorageConfigurationService {
 
-    @Qualifier("storageConfigurationDaoImpl")
+    @Qualifier("storageConfigurationDao")
     @Autowired(required = true)
     private StorageConfigurationDao storageConfigurationDao;
 
@@ -53,6 +53,15 @@ public class StorageConfigurationServiceImpl implements StorageConfigurationServ
             storageConfiguration = storageConfigurationDao.get(id);
         }
         return storageConfiguration;
+    }
+
+    @Override
+    public <T extends StorageConfiguration> T get(Long id, Class<T> storageConfigurationClass) {
+        if (id == null || id <= 0 || storageConfigurationClass == null) {
+            return null;
+        }
+
+        return storageConfigurationDao.get(id, storageConfigurationClass);
     }
 
     @Override

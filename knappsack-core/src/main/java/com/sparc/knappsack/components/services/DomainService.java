@@ -23,6 +23,11 @@ public interface DomainService {
 
     Domain getByUUID(String domainUUID);
 
+    /**
+     * @param domain Domain - The domain to check.
+     * @return Whether or not the application resigner is enabled for the given domain.
+     */
+    boolean isApplicationResignerEnabled(Domain domain);
 
     /**
      * @param regionId Id of the region to use for lookup

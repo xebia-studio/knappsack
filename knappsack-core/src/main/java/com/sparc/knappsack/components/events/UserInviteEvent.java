@@ -1,17 +1,21 @@
 package com.sparc.knappsack.components.events;
 
-import com.sparc.knappsack.components.entities.*;
+import com.sparc.knappsack.components.entities.Invitation;
+import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.EmailService;
 import com.sparc.knappsack.components.services.EmailServiceImpl;
 import com.sparc.knappsack.components.services.InvitationService;
 import com.sparc.knappsack.components.services.UserService;
-import com.sparc.knappsack.enums.DomainType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
+import java.util.*;
 
 @Component("userInviteEvent")
-public class UserInviteEvent implements EventDelivery<Invitation> {
+public class UserInviteEvent implements EventDelivery<List<Invitation>> {
 
     @Qualifier("emailDeliveryService")
     @Autowired(required = true)
@@ -26,29 +30,43 @@ public class UserInviteEvent implements EventDelivery<Invitation> {
     private InvitationService invitationService;
 
     @Override
-    public boolean sendNotifications(Invitation invitation) {
+    public boolean sendNotifications(List<Invitation> invitations) {
         boolean success = false;
 
-        if (invitation != null) {
+        if (!CollectionUtils.isEmpty(invitations)) {
 
             User fromUser = userService.getUserFromSecurityContext();
-            Domain domain = invitation.getDomain();
+            Long fromUserId = fromUser != null ? fromUser.getId() : null;
 
-            if (domain != null) {
+            Map<String, List<Invitation>> map = new HashMap<String, List<Invitation>>();
+            for (Invitation invitation : invitations) {
+                String key = StringUtils.trimAllWhitespace(invitation.getEmail()).toLowerCase();
+                if (map.get(key) == null) {
+                    map.put(key, new ArrayList<Invitation>());
+                }
+                map.get(key).add(invitation);
+            }
 
-                User invitee = userService.getByEmail(invitation.getEmail());
-                Long fromUserId = fromUser != null ? fromUser.getId() : null;
-                success = emailService.sendInvitationEmail(fromUserId, invitation.getId());
-                if(invitee != null) {
-                    if(DomainType.GROUP.equals(domain.getDomainType())) {
-                        userService.addUserToGroup(invitee, (Group) domain, invitation.getRole().getUserRole());
-                    } else if(DomainType.ORGANIZATION.equals(domain.getDomainType())) {
-                        userService.addUserToOrganization(invitee, (Organization) domain, invitation.getRole().getUserRole());
+            for (String key : map.keySet()) {
+                User invitee = userService.getByEmail(key);
+                List<Invitation> invitationList = map.get(key);
+                Set<Long> invitationIds = new HashSet<Long>();
+                for (Invitation invitation : invitationList) {
+                    if (invitee != null) {
+                        userService.addUserToDomain(invitee, invitation.getDomain(), invitation.getRole().getUserRole());
                     }
+                    invitationIds.add(invitation.getId());
+                }
+                List<Long> invitationsSent = emailService.sendInvitationsEmail(fromUserId, new ArrayList<Long>(invitationIds));
 
-                    if (emailService instanceof EmailServiceImpl) {
+                if (!CollectionUtils.isEmpty(invitationsSent) && invitee != null && emailService instanceof EmailServiceImpl) {
+                    for (Invitation invitation : invitationList) {
                         invitationService.delete(invitation.getId());
                     }
+                }
+
+                if (!CollectionUtils.isEmpty(invitationsSent)) {
+                    success = true;
                 }
             }
         }

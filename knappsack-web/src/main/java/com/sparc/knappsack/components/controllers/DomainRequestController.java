@@ -10,7 +10,6 @@ import com.sparc.knappsack.components.events.EventDeliveryFactory;
 import com.sparc.knappsack.components.services.DomainRequestService;
 import com.sparc.knappsack.components.services.DomainService;
 import com.sparc.knappsack.components.services.RegionService;
-import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.components.validators.DomainRequestValidator;
 import com.sparc.knappsack.enums.DeviceType;
 import com.sparc.knappsack.enums.EventType;
@@ -44,10 +43,6 @@ public class DomainRequestController extends AbstractController {
     @Qualifier("domainService")
     @Autowired(required = true)
     private DomainService domainService;
-
-    @Qualifier("userService")
-    @Autowired(required = true)
-    private UserService userService;
 
     @Qualifier("domainRequestValidator")
     @Autowired(required = true)

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="title='Knappsack'" >
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='${orgName}'" >
 <head th:substituteby="/mobile/includesTH :: mobileHead" ></head>
 <body>
 
@@ -15,7 +15,7 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
 
-        $('#activatePage').bind('pagecreate', function() {
+        $(document).on('pagecreate', '#activatePage', function(e) {
 
             var url = /*[[@{/activate/}]]*/ '/activate';
 
@@ -27,7 +27,7 @@
                 return true;
             });
 
-            $('#resendBtn').click(function() {
+            $('#confirmation').on('click', '#activationResendBtn', function() {
                 $.mobile.showPageLoadingMsg();
 
                 var sendCodeUrl = /*[[@{/activate/sendCode}]]*/ '/activate/sendCode'
@@ -45,9 +45,9 @@
     </script>
 
     <div data-role="header" data-id="mainHeader" data-position="fixed" class="header">
-        <a th:href="@{/auth/logout}" href="/auth/logout" data-ajax="false" data-icon="back" data-direction="reverse" th:text="#{mobile.activate.logout}">Logout</a>
+        <a data-rel="back" th:href="@{/auth/logout}" href="/auth/logout" data-ajax="false" data-icon="back" data-direction="reverse" th:text="#{mobile.activate.logout}">Logout</a>
         <!--<img class="logo_cente?adgr" src="../../../resources/img/knappsack.png" th:src="@{/resources/img/knappsack.png}"/>-->
-        <h1>Knappsack</h1>
+        <h1 th:text="${orgName}">Knappsack</h1>
         <a th:href="@{/home}" href="/home" data-icon="home" th:if="${#bools.isTrue(activated)}" th:text="#{mobile.activate.home}">Home</a>
     </div>
 
@@ -93,7 +93,7 @@
                 <dd th:text="#{mobile.activate.activationCode.help.1}">The activation code is a unique code for your user account.  In order for you to navigate to any page other than this one you will have to enter the code you received by email.</dd>
                 <dd th:text="#{mobile.activate.activationCode.help.2}">Please check your email for the address you logged in with to obtain the activation code.</dd>
                 <br/>
-                <dd><span  th:text="#{mobile.activate.activationCode.help.3}">If you would like to have your activation code re-emailed to you for this account please </span><a id="resend" data-rel="dialog" href="#confirmation" th:text="#{mobile.activate.clickHere}">Click Here</a>.</dd>
+                <dd><span  th:text="#{mobile.activate.activationCode.help.3}">If you would like to have your activation code re-emailed to you for this account please</span> <a id="resend" data-rel="dialog" href="#confirmation" th:text="#{mobile.activate.clickHere}">Click Here</a>.</dd>
             </dl>
         </div>
 
@@ -109,7 +109,7 @@
         <h1 th:text="#{mobile.activate.resend}">Resend Activation Code?</h1>
         <p th:text="#{mobile.activate.resendConfirmation}">Are you sure you want to have your activation code resent to your email address?</p>
 
-        <button id="resendBtn" data-theme="b" th:text="#{mobile.activate.continue}">Continue</button>
+        <button id="activationResendBtn" data-theme="b" th:text="#{mobile.activate.continue}">Continue</button>
         <a href="#" data-role="button" data-rel="back" th:text="#{mobile.activate.cancel}">Cancel</a>
     </div>
 
@@ -127,8 +127,6 @@
     </div>
 
 </div>
-
-<div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
 
 </body>
 </html>

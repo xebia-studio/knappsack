@@ -1,23 +1,57 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="include_home=${true},title='Knappsack'" >
+<html xmlns:th="http://www.thymeleaf.org" th:with="include_home=${true},title='${orgName}'" >
 <head th:substituteby="/mobile/includesTH :: mobileHead" ></head>
 <body>
-<div id="homePage" data-role="page" class="page-no-cache">
+<div id="homePage" data-role="page" data-id="homePage">
 
-    <script th:inline="javascript">
+    <script type="text/javascript" th:inline="javascript">
         /*<![CDATA[*/
+        $(document).on('pageshow', '#homePage', function(event) {
+            addToHome.show();
+            $("#activeOrganizationDiv").hide();
 
-        $("#homePage").bind('pagebeforehide', function() {
-//            alert('pagebeforehide');
-//            addToHome.close();
-//            alert('closed');
+            getActiveOrganizationList();
+
+            $("#activeOrganizationSelect").on("change", function () {
+                var orgId = $(this).val();
+                var activeOrgURL = /*[[@{/activeOrganization/}]]*/ '/activeOrganization';
+                activeOrgURL = activeOrgURL + orgId;
+                window.location = activeOrgURL;
+            });
         });
+
+        function getActiveOrganizationList() {
+            var organizationsUrl = /*[[@{/activeOrganizations}]]*/ '/activeOrganizations';
+            $.getJSON(organizationsUrl, function (organizations) {
+                $("#activeOrganizationSelect").empty();
+
+                for (var i = 0; i < organizations.length; i++) {
+                    var activeOrgURL = /*[[@{/activeOrganization/}]]*/ '/activeOrganization';
+                    var currentActiveOrg = /*[[${#bools.isTrue(user.activeOrganization)} ? ${#objects.nullSafe(user.activeOrganization.id,'')} : '0']]*/ '0';
+                    activeOrgURL = activeOrgURL + organizations[i].id;
+
+                    $("#activeOrganizationSelect").append($("<option value='" + organizations[i].id + "' " + (currentActiveOrg == organizations[i].id ? "selected" : "") + ">" + organizations[i].name + "</option>"))
+                }
+
+                if (organizations.length == 0) {
+                    var noOrgMessage = /*[[#{mobile.home.noOrganizations}]]*/ 'No organization available';
+                    $("#activeOrganizationSelect").append($("<option value='0' selected)>" + noOrgMessage + "</option>"))
+                }
+
+                if (organizations.length == 1) {
+                    $("#activeOrganizationDiv").hide();
+                } else {
+                    $("#activeOrganizationDiv").show();
+                }
+
+                $("#activeOrganizationSelect").selectmenu("refresh", true);
+            });
+        }
+
 
         /*]]>*/
     </script>
-
-    <div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
 
     <div data-role="header" data-id="mainHeader" data-position="fixed" class="header">
         <h1 th:text="#{mobile.home.welcome}">Welcome</h1>
@@ -25,16 +59,29 @@
 
     <div data-role="content">
         <div id="homeLogo" class="center">
-            <h2 style="text-align: center" th:text="#{mobile.home.welcomeTo}">Welcome to Knappsack!</h2>
+            <h2 style="text-align: center" th:text="#{mobile.home.message(${orgName})}">Welcome to Knappsack!</h2>
         </div>
-        <div th:if="${#lists.size(categories) > 1}">
+
+        <div class="alert alert-success" th:if="${#bools.isTrue(activationSuccess)}">
+            <!--<a class="close" data-dismiss="alert" href="#">x</a>-->
+            <p><strong th:text="#{alert.success.prefix}">Well done!</strong> <span th:text="#{mobile.home.alert.activation.success}">Your account is successfully activated.</span></p>
+        </div>
+
+        <form>
+            <div id="activeOrganizationDiv" data-role="fieldcontain" >
+                <label for="activeOrganizationSelect" th:text="#{mobile.home.organization}">Organization:</label>
+                <select name="activeOrganizationSelect" id="activeOrganizationSelect"></select>
+            </div>
+        </form>
+
+        <div th:if="${#lists.size(categoryMenuItems) > 1}">
             <ul data-role="listview" data-inset="true" data-filter="false">
                 <li><a href="categoriesTH.html" th:href="@{/categories}" data-transition="slide" th:text="#{mobile.home.categories}">Categories</a></li>
             </ul>
         </div>
-        <div th:if="${#lists.size(categories) == 1}">
+        <div th:if="${#lists.size(categoryMenuItems) == 1}">
             <ul data-role="listview" data-inset="true" data-filter="false">
-                <li><a href="categoriesTH.html" th:href="@{'/categories/' + ${categories[0].id}}" data-transition="slide" th:text="#{mobile.home.apps}">Apps</a></li>
+                <li><a href="categoriesTH.html" th:href="@{'/categories/' + ${categoryMenuItems[0].id}}" data-transition="slide" th:text="#{mobile.home.apps}">Apps</a></li>
             </ul>
         </div>
         <div>
@@ -44,7 +91,7 @@
         </div>
         <div>
             <ul data-role="listview" data-inset="true" data-filter="false">
-                <li><a th:href="@{/auth/logout}" data-ajax="false" th:text="#{mobile.home.logout}">Logout</a></li>
+                <li><a id="mobileLogoutBtn" th:href="@{/auth/logout}" data-ajax="false" th:text="#{mobile.home.logout}">Logout</a></li>
             </ul>
         </div>
     </div>

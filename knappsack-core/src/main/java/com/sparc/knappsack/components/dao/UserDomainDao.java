@@ -2,7 +2,6 @@ package com.sparc.knappsack.components.dao;
 
 import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.entities.UserDomain;
-import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.enums.UserRole;
 
 import java.util.List;
@@ -24,30 +23,10 @@ public interface UserDomainDao extends Dao<UserDomain> {
     UserDomain getUserDomain(User user, Long domainId);
 
     /**
-     * @param user User
-     * @return List<UserDomain>
-     */
-    List<UserDomain> getUserDomains(User user);
-
-    /**
-     * @param user User
-     * @param domainTypes DomainTypes...
-     * @return List<UserDomain>
-     */
-    List<UserDomain> getUserDomains(User user, DomainType... domainTypes);
-
-    /**
      * @param domainId Long
      * @return List<UserDomain>
      */
     List<UserDomain> getUserDomainsForDomain(Long domainId);
-
-    /**
-     * @param domainId Long
-     * @param users List<User>
-     * @return List<UserDomain>
-     */
-    List<UserDomain> getUserDomainsForDomain(Long domainId, List<User> users);
 
     /**
      * @param domainId
@@ -55,6 +34,8 @@ public interface UserDomainDao extends Dao<UserDomain> {
      * @return
      */
     List<UserDomain> getUserDomainsForDomainAndRoles(Long domainId, UserRole... userRole);
+
+    List<UserDomain> getUserDomainsForEmailsAndDomains(List<String> userEmails, List<Long> domainIds);
 
     /**
      * @param domainId Long

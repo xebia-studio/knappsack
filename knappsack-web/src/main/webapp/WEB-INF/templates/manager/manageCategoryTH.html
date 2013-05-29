@@ -1,10 +1,161 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="active='organizationNav',title=#{desktop.manager.title}">
+<html xmlns:th="http://www.thymeleaf.org" th:with="adminOrganizationNavActive=${true},title=#{desktop.manager.title}">
 
 <head th:substituteby="/includesTH :: head"></head>
 
-<body class="lightNav">
+<body>
+
+<div class="container knappsack-container">
+
+    <div th:substituteby="/includesTH :: header"/>
+
+    <div class="row">
+
+        <div th:substituteby="/includesTH :: side_menu"/>
+
+        <div class="span10">
+
+
+
+
+            <div class="page-info callout" th:if="${#bools.isTrue(isEdit)}"> <b class="notch"></b>
+                <span class="page-info-bold"><span th:text="#{desktop.manageCategory.updateCategory}">Update Category</span><span>:</span></span> <span th:text="#{desktop.manageCategory.modifyInformation}">Modify the information for this category.</span>
+            </div>
+
+            <div class="page-info callout" th:if="${#bools.isFalse(isEdit)}"> <b class="notch"></b>
+                <span class="page-info-bold"><span th:text="#{desktop.manageCategory.createCategory}">Create Category</span><span>:</span></span> <span th:text="#{desktop.manageCategory.enterInformation}">Enter information for your new category.</span>
+            </div>
+
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid page-header first" style="border: none;">
+                        <ul class="breadcrumb">
+                            <li>
+                                <a th:href="@{'/manager/editOrg/' + ${parentOrgId}}" th:text="${parentOrgName}"/>
+                                <span class="divider">/</span>
+                            </li>
+                            <li class="active">
+                                <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageCategory.createCategory}">Create Category</a>
+                                <a href="#" th:text="${category.name}" th:if="${#bools.isTrue(isEdit)}">Category Name</a>
+                            </li>
+                        </ul>
+
+                        <div class="row-fluid">
+                            <div class="span7" id="formContainer">
+
+                                <form id="categoryForm" th:object="${category}" th:action="@{/manager/saveCategory}" method="POST"
+                                      enctype="multipart/form-data" class="form-horizontal">
+                                    <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                                        <h2 th:text="#{errors.header}">Errors</h2>
+                                        <ul>
+                                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                                        </ul>
+                                    </div>
+                                    <fieldset>
+                                        <input type="hidden" th:field="*{id}"/>
+                                        <input type="hidden" name="editing" th:value="${isEdit}"/>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="name" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageCategory.name}]]</label>
+
+                                            <div class="controls">
+                                                <input id="name" name="name" th:value="*{name}" placeholder="Category Name" required="required"
+                                                       autofocus="autofocus" type="text"/>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="description" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageCategory.description}]]</label>
+
+                                            <div class="controls">
+                                                <textarea id="description" name="description" th:text="*{description}" rows="0" cols="0"
+                                                          placeholder="Enter your description here." required="required"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group" th:if="${#bools.isFalse(isEdit) and #sets.size(storageConfigurations) > 1}">
+                                            <label class="control-label" for="storageConfigurationId" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageCategory.storage}]]</label>
+
+                                            <div class="controls">
+                                                <select id="storageConfigurationId" name="storageConfigurationId" required="required">
+                                                    <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                    <option th:each="storageConfiguration : ${storageConfigurations}"
+                                                            th:selected="*{storageConfigurationId} == ${storageConfiguration.id}"
+                                                            th:value="${storageConfiguration.id}" th:text="${storageConfiguration.name}"></option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <input th:if="${#sets.size(storageConfigurations) == 1}" type="hidden" id="storageConfigurationIdHidden" name="storageConfigurationId" th:value="${storageConfigurations.get(0).id}"/>
+                                        <input type="hidden" id="orgStorageConfigId" name="orgStorageConfigId" th:value="${orgStorageConfigId}"/>
+                                        <input type="hidden" id="organizationId" name="organizationId" th:value="${parentOrgId}"/>
+
+                                        <div class="control-group" id="addIconDiv">
+                                            <label class="control-label" for="icon" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageCategory.selectIcon}]]</label>
+
+                                            <div class="controls">
+                                                <input class="button" type="file" id="icon" name="icon" required="required"/>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group" id="deleteIconDiv" th:if="${isEdit}">
+                                            <div th:if="*{#bools.isTrue(icon)}">
+                                                <label class="control-label" for="deleteIcon" th:text="#{desktop.manageCategory.deleteIcon}">Delete icon</label>
+                                                <div class="controls">
+                                                    <button class="btn btn-danger"
+                                                            th:value="@{'/manager/deleteCategoryIcon/' + *{id} + '/' + ${parentOrgId}}"
+                                                            id="deleteIcon" th:inline="text"><i class="icon-trash icon-white"></i>&nbsp;[[*{icon.name}]]
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!--<div class="control-group" id="progressDiv">-->
+                                        <!--<label class="control-label" for="progressBar" th:inline="text"><span class="required"></span>[[#{desktop.manageCategory.progress}]]</label>-->
+                                        <!--<div class="controls">-->
+                                        <!--<progress id="progressBar" value="0"></progress>-->
+                                        <!--</div>-->
+                                        <!--</div>-->
+
+                                        <div class="form-actions">
+                                            <button id="submitButton" type="submit" class="btn btn-primary" th:text="#{desktop.manageCategory.submit}">Submit</button>
+                                        </div>
+                                    </fieldset>
+
+                                    <div class="alert alert-info">
+                                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="span5">
+                                <dl>
+                                    <dt th:text="#{desktop.manageCategory.name}">Name</dt>
+                                    <dd th:text="#{desktop.manageCategory.name.help}">This is the name of the category that will be visible to users.</dd>
+                                    <dt th:text="#{desktop.manageCategory.description}">Description</dt>
+                                    <dd th:text="#{desktop.manageCategory.description.help}">This is the description of the category in order to give users an idea of the applications associated with the category.</dd>
+                                    <dt th:text="#{desktop.manageCategory.icon}">Icon</dt>
+                                    <dd th:text="#{desktop.manageCategory.icon.help}">The icon must be 72x72 pixels and less than 800 kilobytes.</dd>
+                                </dl>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<div th:substituteby="/includesTH :: scripts"/>
 
 <script type="text/javascript" th:inline="javascript">
     /*<![CDATA[*/
@@ -124,155 +275,6 @@
     });
     /*]]>*/
 </script>
-
-<div th:substituteby="/includesTH :: header"/>
-
-<div class="container-fluid">
-
-    <div class="row-fluid">
-
-        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
-
-        <div class="span10">
-
-            <header class="jumbotron subhead" id="overview">
-                <ul class="breadcrumb">
-                    <li>
-                        <a th:href="@{'/manager/editOrg/' + ${parentOrgId}}" th:text="${parentOrgName}"/>
-                        <span class="divider">/</span>
-                    </li>
-                    <li class="active">
-                        <a href="#" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageCategory.createCategory}">Create Category</a>
-                        <a href="#" th:inline="text" th:if="${#bools.isTrue(isEdit)}">[[${category.name}]]</a>
-                    </li>
-                </ul>
-
-                <h1 th:if="${#bools.isTrue(isEdit)}" style="text-align: left" th:text="#{desktop.manageCategory.updateCategory}">Update Category</h1>
-
-                <h1 th:if="${#bools.isFalse(isEdit)}" style="text-align: left" th:text="#{desktop.manageCategory.createCategory}">Create Category</h1>
-
-                <p class="lead" th:if="${#bools.isTrue(isEdit)}" th:text="#{desktop.manageCategory.modifyInformation}">
-                    Modify the information for this category.
-                </p>
-
-                <p class="lead" th:if="${#bools.isFalse(isEdit)}" th:text="#{desktop.manageCategory.enterInformation}">
-                    Enter information for your new category.
-                </p>
-            </header>
-
-            <div class="row-fluid">
-                <div class="span7 well" id="formContainer">
-
-                    <form id="categoryForm" th:object="${category}" th:action="@{/manager/saveCategory}" method="POST"
-                          enctype="multipart/form-data" class="form-horizontal">
-                        <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
-                            <h1 th:text="#{errors.header}"/>
-                            <ul>
-                                <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
-                            </ul>
-                        </div>
-                        <fieldset>
-                            <input type="hidden" th:field="*{id}"/>
-                            <input type="hidden" name="editing" th:value="${isEdit}"/>
-
-                            <div class="control-group">
-                                <label class="control-label" for="name" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageCategory.name}]]</label>
-
-                                <div class="controls">
-                                    <input id="name" name="name" th:value="*{name}" placeholder="Category Name" required="required"
-                                           autofocus="autofocus" type="text"/>
-                                </div>
-                            </div>
-
-                            <div class="control-group">
-                                <label class="control-label" for="description" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageCategory.description}]]</label>
-
-                                <div class="controls">
-                                    <textarea id="description" name="description" th:text="*{description}" rows="0" cols="0"
-                                              placeholder="Enter your description here." required="required"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="control-group" th:if="${#bools.isFalse(isEdit) and #sets.size(storageConfigurations) > 1}">
-                                <label class="control-label" for="storageConfigurationId" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageCategory.storage}]]</label>
-
-                                <div class="controls">
-                                    <select id="storageConfigurationId" name="storageConfigurationId" required="required">
-                                        <option value="" th:text="#{select.option.default}">--Please Select--</option>
-                                        <option th:each="storageConfiguration : ${storageConfigurations}"
-                                                th:selected="*{storageConfigurationId} == ${storageConfiguration.id}"
-                                                th:value="${storageConfiguration.id}" th:text="${storageConfiguration.name}"></option>
-                                    </select>
-                                </div>
-                            </div>
-                            <input th:if="${#sets.size(storageConfigurations) == 1}" type="hidden" id="storageConfigurationIdHidden" name="storageConfigurationId" th:value="${storageConfigurations.get(0).id}"/>
-                            <input type="hidden" id="orgStorageConfigId" name="orgStorageConfigId" th:value="${orgStorageConfigId}"/>
-                            <input type="hidden" id="organizationId" name="organizationId" th:value="${parentOrgId}"/>
-
-                            <div class="control-group" id="addIconDiv">
-                                <label class="control-label" for="icon" th:inline="text"><span class="required" th:text="#{desktop.required.field}">*</span> [[#{desktop.manageCategory.selectIcon}]]</label>
-
-                                <div class="controls">
-                                    <input class="button" type="file" id="icon" name="icon" required="required"/>
-                                </div>
-                            </div>
-
-                            <div class="control-group" id="deleteIconDiv" th:if="${isEdit}">
-                                <div th:if="*{#bools.isTrue(icon)}">
-                                    <label class="control-label" for="deleteIcon" th:text="#{desktop.manageCategory.deleteIcon}">Delete icon</label>
-                                    <div class="controls">
-                                        <button class="btn btn-danger"
-                                                th:value="@{'/manager/deleteCategoryIcon/' + *{id} + '/' + ${parentOrgId}}"
-                                                id="deleteIcon" th:inline="text"><i class="icon-trash icon-white"></i>&nbsp;[[*{icon.name}]]
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!--<div class="control-group" id="progressDiv">-->
-                                <!--<label class="control-label" for="progressBar" th:inline="text"><span class="required"></span>[[#{desktop.manageCategory.progress}]]</label>-->
-                                <!--<div class="controls">-->
-                                    <!--<progress id="progressBar" value="0"></progress>-->
-                                <!--</div>-->
-                            <!--</div>-->
-
-                            <div class="form-actions">
-                                <button id="submitButton" type="submit" class="btn btn-primary" th:text="#{desktop.manageCategory.submit}">Submit</button>
-                            </div>
-                        </fieldset>
-
-                        <div class="alert alert-info">
-                            <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="span5">
-                    <dl>
-                        <dt th:text="#{desktop.manageCategory.name}">Name</dt>
-                        <dd th:text="#{desktop.manageCategory.name.help}">This is the name of the category that will be visible to users.</dd>
-                        <dt th:text="#{desktop.manageCategory.description}">Description</dt>
-                        <dd th:text="#{desktop.manageCategory.description.help}">This is the description of the category in order to give users an idea of the applications associated with the category.</dd>
-                        <dt th:text="#{desktop.manageCategory.icon}">Icon</dt>
-                        <dd th:text="#{desktop.manageCategory.icon.help}">The icon must be 72x72 pixels and less than 800 kilobytes.</dd>
-                    </dl>
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-<div th:substituteBy="/includesTH :: confirmation_modal"></div>
-
-<footer th:substituteby="/includesTH :: footer"></footer>
-
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-</section>
 
 </body>
 </html>

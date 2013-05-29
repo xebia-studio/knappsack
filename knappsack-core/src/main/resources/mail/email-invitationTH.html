@@ -5,48 +5,33 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 </head>
 <body>
+
+<div th:include="email-headerTH :: email-header"/>
+
 <p>
     Hello!
 </p>
 
+<p th:if="${not #strings.isEmpty(adminName)} and ${not #sets.contains(domainTypes, 'ORGANIZATION')} and ${#sets.contains(domainTypes, 'GROUP')}" th:utext="#{email.invitation.adminExists.groupsOnly(${adminName}, ${parentDomainName}, ${url})}"/>
+<p th:if="${not #strings.isEmpty(adminName)} and ${#sets.contains(domainTypes, 'ORGANIZATION')}" th:utext="#{email.invitation.adminExists.organization(${adminName}, ${parentDomainName}, ${url})}"/>
+<p th:if="${#strings.isEmpty(adminName)} and ${not #sets.contains(domainTypes, 'ORGANIZATION')} and ${#sets.contains(domainTypes, 'GROUP')}" th:utext="#{email.invitation.noAdmin.groupsOnly(${parentDomainName}, ${url})}"/>
+<p th:if="${#strings.isEmpty(adminName)} and ${#sets.contains(domainTypes, 'ORGANIZATION')}" th:utext="#{email.invitation.noAdmin.organization(${parentDomainName}, ${url})}"/>
 
-<div th:if="${domainType eq 'ORGANIZATION'}">
-    <p th:if="${#bools.isTrue(existingUser)}">
-        <span th:unless="${#strings.isEmpty(adminName)}"><b th:text="${adminName}"/> has added you </span>
-        <span th:if="${#strings.isEmpty(adminName)}">You have been added </span>
-        to the <span th:text="#{domain.organization}">organization</span> <b><span th:text="${invitationDomain}">domain</span></b> at <a th:href="${url}">Knappsack</a>! No further action is necessary.
-    </p>
+<span th:if="${#bools.isTrue(existingUser)}" th:text="#{email.invitation.noFurtherAction}">No further action is necessary.</span>
+<span th:if="${#bools.isFalse(existingUser)}" th:text="#{email.invitation.createAccount}">Please follow the below link to create your Knappsack account.</span>
 
-    <p th:if="${#bools.isFalse(existingUser)}">
-        <span th:unless="${#strings.isEmpty(adminName)}"><b th:text="${adminName}"/> has invited you </span>
-        <span th:if="${#strings.isEmpty(adminName)}">You have been invited </span>
-        to join the <span th:text="#{domain.organization}">organization</span> <b><span th:text="${invitationDomain}">domain</span></b> at <a th:href="${url}">Knappsack</a>! Please follow the link and sign up at Knappsack in order
-        to access applications.
-    </p>
-</div>
-
-<div th:if="${domainType eq 'GROUP'}">
-    <p th:if="${#bools.isTrue(existingUser)}">
-        <span th:unless="${#strings.isEmpty(adminName)}"><b th:text="${adminName}"/> has added you </span>
-        <span th:if="${#strings.isEmpty(adminName)}">You have been added </span>
-        to the <span th:text="#{domain.group}">group</span> <b><span th:text="${invitationDomain}">domain</span></b> for the <span th:text="#{domain.organization}">organization</span> <b><span th:text="${parentDomainName}">parentDomainName</span></b> at <a th:href="${url}">Knappsack</a>! No further action is necessary.
-    </p>
-
-    <p th:if="${#bools.isFalse(existingUser)}">
-        <span th:unless="${#strings.isEmpty(adminName)}"><b th:text="${adminName}"/> has invited you </span>
-        <span th:if="${#strings.isEmpty(adminName)}">You have been invited </span>
-        to join the <span th:text="#{domain.group}">group</span> <b><span th:text="${invitationDomain}">domain</span></b> for the <span th:text="#{domain.organization}">organization</span> <b><span th:text="${parentDomainName}">parentDomainName</span></b> at <a th:href="${url}">Knappsack</a>! Please follow the link and sign up at Knappsack in order
-        to access applications.
-    </p>
-</div>
+<p th:if="${not #sets.contains(domainTypes, 'ORGANIZATION')} and ${#sets.contains(domainTypes, 'GROUP')}">
+    <b th:text="#{email.invitation.groups}">Groups:</b>
+    <ul style="list-style-type: none;">
+        <li th:each="groupInvitation : ${groupInvitations}" th:if="${groupInvitation.domain}" th:text="${groupInvitation.domain.name}">Group Name</li>
+    </ul>
+</p>
 
 <p>
     <a th:href="${url}" th:text="${url}"/>
 </p>
 
-<p>
-    Regards, <br/>
-    &emsp; <em>The Knappsack Team</em>
-</p>
+<div th:include="email-footerTH :: email-footer"/>
+
 </body>
 </html>

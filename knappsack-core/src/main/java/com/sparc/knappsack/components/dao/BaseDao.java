@@ -3,17 +3,18 @@ package com.sparc.knappsack.components.dao;
 import com.mysema.query.jpa.JPQLTemplates;
 import com.mysema.query.jpa.impl.JPADeleteClause;
 import com.mysema.query.jpa.impl.JPAQuery;
-import com.mysema.query.jpa.impl.JPASubQuery;
+import com.mysema.query.jpa.JPASubQuery;
 import com.mysema.query.types.EntityPath;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
-public class BaseDao {
+public class BaseDao extends AbstractBaseDao {
 
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Override
     protected final EntityManager getEntityManager() {
         return entityManager;
     }

@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -124,7 +123,7 @@ public class CategoryServiceIT extends AbstractServiceTests {
         category.setOrganization(organization);
         category.setStorageConfiguration(organization.getStorageConfigurations().get(0));
         category.setIcon(icon);
-        CategoryModel categoryModel = categoryService.createCategoryModel(category);
+        CategoryModel categoryModel = categoryService.createCategoryModel(category, true);
         assertTrue(categoryModel.getDescription().equals("Test Description"));
         assertTrue(categoryModel.getName().equals("Test Category"));
         assertTrue(categoryModel.getIcon() != null);

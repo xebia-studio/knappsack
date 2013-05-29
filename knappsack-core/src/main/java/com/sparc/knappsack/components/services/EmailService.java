@@ -1,9 +1,11 @@
 package com.sparc.knappsack.components.services;
 
+import com.sparc.knappsack.enums.ResignErrorType;
 import com.sparc.knappsack.models.DomainUserRequestModel;
 import com.sparc.knappsack.models.UserModel;
 import org.springframework.mail.MailException;
 
+import java.util.Date;
 import java.util.List;
 
 public interface EmailService {
@@ -32,12 +34,13 @@ public interface EmailService {
 
     /**
      * @param fromUserId Long - The person who is creating the invitation
-     * @param invitationId Invitation ID
+     * @param invitationIds List of Invitation IDs to send in the email
+     * @return List of invitation IDs successfully sent
      * @throws MailException
      *
      * This method will send an email to a user stating that they were invited to join a domain
      */
-    boolean sendInvitationEmail(Long fromUserId, Long invitationId);
+    List<Long> sendInvitationsEmail(Long fromUserId, List<Long> invitationIds);
 
     /**
      * @param userId User ID
@@ -100,4 +103,13 @@ public interface EmailService {
      * @return boolean - Whether or not all emails were successfully sent.  A false indicates that at least one failed.
      */
     boolean sendApplicationVersionErrorEmail(final Long applicationVersionId, final List<Long> userIds);
+
+    /**
+     * @param applicationVersionId Application version ID which was resigned.
+     * @param resignSuccess Whether or not the resign was a success.
+     * @
+     * @param userIds All user IDs to be notified.
+     * @return Whether or not all emails were successfully sent. A false indicates that at least one failed.
+     */
+    boolean sendApplicationVersionResignCompleteEmail(final Long applicationVersionId, final boolean resignSuccess, final ResignErrorType resignErrorType, final List<Long> userIds);
 }

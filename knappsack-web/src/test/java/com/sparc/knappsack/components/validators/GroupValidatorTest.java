@@ -1,7 +1,10 @@
 package com.sparc.knappsack.components.validators;
 
 import com.sparc.knappsack.components.entities.Group;
+import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.GroupService;
+import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.forms.GroupForm;
 import junit.framework.Assert;
 import org.junit.Before;
@@ -20,6 +23,9 @@ import static junit.framework.Assert.*;
 public class GroupValidatorTest {
     @Mock
     private GroupService mockGroupService;
+
+    @Mock
+    private UserService mockUserService;
 
     @InjectMocks
     private GroupValidator validator = new GroupValidator();
@@ -46,9 +52,14 @@ public class GroupValidatorTest {
     @Test
     public void testValid() {
         groupForm.setName("name");
-        groupForm.setOrganizationId(1L);
 
-        Mockito.when(mockGroupService.get(groupForm.getName(), groupForm.getOrganizationId())).thenReturn(null);
+        User user = new User();
+        Organization organization = new Organization();
+        organization.setId(1L);
+        user.setActiveOrganization(organization);
+
+        Mockito.when(mockUserService.getUserFromSecurityContext()).thenReturn(user);
+        Mockito.when(mockGroupService.get(groupForm.getName(), user.getActiveOrganization().getId())).thenReturn(null);
 
         validator.validate(groupForm, errors);
 
@@ -77,9 +88,14 @@ public class GroupValidatorTest {
     @Test
     public void testGroupNameAlreadyExists() {
         groupForm.setName("name");
-        groupForm.setOrganizationId(1L);
 
-        Mockito.when(mockGroupService.get(groupForm.getName(), groupForm.getOrganizationId())).thenReturn(new Group());
+        User user = new User();
+        Organization organization = new Organization();
+        organization.setId(1L);
+        user.setActiveOrganization(organization);
+
+        Mockito.when(mockUserService.getUserFromSecurityContext()).thenReturn(user);
+        Mockito.when(mockGroupService.get(groupForm.getName(), user.getActiveOrganization().getId())).thenReturn(new Group());
 
         validator.validate(groupForm, errors);
 

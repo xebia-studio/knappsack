@@ -4,7 +4,122 @@
 
 <head th:substituteby="/includesTH :: head"></head>
 
-<body class="lightNav">
+<body>
+
+<div class="container knappsack-container">
+
+    <div th:substituteby="/includesTH :: header"/>
+
+    <div class="row">
+
+        <div th:substituteby="/includesTH :: side_menu"/>
+
+        <div class="span10">
+
+
+
+
+            <div class="page-info callout"> <b class="notch"></b>
+                <span class="page-info-bold"><span th:text="#{desktop.manager.regions.header.overview}">Regions</span><span>:</span></span>
+            </div>
+
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid page-header first" style="border: none;">
+                        <ul class="breadcrumb">
+                            <li>
+                                <a th:href="@{'/manager/editOrg/' + ${domainId}}" th:text="${domainName}" th:if="${#strings.toString(domainType) eq 'ORGANIZATION'}"/>
+                                <a th:href="@{'/manager/editGroup/' + ${domainId}}" th:text="${domainName}" th:if="${#strings.toString(domainType) eq 'GROUP'}"/>
+                                <span class="divider">/</span>
+                            </li>
+                            <li class="active">
+                                <a href="#" th:text="#{desktop.manager.regions.header.overview}">Regions</a>
+                            </li>
+                        </ul>
+
+                        <div class="row-fluid">
+                            <span class="label">Note: Click on a row to edit or delete the entry.</span>
+                            <table id="regionTable" class="table table-striped table-bordered" style="max-width: 100%;">
+                                <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Emails</th>
+                                </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <hr />
+
+                        <div class="row-fluid">
+                            <div class="span7">
+                                <div id="regionUpdateSuccess" class="alert alert-success" th:if="${#bools.isTrue(updateSuccess)}">
+                                    <a class="close" data-dismiss="alert" th:text="#{alert.close}">x</a>
+                                    <strong th:text="#{alert.success.prefix}">Well done!</strong> <span>Regions updated successfully.</span>
+                                </div>
+                                <form id="domainRegionForm" th:object="${domainRegionForm}" th:action="@{/manager/regions/saveDomainRegion(did=${domainId})}" method="POST" class="form-horizontal">
+                                    <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                                        <h2 th:text="#{errors.header}">Errors</h2>
+                                        <ul>
+                                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                                        </ul>
+                                    </div>
+                                    <fieldset>
+
+                                        <input type="hidden" id="regionId" th:field="*{id}"/>
+                                        <input type="hidden" id="domainId" th:field="*{domainId}"/>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="regionName"><span class="required" th:text="#{desktop.required.field}">*</span> <span>Name</span></label>
+                                            <div class="controls">
+                                                <input type="text" id="regionName" name="name" th:field="*{name}" required="required" title="Name"/>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="emails"><span>Emails</span></label>
+                                            <div class="controls">
+                                                <input type="text" id="emails" th:field="*{emails}" title="Emails" placeholder="Comma delimited"/>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-actions">
+                                            <button id="submitButton" type="submit" class="btn btn-primary">Submit</button>
+                                            <button id="cancelRegionBtn" class="btn btn-warning"><i class="icon-white icon-remove"/>&nbsp;<span>Cancel</span></button>
+                                            <button id="deleteRegionBtn" class="btn btn-danger" style="display: none;"><i class="icon-white icon-trash"/>&nbsp;<span>Delete</span></button>
+                                        </div>
+
+                                    </fieldset>
+
+                                    <div class="alert alert-info">
+                                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="span5">
+                                <dl>
+                                    <dt>Name</dt>
+                                    <dd>The name of the region.</dd>
+                                    <dt>Emails</dt>
+                                    <dd>Comma delimited list of emails which will be used for notifications.</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<div th:substituteby="/includesTH :: scripts"/>
 
 <script type="text/javascript" th:inline="javascript">
     /*<![CDATA[*/
@@ -15,7 +130,7 @@
         var notApplicableText= /*[[#{notApplicable}]]*/ 'N/A';
 
         var $regionTable = $('#regionTable').dataTable({
-            "sDom": "<'table-inline'<<'span6'l><'floatright'f>r>t<<'span6'i><'floatright'p>>>",
+            "sDom": "<'table-inline'<<'span6'l><'pull-right'f>r>t<<'span6'i><'pull-right'p>>>",
             "sPaginationType": "bootstrap",
             "oLanguage": {
                 "sLengthMenu": '<select>'+
@@ -169,116 +284,6 @@
     });
     /*]]>*/
 </script>
-
-<div th:substituteby="/includesTH :: header"/>
-
-<div class="container-fluid">
-
-    <div class="row-fluid">
-
-        <div th:substituteby="/manager/managerIncludesTH :: sidebar-nav"/>
-
-        <div class="span10">
-
-            <ul class="breadcrumb">
-                <li>
-                    <a th:href="@{'/manager/editOrg/' + ${domainId}}" th:text="${domainName}" th:if="${#strings.toString(domainType) eq 'ORGANIZATION'}"/>
-                    <a th:href="@{'/manager/editGroup/' + ${domainId}}" th:text="${domainName}" th:if="${#strings.toString(domainType) eq 'GROUP'}"/>
-                    <span class="divider">/</span>
-                </li>
-                <li class="active">
-                    <a href="#" th:text="#{desktop.manager.regions.header.overview}">Regions</a>
-                </li>
-            </ul>
-
-            <header class="jumbotron subhead" id="overview">
-                <h1 th:text="#{desktop.manager.regions.header.overview}">Regions</h1>
-            </header>
-
-            <div class="row-fluid">
-                <span class="label label-info">Note: Click on a row to edit or delete the entry.</span>
-                <table id="regionTable" class="table table-striped table-bordered" style="max-width: 100%;">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Emails</th>
-                    </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-
-            <hr />
-
-            <div class="row-fluid">
-                <div class="span7">
-                    <div id="regionUpdateSuccess" class="alert alert-success" th:if="${#bools.isTrue(updateSuccess)}">
-                        <a class="close" data-dismiss="alert" th:text="#{desktop.alert.close}">x</a>
-                        <strong th:text="#{desktop.alert.success.prefix}">Well done!</strong> <span>Regions updated successfully.</span>
-                    </div>
-                    <form id="domainRegionForm" th:object="${domainRegionForm}" th:action="@{/manager/regions/saveDomainRegion(did=${domainId})}" method="POST" class="form-horizontal">
-                        <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
-                            <h1 th:text="#{errors.header}"/>
-                            <ul>
-                                <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
-                            </ul>
-                        </div>
-                        <fieldset>
-
-                            <input type="hidden" id="regionId" th:field="*{id}"/>
-                            <input type="hidden" id="domainId" th:field="*{domainId}"/>
-
-                            <div class="control-group">
-                                <label class="control-label" for="regionName"><span class="required" th:text="#{desktop.required.field}">*</span> <span>Name</span></label>
-                                <div class="controls">
-                                    <input type="text" id="regionName" name="name" th:field="*{name}" required="required" title="Name"/>
-                                </div>
-                            </div>
-
-                            <div class="control-group">
-                                <label class="control-label" for="emails"><span>Emails</span></label>
-                                <div class="controls">
-                                    <input type="text" id="emails" th:field="*{emails}" title="Emails" placeholder="Comma delimited"/>
-                                </div>
-                            </div>
-
-                            <div class="form-actions">
-                                <button id="submitButton" type="submit" class="btn btn-primary">Submit</button>
-                                <button id="cancelRegionBtn" class="btn btn-warning"><i class="icon-white icon-remove"/>&nbsp;<span>Cancel</span></button>
-                                <button id="deleteRegionBtn" class="btn btn-danger" style="display: none;"><i class="icon-white icon-trash"/>&nbsp;<span>Delete</span></button>
-                            </div>
-
-                        </fieldset>
-
-                        <div class="alert alert-info">
-                            <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
-                        </div>
-                    </form>
-                </div>
-                <div class="span5 well">
-                    <dl>
-                        <dt>Name</dt>
-                        <dd>The name of the region.</dd>
-                        <dt>Emails</dt>
-                        <dd>Comma delimited list of emails which will be used for notifications.</dd>
-                    </dl>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div th:substituteBy="/includesTH :: confirmation_modal"></div>
-
-</div>
-
-<footer th:substituteby="/includesTH :: footer"></footer>
-
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-    <section th:include="/includesTH :: table_scripts"/>
-</section>
 
 </body>
 </html>

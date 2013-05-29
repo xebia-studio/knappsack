@@ -2,6 +2,7 @@ package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.StorableType;
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 
@@ -12,7 +13,7 @@ import javax.persistence.*;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "STORABLE")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public abstract class Storable extends BaseEntity {
 
     private static final long serialVersionUID = 131232227317295130L;
@@ -22,7 +23,7 @@ public abstract class Storable extends BaseEntity {
     @Column(name = "ID")
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     @JoinColumn(name = "STORAGE_CONFIGURATION_ID")
     private StorageConfiguration storageConfiguration;
@@ -40,7 +41,7 @@ public abstract class Storable extends BaseEntity {
     }
 
     public StorageConfiguration getStorageConfiguration() {
-        return storageConfiguration;
+        return initializeAndUnproxy(storageConfiguration);
     }
 
     public void setStorageConfiguration(StorageConfiguration storageConfiguration) {

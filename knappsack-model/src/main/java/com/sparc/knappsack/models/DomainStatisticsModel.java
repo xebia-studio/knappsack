@@ -1,33 +1,42 @@
 package com.sparc.knappsack.models;
 
 public class DomainStatisticsModel {
-    int totalUsers;
-    int totalApplications;
-    int totalApplicationVersions;
+    long totalUsers;
+    long totalPendingInvitations;
+    long totalApplications;
+    long totalApplicationVersions;
     double totalMegabyteStorageAmount;
     double totalMegabyteBandwidthUsed;
 
-    public int getTotalUsers() {
+    public long getTotalUsers() {
         return totalUsers;
     }
 
-    public void setTotalUsers(int totalUsers) {
+    public void setTotalUsers(long totalUsers) {
         this.totalUsers = totalUsers;
     }
 
-    public int getTotalApplications() {
+    public long getTotalPendingInvitations() {
+        return totalPendingInvitations;
+    }
+
+    public void setTotalPendingInvitations(long totalPendingInvitations) {
+        this.totalPendingInvitations = totalPendingInvitations;
+    }
+
+    public long getTotalApplications() {
         return totalApplications;
     }
 
-    public void setTotalApplications(int totalApplications) {
+    public void setTotalApplications(long totalApplications) {
         this.totalApplications = totalApplications;
     }
 
-    public int getTotalApplicationVersions() {
+    public long getTotalApplicationVersions() {
         return totalApplicationVersions;
     }
 
-    public void setTotalApplicationVersions(int totalApplicationVersions) {
+    public void setTotalApplicationVersions(long totalApplicationVersions) {
         this.totalApplicationVersions = totalApplicationVersions;
     }
 

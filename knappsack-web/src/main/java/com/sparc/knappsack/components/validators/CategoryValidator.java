@@ -7,6 +7,8 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.image.BufferedImage;
+
 @Component("categoryValidator")
 public class CategoryValidator implements Validator {
 
@@ -47,7 +49,10 @@ public class CategoryValidator implements Validator {
     }
 
     private void validateImageAttributes(MultipartFile icon, Errors errors) {
-        if (!imageValidator.isValidImageSize(icon)) {
+
+        BufferedImage bufferedImage = imageValidator.createBufferedImage(icon);
+
+        if (!imageValidator.isValidImageSize(icon, 819200 /*Bytes: 800 KB*/)) {
             errors.rejectValue(ICON_FIELD, "validator.invalidIconSize");
         }
 
@@ -55,7 +60,7 @@ public class CategoryValidator implements Validator {
             errors.rejectValue(ICON_FIELD, "validator.invalidIconType");
         }
 
-        if (!imageValidator.isValidIconDimension(icon)) {
+        if (!imageValidator.isValidMinDimensions(bufferedImage, 72, 72) || !imageValidator.isSquare(bufferedImage)) {
             errors.rejectValue(ICON_FIELD, "validator.invalidIconDimension");
         }
     }

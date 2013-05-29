@@ -1,55 +1,48 @@
 package com.sparc.knappsack.forms;
 
-import com.sparc.knappsack.enums.DomainType;
-import org.springframework.web.multipart.MultipartFile;
+import com.sparc.knappsack.enums.UserRole;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class InvitationForm {
-    private List<InviteeForm> inviteeForms = new ArrayList<InviteeForm>();
-    private DomainType domainType;
-    private Long domainId;
-    private MultipartFile contactsGmail;
-    private MultipartFile contactsOutlook;
+    private String email;
+    private UserRole organizationUserRole;
+    private UserRole groupUserRole;
+    private List<Long> groupIds;
 
-    public List<InviteeForm> getInviteeForms() {
-        return inviteeForms;
+    public String getEmail() {
+        return email;
     }
 
-    public void setInviteeForms(List<InviteeForm> inviteeForms) {
-        this.inviteeForms = inviteeForms;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    public DomainType getDomainType() {
-        return domainType;
+    public UserRole getOrganizationUserRole() {
+        return organizationUserRole;
     }
 
-    public void setDomainType(DomainType domainType) {
-        this.domainType = domainType;
+    public void setOrganizationUserRole(UserRole organizationUserRole) {
+        this.organizationUserRole = organizationUserRole;
     }
 
-    public Long getDomainId() {
-        return domainId;
+    public UserRole getGroupUserRole() {
+        return groupUserRole;
     }
 
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
+    public void setGroupUserRole(UserRole groupUserRole) {
+        this.groupUserRole = groupUserRole;
     }
 
-    public MultipartFile getContactsGmail() {
-        return contactsGmail;
+    public List<Long> getGroupIds() {
+        if (groupIds == null) {
+            groupIds = new ArrayList<Long>();
+        }
+        return groupIds;
     }
 
-    public void setContactsGmail(MultipartFile contactsGmail) {
-        this.contactsGmail = contactsGmail;
-    }
-
-    public MultipartFile getContactsOutlook() {
-        return contactsOutlook;
-    }
-
-    public void setContactsOutlook(MultipartFile contactsOutlook) {
-        this.contactsOutlook = contactsOutlook;
+    public void setGroupIds(List<Long> groupIds) {
+        this.groupIds = groupIds;
     }
 }

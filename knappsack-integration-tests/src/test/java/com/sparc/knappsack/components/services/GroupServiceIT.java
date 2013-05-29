@@ -79,7 +79,7 @@ public class GroupServiceIT extends AbstractServiceTests {
 
     @Test
     public void doesRequestExistTest() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.add(user);
 
         Group group = getGroup();
@@ -99,17 +99,22 @@ public class GroupServiceIT extends AbstractServiceTests {
 
     @Test
     public void createGroupTest() {
+        Organization organization = getOrganization();
+        setActiveOrganizationOnUserInSecurityContext(organization);
         GroupForm groupForm = getGroupForm();
         groupService.createGroup(groupForm);
 
         List<Group> groups = groupService.getAll();
-        assertTrue(groups.size() == 1);
-        assertTrue(groups.get(0).getName().equals(groupForm.getName()));
+        assertEquals(groups.size(), 1);
+        assertEquals(groups.get(0).getName(), groupForm.getName());
+        assertEquals(groups.get(0).getOrganization(), organization);
     }
 
     @Test
     public void mapGroupToGroupFormTest() {
         Group group = getGroup();
+
+        setActiveOrganizationOnUserInSecurityContext(group.getOrganization());
 
         List<Group> groups = groupService.getAll();
         assertTrue(groups.size() == 1);
@@ -119,12 +124,14 @@ public class GroupServiceIT extends AbstractServiceTests {
         groupService.mapGroupToGroupForm(group, groupForm);
         assertTrue(group.getId().equals(groupForm.getId()));
         assertTrue(group.getName().equals(groupForm.getName()));
-        assertTrue(group.getOrganization().getId().equals(groupForm.getOrganizationId()));
+        assertEquals(group.getOrganization(), getUserWithSecurityContext().getActiveOrganization());
     }
 
     @Test
     public void editGroupTest() {
         Group group = getGroup();
+        setActiveOrganizationOnUserInSecurityContext(group.getOrganization());
+
         List<Group> groups = groupService.getAll();
         assertTrue(groups.size() == 1);
         assertEquals(group, groups.get(0));
@@ -132,7 +139,6 @@ public class GroupServiceIT extends AbstractServiceTests {
         GroupForm groupForm = new GroupForm();
         groupForm.setName("New Group");
         groupForm.setId(group.getId());
-        groupForm.setOrganizationId(group.getOrganization().getId());
         groupService.editGroup(groupForm);
         group = groupService.get(group.getName(), group.getOrganization().getId());
         assertNotNull(group);
@@ -141,16 +147,16 @@ public class GroupServiceIT extends AbstractServiceTests {
 
     @Test
     public void removeUserFromGroupTest() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.add(user);
 
         Group group = getGroup();
 
         userService.addUserToGroup(user, group.getId(), UserRole.ROLE_GROUP_USER);
-        List<Group> groups = userService.getGroups(user);
+        List<Group> groups = userService.getGroups(user, SortOrder.ASCENDING);
         assertTrue(groups.size() == 1);
         groupService.removeUserFromGroup(group.getId(), user.getId());
-        groups = userService.getGroups(user);
+        groups = userService.getGroups(user, SortOrder.ASCENDING);
         assertTrue(groups.size() == 0);
     }
 
@@ -180,11 +186,8 @@ public class GroupServiceIT extends AbstractServiceTests {
     }
 
     private GroupForm getGroupForm() {
-        Organization organization = getOrganization();
-
         GroupForm groupForm = new GroupForm();
         groupForm.setName("Test Group");
-        groupForm.setOrganizationId(organization.getId());
 
         return groupForm;
     }
@@ -205,6 +208,7 @@ public class GroupServiceIT extends AbstractServiceTests {
         organization.setOrgStorageConfig(orgStorageConfig);
 
         organizationService.add(organization);
+        assertTrue(organizationService.doesEntityExist(organization.getId()));
 
         return organization;
     }

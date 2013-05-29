@@ -62,7 +62,6 @@ public class RegistrationValidatorTest {
 
     @Test
     public void testValid() {
-
         registrationForm.setEmail("new@test.com");
         registrationForm.setFirstName("Test");
         registrationForm.setLastName("Test");

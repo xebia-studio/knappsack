@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 
 <head th:fragment="head">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
@@ -15,179 +15,115 @@
     <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
-    <link href="../../resources/css/bootstrap-2.2.1.min.css"
-          ks:href="@{/resources/css/bootstrap-2.2.1.min.css}" rel="stylesheet"/>
-    <link href="../../resources/css/bootstrap-responsive-2.2.1.min.css"
-          ks:href="@{/resources/css/bootstrap-responsive-2.2.1.min.css}" rel="stylesheet"/>
-    <link href="../../resources/css/docs_2.min.css" ks:href="@{/resources/css/docs_2.min.css}"
-          rel="stylesheet"/>
-    <link href="../../resources/css/custom_7.min.css"
-          ks:href="@{/resources/css/custom_7.min.css}" rel="stylesheet"/>
-
-    <link href="../../resources/css/login.min.css" ks:href="@{/resources/css/login.min.css}"
-          rel="stylesheet" th:if="${include_login}"/>
-
-    <link href="../../resources/css/DT_bootstrap.min.css"
-          ks:href="@{/resources/css/DT_bootstrap.min.css}" rel="stylesheet"/>
-    <link href="../../resources/css/prettify.min.css"
-          ks:href="@{/resources/css/prettify.min.css}" rel="stylesheet"/>
-    <link href="../../resources/css/multi-select_1.css"
-          ks:href="@{/resources/css/multi-select_1.css}" rel="stylesheet"/>
-
-    <link rel="shortcut icon" href="../../resources/img/favicon.png" ks:href="@{/resources/img/favicon.png}"/>
-
-    <script src="../../resources/js/jquery-1.7.1.min.js" ks:src="@{/resources/js/jquery-1.7.1.min.js}"
-            type="text/javascript"></script>
-
-    <script src="../../resources/js/knappsack_3.min.js" ks:src="@{/resources/js/knappsack_3.min.js}"
-            type="text/javascript"></script>
-
-    <script src="../../resources/js/openid.min.js" ks:src="@{/resources/js/openid.min.js}"
-            type="text/javascript" th:if="${include_login}"></script>
-
-    <script type="text/javascript" th:inline="javascript" th:if="${#bools.isFalse(exclude_systemNotifications)}">
-        /*<![CDATA[*/
-        var systemNotifications = [];
-
-        function displaySystemNotifications() {
-            var getSystemNotificationsUrl = /*[[@{/getSystemNotifications}]]*/ '/getSystemNotifications';
-            var systemNotificationTypes = /*[[${systemNotificationTypes}]]*/ [];
-            $(systemNotifications).each(function(index, value) {
-                value.close();
-            });
-            $.ajax( {
-                url: getSystemNotificationsUrl,
-                data: {"types": systemNotificationTypes}
-            }).done(function(result) {
-                        if (result) {
-                            $('body > .container, body > .container-fluid > .row-fluid > .span10').prepend($('<div>').addClass('system-notifications'));
-                            $.each(result, function(index, value) {
-                                var type = 'alert';
-                                switch (value.notificationSeverity) {
-                                    case 'INFO':
-                                        type = 'information';
-                                        break;
-                                    case 'WARNING':
-                                        type = 'warning';
-                                        break;
-                                    case 'ERROR':
-                                        type = 'error';
-                                        break;
-                                }
-                                systemNotifications.push($('.system-notifications').noty({
-                                    text: escapeHtml(value.message),
-                                    type: type,
-                                    layout: 'topCenter',
-                                    closeWith: ['click']
-                                }));
-                            });
-                        }
-                    });
-        }
-        /*]]>*/
+    <script th:src="@{/static/jawr_loader.js}" type="text/javascript"></script>
+    <script type="text/javascript">
+        JAWR.loader.style('/bundles/knappsack.css');
+        JAWR.loader.style('/bundles/ext.css');
     </script>
+    <!-- Typekit -->
+    <script type="text/javascript" src="//use.typekit.net/gae0wog.js"></script>
+    <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
 
-    <script type="text/javascript" th:inline="javascript">
-        /*<![CDATA[*/
-        $(document).ready(function() {
+    <link href="//assets.zendesk.com/external/zenbox/v2.5/zenbox.css" media="screen, projection" type="text/css" rel="stylesheet" />
 
-            $('a[rel*=external]').click(function(){
-                window.open($(this).attr('href'));
-                return false;
-            });
-
-            var excludeSystemNotifications = /*[[${#bools.isTrue(exclude_systemNotifications)}]]*/ false;
-
-            if (!excludeSystemNotifications) {
-                $('.noty_text').escapeHtml();
-                displaySystemNotifications();
-            }
-
-        });
-        /*]]>*/
-    </script>
-
-    <script type="text/javascript" th:inline="javascript">
-        /*<![CDATA[*/
-        $(document).ready(function () {
-            var contactsURL = /*[[@{/contacts}]]*/ '/contacts';
-            $("#supportFooter").live("click", function (e) {
-                e.preventDefault();
-                $.ajax({
-                    type: 'GET',
-                    url: contactsURL,
-                    cache: false
-                }).done(function (data) {
-                            $('.generated-contact').remove();
-                            data.forEach(function (contacts) {
-                                for (contact in contacts.contacts) {
-                                    console.log(contacts.contacts[contact].name);
-                                    var mailTo = '<a class="generated-contact" id="knappsackSupport" href="mailto:' + contacts.contacts[contact].email + '" rel="external">' + contacts.contacts[contact].name + '</a>';
-                                    $("<div class='generated-contact'>" + mailTo + "</div>").prependTo("#contactsModalDiv");
-                                }
-                                $("<p class='generated-contact' style='padding-top:.5em;'><b>" + contacts.domainName + " Administrators</b></p>").prependTo("#contactsModalDiv");
-                            });
-                            $('#contactsModal').modal({
-                                show: true
-                            });
-                        });
-            });
-        });
-        /*]]>*/
-    </script>
+    <link rel="shortcut icon" href="../../static/resources/img/favicon.png" th:href="@{/static/resources/img/favicon.png}"/>
+    <link rel="apple-touch-icon" sizes="57x57" href="../../resources/img/apple_touch_icon_57x57.png" th:href="@{/static/resources/img/apple_touch_icon_57x57.png}" />
+    <link rel="apple-touch-icon" sizes="72x72" href="../../resources/img/apple_touch_icon_72x72.png" th:href="@{/static/resources/img/apple_touch_icon_72x72.png}" />
+    <link rel="apple-touch-icon" sizes="114x114" href="../../resources/img/apple_touch_icon_114x114.png" th:href="@{/static/resources/img/apple_touch_icon_114x114.png}" />
+    <link rel="apple-touch-icon" sizes="144x144" href="../../resources/img/apple_touch_icon_144x144.png" th:href="@{/static/resources/img/apple_touch_icon_144x144.png}" />
 
 </head>
 
 <body>
 
+<div class="row system_notifications" th:fragment="system_notifications">
+    <div class="span2"></div>
+    <div class="span10 content"></div>
+</div>
+
+<div class="span2" th:fragment="side_menu">
+    <ul class="nav nav-list nav-knappsack">
+        <!-- Admin -->
+        <li class="nav-header" th:class="${#bools.isTrue(adminNavActive)} ? 'nav-header active' : 'nav-header'" th:if="${#bools.isTrue(user.anyAdmin)}"><a href="/manager" th:href="@{/manager}"><i class="icon-dashboard"></i> admin</a></li>
+        <li th:if="${#bools.isTrue(user.systemAdmin)}" th:class="${#bools.isFalse(isEdit)} and ${#bools.isTrue(adminOrganizationNavActive)} ? 'active' : ''"><a id="addOrgMenuItem" th:href="@{/manager/addOrg}" th:text="#{desktop.managerIncludes.addOrganization}">Add Organization</a></li>
+        <li th:if="${#bools.isTrue(user.activeOrganizationAdmin)} and ${user.activeOrganization != null}" th:class="${#bools.isTrue(isEdit)} and ${#bools.isTrue(adminOrganizationNavActive)} ? 'active' : ''"><a id="editOrgMenuItem" th:if="${user.activeOrganizationAdmin}" th:href="@{'/manager/editOrg/' + ${user.activeOrganization.id}}">Edit Organization</a></li>
+        <li th:if="${#bools.isTrue(user.activeOrganizationAdmin)} or ${#bools.isTrue(user.activeOrganizationGroupAdmin)}" th:class="${#bools.isTrue(adminGroupNavActive)} ? 'active' : ''"><a id="editGroupsMenuItem" th:href="@{/manager/viewGroups}">Edit Groups</a></li>
+        <li th:if="${user.systemAdmin}" th:class="${#bools.isTrue(adminStorageConfigsNavActive)} ? 'active' : ''">
+            <a id="storageMenuItem" href="storageConfigsTH.html" th:href="@{/manager/viewStorageConfigs}" th:text="#{desktop.managerIncludes.storageConfigurations}">Storage Configurations</a>
+        </li>
+        <li th:if="${user.systemAdmin}" th:class="${#bools.isTrue(adminReportsNavActive)} ? 'active' : ''">
+            <a id="reportsMenuItem" href="reportsTH.html" th:href="@{/manager/viewReports}">Reports</a>
+        </li>
+        <li th:if="${#bools.isTrue(user.organizationAdminWithResignerEnabled)}" th:class="${#bools.isTrue(adminKeyVaultNavActive)} ? 'active' : ''">
+            <a id="keyVaultMenuItem" href="manageKeyVaultTH.html" th:href="@{/manager/viewKeyVault}" th:text="#{desktop.managerIncludes.keyVault}">Key Vault</a>
+        </li>
+        <li th:if="${user.systemAdmin}" th:class="${#bools.isTrue(adminSystemNavActive)} ? 'active' : ''">
+            <a id="systemMenuItem" href="/manager/system" th:href="@{/manager/system}" th:text="#{desktop.managerIncludes.nav.system}">System</a>
+        </li>
+        <!-- Groups -->
+        <li class="nav-header"><a href="#">groups</a></li>
+        <li th:each="item,iterStat : ${groupMenuItems}" th:class="${#arrays.contains(groupNavActiveIDs, item.id)} ? 'active' : ''"><a th:id="${'group[' + iterStat.count + ']'}" th:href="@{/home(grp=${item.id})}" th:text="${item.name}">Name</a></li>
+        <!-- Categories -->
+        <li class="nav-header"><a href="#">categories</a></li>
+        <li th:each="item,iterStat : ${categoryMenuItems}" th:class="${#arrays.contains(categoryNavActiveIDs, item.id)} ? 'active' : ''"><a th:id="${'category[' + iterStat.count + ']'}" th:href="@{/home(ctg=${item.id})}" th:text="${item.name}">Name</a></li>
+        <!-- Devices -->
+        <li class="nav-header"><a href="#">devices</a></li>
+        <li th:each="item,iterStat : ${deviceTypeMenuItems}" th:class="${#arrays.contains(typeNavActive, item)} ? 'active' : ''"><a th:id="${'device[' + iterStat.count + ']'}" th:href="@{/home(type=${item})}" th:text="#{${item.messageKey}}">Device Type</a></li>
+    </ul>
+</div>
+
 <div th:fragment="header">
-    <div class="navbar navbar-fixed-top">
-        <div class="navbar-inner">
-            <div class="container-fluid">
-                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
+    <div th:substituteby="/includesTH :: system_notifications" th:unless="${#bools.isTrue(exclude_systemNotifications)}"/>
+    <div class="row">
+        <div class="span2" th:include="/includesTH :: logo"></div>
+        <div class="span2">
+            <div th:include="/includesTH :: context_switcher" th:if="${user}" th:unless="${#bools.isTrue(exclude_contextSwitcher)}"></div>
+        </div>
+        <div class="span8" th:include="/includesTH :: navbar" th:if="${user}"></div>
+    </div>
+</div>
+
+<div th:fragment="logo">
+    <a class="brand pull-right" th:href="@{/}" href="/" style="min-width: 100%;">
+        <h1 id="defaultLogo" class="knappsack-logo" th:alt="#{desktop.includes.logo.alt}" alt="Knappsack" th:style="${!#strings.isEmpty(customLogoURL)} and ${#bools.isFalse(exclude_contextSwitcher)} ? 'display: none;' : ''"></h1>
+        <img id="customLogo" th:src="@{${customLogoURL}}" th:alt="${customLogoOrganizationName}" th:title="${customLogoOrganizationName}" th:unless="${#strings.isEmpty(customLogoURL)} or ${#bools.isTrue(exclude_contextSwitcher)}" class="pull-right knappsack-logo custom"/>
+    </a>
+</div>
+
+<div th:fragment="context_switcher">
+    <div class="btn-group filter">
+        <a id="activeOrganizationButton" class="ks-orgContextMenu btn-noborder dropdown-toggle" data-toggle="dropdown" href="#">
+            <span th:if="${user.activeOrganization != null}" th:text="${user.activeOrganization.name}">Organization Name</span>
+            <span th:if="${user.activeOrganization == null}">Filter organization</span>
+            <span class="caret"></span>
+        </a>
+        <div id="activeOrganizationsMenu" class="dropdown-menu">
+            <input class="typeahead" type="text" th:placeholder="#{desktop.includes.contextSwitcher.search}" placeholder="Search" autocomplete="false"/>
+            <ul class="elements"></ul>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="navbar">
+    <div class="navbar knappsack">
+        <div class="container-fluid knappsack-utility-wrap">
+            <div class="btn-group pull-right">
+                <a id="userAccount" class="btn group-custom dropdown-toggle" data-toggle="dropdown" href="#" style="padding: 0px 8px 0px 13px;">
+                    <span th:text="${user.username}">User Name</span><i class="icon-cog"></i><span class="icon-caret-down" style="padding-left: 8px;"></span>
                 </a>
-                <a class="brand" th:href="@{/}" href="/"><img src="../../resources/img/logo-header.png.png"
-                                                              ks:src="@{/resources/img/logo-header.png}"
-                                                              th:alt="#{desktop.includes.logo.alt}" alt="Knappsack"/></a>
-
-                <div class="nav-collapse" th:if="${user}">
-                    <ul class="nav nav-pills" th:if="${#bools.isTrue(user.activated)} and ${#bools.isFalse(user.passwordExpired)}">
-                        <li><a href="#" th:href="@{/home}" th:unless="${include_activate}" th:title="#{desktop.includes.header.home.title}" title="Home" th:text="#{desktop.includes.header.home}">Home</a></li>
-                        <li><a href="categoriesTH.html" th:href="@{/categories}" th:unless="${include_activate}" th:title="#{desktop.includes.header.categories.title}" title="Categories" th:text="#{desktop.includes.header.categories}">Categories</a></li>
-                        <!--<li><a href="searchTH.html" th:href="@{/search}" th:unless="${include_activate}" th:title="#{desktop.includes.header.search.title}" title="Search" th:text="#{desktop.includes.header.search}">Search</a></li>-->
-                        <li><a href="domain_accessTH.html" th:href="@{/domain/requestAccess}" th:unless="${include_activate}" th:title="#{desktop.includes.header.request.group.access.title}" title="Request Group Access" th:text="#{desktop.includes.header.request.group.access}">Request Group Access</a></li>
-                        <li><a href="manager/managerHomeTH.html" th:href="@{/manager/}" th:if="${user.anyAdmin}" th:unless="${include_activate}" th:title="#{desktop.includes.header.manage.title}" title="Manage Application" th:text="#{desktop.includes.header.manage}">Manage Application</a></li>
-                    </ul>
-                    <!--<div class="logoutNav">-->
-                    <ul class="nav nav-pills pull-right">
-                        <li class="dropdown" id="account">
-                            <a class="dropdown-toggle" data-toggle="dropdown" href="#"><span th:text="${user.fullName + ' (' + user.email + ')'}">User</span> <b class="caret"/> </a>
-                            <ul class="dropdown-menu">
-                                <li th:if="${user.activated}">
-                                    <a id="changePassword" href="/profile/changePassword" th:href="@{/profile/changePassword}" th:text="#{desktop.includes.header.account.menu.change.password}">Change Password</a>
-                                </li>
-                                <li>
-                                    <a id="logout" href="/auth/logout" th:href="@{/auth/logout}" th:text="#{desktop.includes.header.account.menu.logout}">Logout</a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <!--[[${user.fullName}]]-->
-                    <!--([[(${user.email})]])-->
-                    <!--<a class="btn btn-primary" href="auth/logout" th:href="@{/auth/logout}" th:title="#{desktop.includes.header.logout.title}" title="Logout" th:text="#{desktop.includes.header.logout}">Logout</a>-->
-                    <!--</div>-->
-                </div>
-                <div class="nav-collapse" th:unless="${user}">
-                    <div class="loginNav" th:inline="text">
-                        <a class="btn btn-primary" href="auth/login" th:href="@{/auth/login}" th:title="#{desktop.includes.header.login.title}" title="Login" th:text="#{desktop.includes.header.login}">Login</a>
-                    </div>
-                </div>
-
-                <!--/.nav-collapse -->
+                <ul class="dropdown-menu">
+                    <li th:if="${user.activated}">
+                        <a id="changePassword" href="/profile/changePassword" th:href="@{/profile/changePassword}"><i class="icon-key"></i> <span th:text="#{desktop.includes.header.account.menu.change.password}">Change Password</span></a>
+                    </li>
+                    <li class="divider" th:if="${user.activated}"></li>
+                    <li>
+                        <a id="logout" href="/auth/logout" th:href="@{/auth/logout}" th:text="#{desktop.includes.header.account.menu.logout}">Logout</a>
+                    </li>
+                </ul>
             </div>
+            <!--/.btn-group -->
+            <div th:if="${#bools.isTrue(user.anyAdmin)} and ${not #bools.isTrue(exclude_navbarUtils)}"><span class="divider pull-right"></span> <a class="btn pull-right" href="/manager/addApplication" th:href="@{/manager/addApplication}"><span th:text="#{desktop.includes.header.addAnApp}">add an app</span><i class="icon-plus-sign-alt"></i> </a><span class="divider pull-right"></span> <a class="btn pull-right" href="/manager/inviteUser" th:href="@{/manager/inviteUser}"><span th:text="#{desktop.includes.header.inviteUsers}">invite users</span><i class="icon-plus-sign-alt"></i> </a></div>
+            <div><span class="divider pull-right"></span> <a class="btn pull-right home" href="/" th:href="@{/}"><i class="icon-home icon-large"></i> </a></div>
         </div>
     </div>
 </div>
@@ -195,12 +131,11 @@
 <footer class="footer" th:fragment="footer">
     <div class="container-fluid">
         <hr/>
-        <!--<div class="row-fluid">-->
         <div class="span8">
-            <strong>&copy; 2013 Sparc LLC</strong>
+            <strong>&copy; <span th:text="#{knappsack.copyright.year}">2013</span> <a class="dashed" href="http://www.sparcedge.com" title="Sparc LLC" rel="external" th:text="#{knappsack.author}">Sparc LLC</a></strong><strong id="poweredByKnappsack" th:style="${#strings.isEmpty(customLogoURL)} ? 'display: none;' : ''" th:unless="${#bools.isTrue(exclude_contextSwitcher)}"> | <span th:text="#{desktop.includes.footer.poweredBy}">Powered by</span> <a class="dashed" href="http://knappsack.com" title="Knappsack" rel="external">Knappsack</a></strong>
             <br />
             All rights reserved.
-            <a id="supportFooter" href="#" th:title="#{desktop.includes.footer.support.title}" title="Contacts" th:text="#{desktop.includes.footer.support}">Contact Us</a>
+            <a id="supportFooter" class="contacts" href="#" th:title="#{desktop.includes.footer.support.title}" title="Contacts" th:text="#{desktop.includes.footer.support}">Contact Us</a>
             |
             <a id="faqFooter" th:href="@{http://support.knappsack.com/forums/21434262-faqs}" rel="external" th:text="#{desktop.includes.footer.faqs}" th:title="#{desktop.includes.footer.faqs.title}" title="Frequently Asked Questions">FAQs</a>
         </div>
@@ -213,7 +148,6 @@
                 </li>
             </ul>
         </div>
-        <!--</div>-->
     </div>
 
     <div id="contactsModal" class="modal hide fade">
@@ -222,8 +156,6 @@
             <h3>Contacts</h3>
         </div>
         <div id="contactsModalDiv" class="modal-body">
-            <p style='padding-top:1em;'><b>Knappsack Support</b></p>
-            <a id="knappsackSupport" th:href="'mailto:' + #{knappsack.support}" href="mailto:support@knappsack.com" th:title="#{knappsack.support}" title="Knappsack Support" th:text="#{knappsack.support}" rel="external">Knappsack Support</a>
         </div>
         <div class="modal-footer">
             <a href="#" class="btn" data-dismiss="modal">Close</a>
@@ -231,105 +163,90 @@
     </div>
 </footer>
 
-<div></div>
+<div th:fragment="scripts">
+    <script type="text/javascript" src="//assets.zendesk.com/external/zenbox/v2.5/zenbox.js"></script>
 
-<section id="scripts">
-    <section th:fragment="required_scripts">
-        <script src="../../resources/js/prettify.min.js"
-                ks:src="@{/resources/js/prettify.min.js}" type="text/javascript"></script>
-        <script src="../../resources/js/bootstrap-2.2.1.min.js"
-                ks:src="@{/resources/js/bootstrap-2.2.1.min.js}"></script>
-        <section th:if="${#bools.isFalse(exclude_systemNotifications)}">
-            <script src="../../resources/js/jquery.noty.min.js"
-                    ks:src="@{/resources/js/jquery.noty.min.js}"></script>
-            <script src="../../resources/js/top.min.js"
-                    ks:src="@{/resources/js/top.min.js}"></script>
-            <script src="../../resources/js/inline.min.js"
-                    ks:src="@{/resources/js/inline.min.js}"></script>
-            <script src="../../resources/js/default.min.js"
-                    ks:src="@{/resources/js/default.min.js}"></script>
-        </section>
-    </section>
+    <script type="text/javascript" th:fragment="scripts" th:inline="javascript">
+        /*<![CDATA[*/
+        JAWR.loader.script('/bundles/knappsack.js');
+        JAWR.loader.script('/bundles/ext.js');
 
-    <section th:fragment="table_tools_scripts">
-        <script src="../../resources/js/jquery.dataTables-1.9.4.min.js"
-                ks:src="@{/resources/js/jquery.dataTables-1.9.4.min.js}"></script>
-        <script src="../../resources/DataTables/js/TableTools.min.js"
-                ks:src="@{/resources/js/TableTools.min.js}"></script>
-        <script src="../../resources/DataTables/js/ZeroClipboard.js"
-                ks:src="@{/resources/js/ZeroClipboard.min.js}"></script>
-        <script src="../../resources/js/DT_bootstrap_4.min.js"
-                ks:src="@{/resources/js/DT_bootstrap_4.min.js}"></script>
-        <script src="../../resources/js/TT_bootstrap_1.min.js"
-                ks:src="@{/resources/js/TT_bootstrap_1.min.js}"></script>
-    </section>
+        $(document).ready(function() {
+            ks.recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
+            ks.contextPath = /*[[${#httpServletRequest.contextPath}]]*/ '';
+            ks.contactsURL = /*[[@{/contacts}]]*/ '/contacts';
 
-    <section th:fragment="table_scripts">
-        <script src="../../resources/js/jquery.dataTables-1.9.4.min.js"
-                ks:src="@{/resources/js/jquery.dataTables-1.9.4.min.js}"></script>
-        <script src="../../resources/js/DT_bootstrap_4.min.js"
-                ks:src="@{/resources/js/DT_bootstrap_4.min.js}"></script>
-    </section>
-
-    <section th:fragment="table_tools_scripts">
-        <script src="../../resources/DataTables/js/TableTools.min.js"
-                ks:src="@{/resources/js/TableTools.min.js}"></script>
-        <script src="../../resources/DataTables/js/ZeroClipboard.js"
-                ks:src="@{/resources/js/ZeroClipboard.min.js}"></script>
-    </section>
-
-    <section th:fragment="wysiwyg_scripts">
-        <link href="../../resources/css/bootstrap-wysihtml5-0.0.2.min.css"
-              ks:href="@{/resources/css/bootstrap-wysihtml5-0.0.2.min.css}"
-              rel="stylesheet"/>
-        <script src="../../resources/js/wysihtml5-0.3.0.min.js"
-                ks:src="@{/resources/js/wysihtml5-0.3.0.min.js}" type="text/javascript"></script>
-        <script src="../../resources/js/bootstrap-wysihtml5-0.0.2.min.js"
-                ks:src="@{/resources/js/bootstrap-wysihtml5-0.0.2.min.js}" type="text/javascript"></script>
-    </section>
-
-    <section id="individual_scripts">
-        <script src="../../resources/js/bootstrap-inputmask.min.js"
-                ks:src="@{/resources/js/bootstrap-inputmask.min.js}" th:fragment="inputmask_script"></script>
-        <script src="../../resources/js/jquery.cookie-1.3.min.js"
-                ks:src="@{/resources/js/jquery.cookie-1.3.min.js}" th:fragment="cookie_script"></script>
-        <script src="../../resources/js/jquery.multi-select.js"
-                ks:src="@{/resources/js/jquery.multi-select.js}" th:fragment="multiselect_script"></script>
-    </section>
-
-    <section th:fragment="inputmask_scripts">
-        <script src="../../resources/js/jquery.inputmask.min.js"
-                ks:src="@{/resources/js/jquery.inputmask.min.js}"></script>
-        <script src="../../resources/js/jquery.inputmask.extensions.min.js"
-                ks:src="@{/resources/js/jquery.inputmask.extensions.min.js}"></script>
-        <script src="../../resources/js/jquery.inputmask.date.extensions.min.js"
-                ks:src="@{/resources/js/jquery.inputmask.date.extensions.min.js}"></script>
-        <script src="../../resources/js/jquery.inputmask.numeric.extensions.min.js"
-                ks:src="@{/resources/js/jquery.inputmask.numeric.extensions.min.js}"></script>
-        <script src="../../resources/js/jquery.inputmask.date.custom.extensions.min.js"
-                ks:src="@{/resources/js/jquery.inputmask.date.custom.extensions.min.js}"></script>
-    </section>
-</section>
-
-<!--</div>-->
+            (function() {
+                var excludeSystemNotifications = /*[[${#bools.isTrue(exclude_systemNotifications)}]]*/ false;
+                if (!excludeSystemNotifications) {
+                    ks.params.systemNotificationTypes = /*[[${systemNotificationTypes}]]*/ [];
+                    $(document).trigger('knappsack.system_notifications-fragment', ks.params);
+                }
+            })();
+        });
+        /*]]>*/
+    </script>
+</div>
 
 <div id="confirmationModal" class="modal hide fade" th:fragment="confirmation_modal">
     <div class="modal-header">
-        <a class="close" data-dismiss="modal" th:text="#{desktop.alert.close}">x</a>
+        <a class="close" data-dismiss="modal" th:text="#{alert.close}">x</a>
         <h3 th:text="#{desktop.includes.confirmation.modal.title}">Title</h3>
     </div>
     <div class="modal-body">
         <div class="alert alert-success" style="display: none;">
-            <h2 th:text="#{desktop.includes.confirmation.modal.success}">Success!!</h2>
+            <div class="custom"/>
+            <h2 class="default" th:text="#{desktop.includes.confirmation.modal.success}">Success!!</h2>
         </div>
         <div class="alert alert-error" style="display: none;">
-            <h2 th:text="#{desktop.includes.confirmation.modal.failure}">An error has occurred. Please try again.</h2>
+            <div class="custom"/>
+            <h2 class="default" th:text="#{desktop.includes.confirmation.modal.failure}">An error has occurred. Please try again.</h2>
         </div>
-        <p th:text="#{desktop.includes.confirmation.modal.body}">Are you sure you want to continue?</p>
+        <div class="body">
+            <div class="custom"/>
+            <p class="default" th:text="#{desktop.includes.confirmation.modal.body}">Are you sure you want to continue?</p>
+        </div>
     </div>
     <div class="modal-footer">
-        <a id="confirmationModalSubmit" href="#" class="btn btn-primary" th:text="#{desktop.includes.confirmation.modal.submit}">Yes</a>
-        <a id="modalCancel" href="#" class="btn" data-dismiss="modal" th:text="#{desktop.includes.confirmation.modal.cancel}">No</a>
+        <button id="confirmationModalSubmit" href="#" class="btn btn-primary" th:text="#{desktop.includes.confirmation.modal.submit}">Yes</button>
+        <button id="modalCancel" href="#" class="btn" data-dismiss="modal" th:text="#{desktop.includes.confirmation.modal.cancel}">No</button>
+    </div>
+</div>
+
+<div th:fragment="manager-checklist">
+
+    <div id="managerChecklistDiv" class="row-fluid page-header" style="border: none; display: none;" th:if="${user.activeOrganizationAdmin}">
+        <h3 class="page-header">Steps to create an application and invite users:</h3>
+        <div class="row-fluid page-header" style="border: none;">
+            <div id="completedGroupDiv" style="display: none; padding: 2px 0px;"><span class="badge badge-success"
+                                                                                       style="margin-right: .5em">  </span><strong>Created a group</strong>
+            </div>
+            <div id="createGroupDiv" class="row-fluid" style="padding: 2px 0px;"><span class="badge badge-important" style="margin-right: .5em">  </span><a
+                    id="createGroupLink" href="" class="btn">Create a group</a></div>
+
+            <div id="completedApplicationDiv" style="display: none; padding: 2px 0px;" class="row-fluid"><span class="badge badge-success"
+                                                                                                               style="margin-right: .5em">  </span><strong>Created an application</strong>
+            </div>
+            <div id="createApplicationDiv" class="row-fluid" style="padding: 2px 0px;"><span class="badge badge-important" style="margin-right: .5em">  </span><a
+                    id="createApplicationLink" href="" class="btn">Create an application</a></div>
+
+            <div id="completedAppVersionDiv" style="display: none; padding: 2px 0px;" class="row-fluid"><span class="badge badge-success"
+                                                                                                              style="margin-right: .5em">  </span><strong>Created an application version</strong>
+            </div>
+            <div id="createAppVersionDiv" class="row-fluid" style="padding: 2px 0px;"><span class="badge badge-important" style="margin-right: .5em">  </span><a
+                    id="createAppVersionLink" href="" class="btn">Add an application version</a></div>
+
+            <div id="completedInviteOrganizationUserDiv" style="display: none; padding: 2px 0px;" class="row-fluid"><span class="badge badge-success"
+                                                                                                                          style="margin-right: .5em">  </span><strong>Added an organization user</strong>
+            </div>
+            <div id="inviteOrganizationUserDiv" class="row-fluid" style="padding: 2px 0px;"><span class="badge badge-important" style="margin-right: .5em">  </span><a
+                    id="inviteOrganizationUserLink" href="" class="btn">Add a user to your organization</a></div>
+        </div>
+
+        <div class="progress row-fluid">
+            <div id="managerChecklistSuccessProgress" class="bar bar-success">Complete</div>
+            <div id="managerChecklistIncompleteProgress" class="bar bar-danger">Incomplete</div>
+        </div>
     </div>
 </div>
 

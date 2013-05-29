@@ -1,8 +1,13 @@
 package com.sparc.knappsack.components.dao;
 
+import com.mysema.query.jpa.JPASubQuery;
+import com.mysema.query.types.expr.BooleanExpression;
+import com.mysema.query.types.query.ListSubQuery;
 import com.sparc.knappsack.components.entities.*;
+import com.sparc.knappsack.enums.UserRole;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -15,6 +20,7 @@ public class OrganizationDaoImpl extends BaseDao implements OrganizationDao {
     QCategory category = QCategory.category;
     QGroup group = QGroup.group;
     QUserDomain userDomain = QUserDomain.userDomain;
+    QUser user = QUser.user;
 
     @Override
     public void add(Organization organization) {
@@ -58,26 +64,58 @@ public class OrganizationDaoImpl extends BaseDao implements OrganizationDao {
 
     @Override
     public long countOrganizationGroups(Long orgId) {
-        return query().from(organization).innerJoin(organization.groups, group).where(organization.id.eq(orgId)).count();
+        return cacheableQuery().from(organization).innerJoin(organization.groups, group).where(organization.id.eq(orgId)).count();
     }
 
     @Override
-    public long countOrganizationUsers(Long orgId) {
-        return query().from(organization, userDomain).where(organization.id.eq(orgId).and(userDomain.domain.id.eq(orgId))).count();
+    public long countOrganizationUsers(Long orgId, boolean includeGroups) {
+
+        List<BooleanExpression> expressions = new ArrayList<BooleanExpression>();
+        expressions.add(userDomain.domain.id.eq(orgId));
+
+        if (includeGroups) {
+            JPASubQuery groupSubQuery = subQuery().from(group).where(group.organization.id.eq(orgId));
+            JPASubQuery groupUserDomainsSubQuery = subQuery().from(userDomain).where(userDomain.domain.in(groupSubQuery.list(group)));
+
+            expressions.add(userDomain.in(groupUserDomainsSubQuery.list(userDomain)));
+        }
+
+        JPASubQuery userIdSubQuery = subQuery().from(userDomain).where(BooleanExpression.anyOf(expressions.toArray(new BooleanExpression[expressions.size()]))).groupBy(userDomain.user.id);
+        ListSubQuery<Long> userIds = userIdSubQuery.list(userDomain.user.id);
+
+        return cacheableQuery().from(user)
+                .where(user.id.in(userIds))
+                .countDistinct();
     }
 
     @Override
     public long countOrganizationApps(Long orgId) {
-        return query().from(organization, application, category).where(organization.id.eq(orgId).and(category.in(organization.categories)).and(category.eq(application.category))).count();
+        return cacheableQuery().from(organization, application, category).where(organization.id.eq(orgId).and(category.in(organization.categories)).and(category.eq(application.category))).count();
     }
 
     @Override
     public long countOrganizationAppVersions(Long orgId) {
-        return query().from(organization, application, applicationVersion, category).where(organization.id.eq(orgId).and(category.in(organization.categories).and(category.eq(application.category).and(application.eq(applicationVersion.application))))).count();
+        return cacheableQuery().from(organization, application, applicationVersion, category).where(organization.id.eq(orgId).and(category.in(organization.categories).and(category.eq(application.category).and(application.eq(applicationVersion.application))))).count();
     }
 
     @Override
     public List<Organization> getAllForCreateDateRange(Date minDate, Date maxDate) {
         return query().from(organization).where(organization.createDate.between(minDate, maxDate)).list(organization);
+    }
+
+    @Override
+    public List<Organization> getAdministeredOrganizationsForUser(User user) {
+        return cacheableQuery().from(organization)
+                .where(organization.in(
+                        subQuery().from(userDomain)
+                                .where(userDomain.user.eq(user), userDomain.role.authority.eq(UserRole.ROLE_ORG_ADMIN.toString()))
+                                .list(userDomain.domain.as(organization.getClass()))
+                )).list(organization);
+    }
+
+    @Override
+    public Organization getForGroupId(long groupId) {
+        return query().from(group)
+                .where(group.id.eq(groupId)).uniqueResult(group.organization);
     }
 }

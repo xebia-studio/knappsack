@@ -34,7 +34,15 @@ public class BandwidthServiceImpl implements BandwidthService {
     }
 
     public double getMegabyteBandwidthUsed(Long organizationId) {
-        Organization organization = organizationService.get(organizationId);
+        return getMegabyteBandwidthUsed(organizationService.get(organizationId));
+    }
+
+    @Override
+    public double getMegabyteBandwidthUsed(Organization organization) {
+        if (organization == null) {
+            return 0.0;
+        }
+
         Date startDate = getStartDate(organization);
         Date endDate = getEndDate();
         StorageConfiguration storageConfiguration = organization.getOrgStorageConfig().getStorageConfigurations().get(0);
@@ -47,16 +55,7 @@ public class BandwidthServiceImpl implements BandwidthService {
     }
 
     private Date getStartDate(Organization organization) {
-        Date startDate = organization.getCreateDate();
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(startDate);
-        calendar.set(Calendar.HOUR, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-
-        return calendar.getTime();
+        return organization.getCreateDate();
     }
 
     private Date getEndDate() {

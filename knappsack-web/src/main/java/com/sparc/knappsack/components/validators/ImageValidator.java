@@ -16,26 +16,53 @@ public class ImageValidator {
     private static final String IMAGE_JPG = "image/jpg";
     private static final String IMAGE_JPEG = "image/jpeg";
 
-    public boolean isValidIconDimension(MultipartFile multipartFile) {
-        if (multipartFile != null) {
-            BufferedImage iconImage;
-            try {
-                iconImage = ImageIO.read(multipartFile.getInputStream());
-                if (iconImage == null) {
-                    return false;
-                }
-            } catch (IOException e) {
-                log.error("IOException caught validating application icon.", e);
-                return false;
-            }
+    public BufferedImage createBufferedImage(MultipartFile multipartFile) {
+        if (multipartFile == null) {
+            log.info("Attempted to create buffered image from null MultipartFile");
+            return null;
+        }
 
-            return (iconImage.getWidth() >= 72 && iconImage.getHeight() >= 72) && iconImage.getWidth() == iconImage.getHeight();
+        BufferedImage bufferedImage;
+        try {
+            bufferedImage = ImageIO.read(multipartFile.getInputStream());
+        } catch (IOException e) {
+            log.error("IOException caught validating application icon.", e);
+            return null;
+        }
+
+        if (bufferedImage == null) {
+            log.error("Unable to create BufferedImage from multipartFile");
+            return null;
+        }
+
+        return bufferedImage;
+    }
+
+    public boolean isValidMinDimensions(BufferedImage image, long minWidth, long minHeight) {
+        if (image != null) {
+            return image.getWidth() >= minWidth && image.getHeight() >= minHeight;
+
+        }
+        return false;
+    }
+
+    public boolean isValidMaxDimensions(BufferedImage image, long maxWidth, long maxHeight) {
+        if (image != null) {
+            return image.getWidth() <= maxWidth && image.getHeight() <= maxHeight;
+        }
+
+        return false;
+    }
+
+    public boolean isSquare(BufferedImage image) {
+        if (image != null) {
+            return image.getWidth() == image.getHeight();
         }
         return true;
     }
 
-    public boolean isValidImageSize(MultipartFile multipartFile) {
-        return multipartFile == null || multipartFile.getSize() <= 819200;
+    public boolean isValidImageSize(MultipartFile multipartFile, long bytes) {
+        return multipartFile == null || multipartFile.getSize() <= bytes;
     }
 
     public boolean isValidImageType(MultipartFile multipartFile) {

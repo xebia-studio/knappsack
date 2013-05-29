@@ -1,7 +1,10 @@
 package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.dao.CategoryDao;
-import com.sparc.knappsack.components.entities.*;
+import com.sparc.knappsack.components.entities.AppFile;
+import com.sparc.knappsack.components.entities.Category;
+import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.StorageConfiguration;
 import com.sparc.knappsack.enums.AppFileType;
 import com.sparc.knappsack.forms.CategoryForm;
 import com.sparc.knappsack.models.CategoryModel;
@@ -48,10 +51,6 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
     @Autowired(required = true)
     private OrganizationService organizationService;
 
-    @Qualifier("applicationService")
-    @Autowired(required = true)
-    private ApplicationService applicationService;
-
     @Qualifier("appFileService")
     @Autowired
     private AppFileService appFileService;
@@ -92,15 +91,13 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
 
     @Override
     public void delete(Long id) {
-        Category category = get(id);
+        delete(get(id));
+    }
 
-        List<Application> applicationsByCategory = applicationService.getAll(category);
-        if(applicationsByCategory != null && !applicationsByCategory.isEmpty()) {
-            return;
-        }
-
+    @Override
+    public void delete(Category category) {
         if (category != null) {
-            deleteIcon(id);
+            deleteIcon(category);
             Organization organization = category.getOrganization();
             organization.getCategories().remove(category);
 
@@ -168,7 +165,11 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
 
     @Override
     public void deleteIcon(Long categoryId) {
-        Category category = get(categoryId);
+        deleteIcon(get(categoryId));
+    }
+
+    @Override
+    public void deleteIcon(Category category) {
         if (category != null) {
             AppFile appFile = category.getIcon();
             category.setIcon(null);
@@ -177,14 +178,16 @@ public class CategoryServiceImpl implements CategoryService, ApplicationContextA
     }
 
     @Override
-    public CategoryModel createCategoryModel(Category category) {
+    public CategoryModel createCategoryModel(Category category, boolean includeIcon) {
         CategoryModel categoryModel = null;
         if (category != null) {
             categoryModel = new CategoryModel();
             categoryModel.setId(category.getId());
             categoryModel.setName(category.getName());
             categoryModel.setDescription(category.getDescription());
-            categoryModel.setIcon(appFileService.createImageModel(category.getIcon()));
+            if (includeIcon) {
+                categoryModel.setIcon(appFileService.createImageModel(category.getIcon()));
+            }
         }
 
         return categoryModel;

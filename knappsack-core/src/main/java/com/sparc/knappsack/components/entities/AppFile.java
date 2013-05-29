@@ -2,6 +2,7 @@ package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.StorageType;
 import org.codehaus.jackson.annotate.JsonBackReference;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 
@@ -10,7 +11,7 @@ import javax.persistence.*;
  */
 @Entity
 @Table(name = "APP_FILE")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class AppFile extends BaseEntity {
 
     private static final long serialVersionUID = -922503072652756916L;

@@ -84,7 +84,7 @@ public class ApplicationVersionStateChangedEvent implements EventDelivery<Applic
         boolean isVisible = false;
 
         if (applicationVersion != null && applicationVersion.getApplication() != null && user != null) {
-            List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(user, applicationVersion.getApplication().getId(), null, applicationVersion.getAppState());
+            List<ApplicationVersion> applicationVersions = userService.getApplicationVersions(user, applicationVersion.getApplication().getId(), null);
             isVisible = applicationVersions.contains(applicationVersion);
         }
 

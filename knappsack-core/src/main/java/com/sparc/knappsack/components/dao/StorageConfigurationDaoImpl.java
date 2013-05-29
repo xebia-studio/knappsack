@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
+@Repository("storageConfigurationDao")
 public class StorageConfigurationDaoImpl extends BaseDao implements StorageConfigurationDao {
     QStorageConfiguration storageConfiguration = QStorageConfiguration.storageConfiguration;
 
@@ -20,6 +20,11 @@ public class StorageConfigurationDaoImpl extends BaseDao implements StorageConfi
 
     public StorageConfiguration get(Long id) {
         return getEntityManager().find(StorageConfiguration.class, id);
+    }
+
+    @Override
+    public <T extends StorageConfiguration> T get(Long id, Class<T> storageConfigurationClass) {
+        return getEntityManager().find(storageConfigurationClass, id);
     }
 
     public StorageConfiguration get(String name) {

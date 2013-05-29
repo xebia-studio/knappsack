@@ -28,10 +28,6 @@ public class GroupServiceImpl implements GroupService {
     @Autowired(required = true)
     private GroupDao groupDao;
 
-    @Qualifier("domainUserRequestService")
-    @Autowired(required = true)
-    private DomainUserRequestService requestService;
-
     @Qualifier("organizationService")
     @Autowired
     private OrganizationService organizationService;
@@ -47,6 +43,14 @@ public class GroupServiceImpl implements GroupService {
     @Qualifier("invitationService")
     @Autowired(required = true)
     private InvitationService invitationService;
+
+    @Qualifier("keyVaultEntryService")
+    @Autowired(required = true)
+    private KeyVaultEntryService keyVaultEntryService;
+
+    @Qualifier("userService")
+    @Autowired(required = true)
+    private UserService userService;
 
     @Override
     public void add(Group group) {
@@ -71,9 +75,13 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public Group get(String name, Long organizationId) {
-        Organization organization = organizationService.get(organizationId);
-        return groupDao.get(name, organization);
+        if (organizationId != null && organizationId > 0) {
+            return groupDao.get(name, organizationId);
+        }
+
+        return null;
     }
+
 
     public List<Group> getAll() {
         return groupDao.getAll();
@@ -91,32 +99,34 @@ public class GroupServiceImpl implements GroupService {
         if (group != null && groupForm != null) {
             groupForm.setId(group.getId());
             groupForm.setName(group.getName());
-            groupForm.setOrganizationId(group.getOrganization().getId());
         }
     }
 
     @Override
-    @PreAuthorize("isOrganizationAdmin(#groupForm.organizationId) or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("isOrganizationAdminForActiveOrganization() or hasRole('ROLE_ADMIN')")
     public Group createGroup(GroupForm groupForm) {
         Group newGroup = null;
         if (groupForm != null) {
-            newGroup = new Group();
-            mapGroupFormToGroup(groupForm, newGroup);
+            User user = userService.getUserFromSecurityContext();
+            if (user != null) {
+                newGroup = new Group();
+                mapGroupFormToGroup(groupForm, newGroup);
 
-            Organization organization = organizationService.get(groupForm.getOrganizationId());
+                Organization organization = user.getActiveOrganization();
 
-            DomainConfiguration domainConfiguration = new DomainConfiguration();
-            if (organization != null && organization.getDomainConfiguration() != null) {
-                BeanUtils.copyProperties(organization.getDomainConfiguration(), domainConfiguration, new String[] {"id"});
+                DomainConfiguration domainConfiguration = new DomainConfiguration();
+                if (organization != null && organization.getDomainConfiguration() != null) {
+                    BeanUtils.copyProperties(organization.getDomainConfiguration(), domainConfiguration, new String[] {"id"});
+                }
+
+                domainConfiguration.setDisableLimitValidations(true);
+                newGroup.setDomainConfiguration(domainConfiguration);
+
+                newGroup.setOrganization(organization);
+                organization.getGroups().add(newGroup);
+
+                save(newGroup);
             }
-
-            domainConfiguration.setDisableLimitValidations(true);
-            newGroup.setDomainConfiguration(domainConfiguration);
-
-            newGroup.setOrganization(organization);
-            organization.getGroups().add(newGroup);
-
-            save(newGroup);
         }
 
         return newGroup;
@@ -149,6 +159,10 @@ public class GroupServiceImpl implements GroupService {
                 group.getOwnedApplications().remove(application);
             }
             group.getOwnedApplications().clear();
+
+            keyVaultEntryService.deleteAllForDomain(group);
+            group.setKeyVaultEntries(null);
+            group.setChildKeyVaultEntries(null);
 
             Organization organization = group.getOrganization();
             organization.getGroups().remove(group);
@@ -217,17 +231,34 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public int getTotalUsers(Group group) {
+    public long getTotalUsers(Group group) {
+        if (group == null) {
+            return 0;
+        }
         return userDomainService.getAll(group.getId()).size();
     }
 
     @Override
-    public int getTotalApplications(Group group) {
+    public long getTotalPendingInvitations(Group group) {
+        if (group == null) {
+            return 0;
+        }
+        return invitationService.countAll(group.getId());
+    }
+
+    @Override
+    public long getTotalApplications(Group group) {
+        if (group == null) {
+            return 0;
+        }
         return group.getOwnedApplications().size();
     }
 
     @Override
-    public int getTotalApplicationVersions(Group group) {
+    public long getTotalApplicationVersions(Group group) {
+        if (group == null) {
+            return 0;
+        }
         int applicationVersions = 0;
         for(Application application : group.getOwnedApplications()) {
             applicationVersions += application.getApplicationVersions().size();
@@ -237,6 +268,9 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public double getTotalMegabyteStorageAmount(Group group) {
+        if (group == null) {
+            return 0;
+        }
         double totalMegabyteStorageAmount = 0;
         for(Application application : group.getOwnedApplications()) {
             for(ApplicationVersion applicationVersion : application.getApplicationVersions()) {
@@ -248,12 +282,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public boolean isApplicationLimit(Group group) {
-        return group.getDomainConfiguration().getApplicationLimit() <= getTotalApplications(group);
-    }
-
-    @Override
-    public boolean isUserLimit(Group group) {
-        return group.getDomainConfiguration().getUserLimit() <= getTotalUsers(group);
+        return organizationService.isApplicationLimit(group.getOrganization());
     }
 
     @Override
@@ -306,6 +335,22 @@ public class GroupServiceImpl implements GroupService {
         domainModels.add(createDomainModel(group));
 
         return domainModels;
+    }
+
+    @Override
+    public boolean isApplicationResignerEnabled(Group group) {
+        boolean isResignerEnabled = false;
+
+        if (group != null) {
+
+            DomainConfiguration groupDomainConfiguration = group.getDomainConfiguration();
+            if (groupDomainConfiguration != null && groupDomainConfiguration.isApplicationResignerEnabled() && organizationService.isApplicationResignerEnabled(group.getOrganization())) {
+                isResignerEnabled = true;
+            }
+
+        }
+
+        return isResignerEnabled;
     }
 
     @Override

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="title=#{desktop.disabled.title}, exclude_systemNotifications=${true}, exclude_navbarUtils=${true}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body>
+
+<div class="container knappsack-container">
+
+    <div th:substituteby="/includesTH :: header"/>
+
+    <div class="row">
+        <div class="span12">
+            <div class="page-info callout"> <b class="notch"></b> <span class="page-info-bold" th:text="#{alert.error.prefix}">Oh Snap!</span> <span th:text="#{desktop.disabled.header.lead}">Your organization is disabled.</span></div>
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid page-header small noborder">
+                        <div style="text-align: center;">
+                            <h2 th:text="#{desktop.disabled.message}">We're sorry, this organization is currently disabled.</h2>
+                            <div class="row-fluid" th:if="${#bools.isTrue(user.activeOrganizationAdmin)}">
+                                <h3><span th:text="#{desktop.disabled.message.admin}">Update the organization's account @</span> <a href="manageOrganizationAccountTH.html" th:href="@{/manager/organization/accountManagement}" th:text="#{desktop.manageOrganization.accountManagement}" class="dashed">Account Management</a></h3>
+                            </div>
+                            <div class="row-fluid" th:if="${#bools.isFalse(user.activeOrganizationAdmin)}">
+                                <h3><span th:utext="#{desktop.disabled.message.nonAdmin}">Please <a href="#" class="contacts dashed">contact</a> an organization admin to update the organization's account.</span></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<div th:substituteby="/includesTH :: scripts"/>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+
+    /*]]>*/
+</script>
+
+</body>
+</html>

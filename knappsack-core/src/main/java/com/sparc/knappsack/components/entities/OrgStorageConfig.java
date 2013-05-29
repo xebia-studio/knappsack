@@ -1,5 +1,6 @@
 package com.sparc.knappsack.components.entities;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -15,7 +16,7 @@ import java.util.List;
  */
 @Entity
 @Table(name = "ORG_STORAGE_CONFIG")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class OrgStorageConfig extends BaseEntity {
 
     private static final long serialVersionUID = 7160416296577678618L;

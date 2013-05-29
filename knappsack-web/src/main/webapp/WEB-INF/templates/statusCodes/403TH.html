@@ -3,20 +3,31 @@
 <html xmlns:th="http://www.thymeleaf.org" th:with="include_login=${true},title=#{desktop.error.403.title},exclude_systemNotifications=${true}">
 <head th:substituteby="/includesTH :: head"></head>
 
-<body class="lightNav">
-<div th:substituteby="/includesTH :: header"></div>
+<body>
 
-<div class="container">
-    <div class="alert alert-error" style="text-align: center;" th:text="#{desktop.error.403}">
-        We're sorry, but you don't have permission to access that page.
+<div class="container knappsack-container">
+
+    <div th:substituteby="/includesTH :: header"/>
+    <div class="row">
+        <div class="span12">
+            <div class="page-info callout"> <b class="notch"></b> <span class="page-info-bold" th:text="#{alert.error.prefix}">Oh Snap!</span> <span th:text="#{desktop.error.generic.header}">An error has occurred.</span></div>
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid">
+                        <div class="alert alert-error" style="text-align: center;">
+                            <span th:text="#{desktop.error.403}">We're sorry, but you don't have permission to access that page.</span>
+                            <p th:unless="${#strings.isEmpty(errorId)}"><span>Error ID:</span> <span th:text="${errorId}">N/A</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <footer th:substituteby="/includesTH :: footer"></footer>
 
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-</section>
+<div th:substituteby="/includesTH :: scripts"/>
 
 </body>
 

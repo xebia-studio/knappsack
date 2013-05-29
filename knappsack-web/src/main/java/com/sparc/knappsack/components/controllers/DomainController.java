@@ -36,6 +36,10 @@ public class DomainController extends AbstractController {
     @Autowired(required = true)
     private UserService userService;
 
+    @Qualifier("userDomainService")
+    @Autowired(required = true)
+    private UserDomainService userDomainService;
+
     @Autowired(required = true)
     private DomainUserRequestService domainUserRequestService;
 
@@ -98,8 +102,8 @@ public class DomainController extends AbstractController {
 
         if (domainUserRequest != null && domainUserRequest.getDomain() != null
                 && (user.isSystemAdmin()
-                || userService.isUserInDomain(user, domainUserRequest.getDomain().getId(), UserRole.ROLE_GROUP_ADMIN)
-                || userService.isUserInDomain(user, domainUserRequest.getDomain().getId(), UserRole.ROLE_ORG_ADMIN))) {
+                || userDomainService.get(user, domainUserRequest.getDomain().getId(), UserRole.ROLE_GROUP_ADMIN) != null
+                || userDomainService.get(user, domainUserRequest.getDomain().getId(), UserRole.ROLE_ORG_ADMIN) != null)) {
 
             if (status) {
                 success = requestService.acceptRequest(domainUserRequest, userRole);
@@ -131,7 +135,7 @@ public class DomainController extends AbstractController {
             inviteeForm.setName(domainRequest.getFirstName() + " " + domainRequest.getLastName());
             UserRole userRole = DomainType.GROUP.equals(assignedDomain.getDomainType()) ? UserRole.ROLE_GROUP_USER : UserRole.ROLE_ORG_USER;
             inviteeForm.setUserRole(userRole);
-            success = invitationControllerService.inviteUser(inviteeForm, domainId, false);
+            success = invitationControllerService.inviteUserToDomain(domainRequest.getEmailAddress(), domainId, userRole, false);
         }
 
         domainRequestService.delete(requestId);

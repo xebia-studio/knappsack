@@ -14,17 +14,13 @@ public interface UserDomainService extends EntityService<UserDomain> {
 
     UserDomain get(User user, Long domainId);
 
-    List<UserDomain> getAll(User user, DomainType domainType);
-
-    List<UserDomain> getAll(User user, DomainType... domainTypes);
-
-    List<UserDomain> getAll(User user, DomainType domainType, UserRole userRole);
-
     List<UserDomain> getAll(Long domainId);
 
     List<UserDomain> getAll(Long domainId, UserRole... userRoles);
 
     List<UserDomain> getAll(Long domainId, DomainType domainType, UserRole... userRoles);
+
+    List<UserDomain> getUserDomainsForEmailsAndDomains(List<String> emails, List<Long> domainId);
 
     void removeUserDomainFromDomain(Long domainId, Long userId);
 
@@ -33,7 +29,6 @@ public interface UserDomainService extends EntityService<UserDomain> {
     void removeAllFromDomain(Long domainId);
 
     UserDomainModel createUserDomainModel(UserDomain userDomain);
-
 
     /**
      * @param user User

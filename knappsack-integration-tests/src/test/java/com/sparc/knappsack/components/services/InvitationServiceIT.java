@@ -3,7 +3,8 @@ package com.sparc.knappsack.components.services;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.enums.UserRole;
-import com.sparc.knappsack.forms.InviteeForm;
+import com.sparc.knappsack.forms.InvitationForm;
+import com.sparc.knappsack.models.Contact;
 import com.sparc.knappsack.util.MailTestUtils;
 import com.sparc.knappsack.util.WebRequest;
 import junit.framework.Assert;
@@ -20,7 +21,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.UUID;
 
 import static junit.framework.Assert.assertTrue;
 
@@ -68,7 +68,7 @@ public class InvitationServiceIT extends AbstractServiceTests {
     public void addTest() {
         Invitation invitation = getInvitation();
         invitationService.add(invitation);
-        List<Invitation> invitations = invitationService.getByEmail(getUser().getEmail());
+        List<Invitation> invitations = invitationService.getByEmail(getUserWithSecurityContext().getEmail());
         assertTrue(invitations.size() == 1);
     }
 
@@ -76,10 +76,10 @@ public class InvitationServiceIT extends AbstractServiceTests {
     public void deleteTest() {
         Invitation invitation = getInvitation();
         invitationService.add(invitation);
-        List<Invitation> invitations = invitationService.getByEmail(getUser().getEmail());
+        List<Invitation> invitations = invitationService.getByEmail(getUserWithSecurityContext().getEmail());
         assertTrue(invitations.size() == 1);
         invitationService.delete(invitation.getId());
-        invitations = invitationService.getByEmail(getUser().getEmail());
+        invitations = invitationService.getByEmail(getUserWithSecurityContext().getEmail());
         assertTrue(invitations.size() == 0);
     }
 
@@ -87,14 +87,14 @@ public class InvitationServiceIT extends AbstractServiceTests {
     public void updateTest() {
         Invitation invitation = getInvitation();
         invitationService.add(invitation);
-        List<Invitation> invitations = invitationService.getByEmail(getUser().getEmail());
+        List<Invitation> invitations = invitationService.getByEmail(getUserWithSecurityContext().getEmail());
         assertTrue(invitations.size() == 1);
         invitation = invitations.get(0);
         invitation.setEmail("updated@sparcedge.com");
         invitationService.update(invitation);
         invitations = invitationService.getByEmail("updated@sparcedge.com");
         assertTrue(invitations.size() == 1);
-        invitations = invitationService.getByEmail(getUser().getEmail());
+        invitations = invitationService.getByEmail(getUserWithSecurityContext().getEmail());
         assertTrue(invitations.isEmpty());
     }
 
@@ -105,20 +105,19 @@ public class InvitationServiceIT extends AbstractServiceTests {
         List<Invitation> invitations = invitationService.getAll(invitation.getDomain().getId());
         assertTrue(invitations.size() == 1);
 
-        invitations = invitationService.getAll(getUser().getEmail(), invitation.getDomain().getId());
+        invitations = invitationService.getAll(getUserWithSecurityContext().getEmail(), invitation.getDomain().getId());
         assertTrue(invitations.size() == 1);
     }
 
     @Test
     public void inviteUsersTest() {
-        Invitation invitation = getInvitation();
+        User user = getUserWithSecurityContext();
+        setActiveOrganizationOnUser(user, getOrganization());
+        InvitationForm form = new InvitationForm();
+        form.setEmail("invitee@sparcedge.com");
+        form.setOrganizationUserRole(UserRole.ROLE_ORG_USER);
 
-        InviteeForm inviteeForm = new InviteeForm();
-        inviteeForm.setEmail("invitee@sparcedge.com");
-        inviteeForm.setName("New Guy");
-        inviteeForm.setUserRole(UserRole.ROLE_ORG_USER);
-
-        invitationControllerService.inviteUser(inviteeForm, invitation.getDomain().getId(), true);
+        assertTrue(invitationControllerService.inviteUser(form, true));
         List<Invitation> invitations = invitationService.getByEmail("invitee@sparcedge.com");
         assertTrue(invitations.size() == 1);
     }
@@ -133,7 +132,7 @@ public class InvitationServiceIT extends AbstractServiceTests {
 //        inviteeForm.setUserRole(UserRole.ROLE_ORG_USER);
 //        List<InviteeForm> inviteeForms = new ArrayList<InviteeForm>();
 //        inviteeForms.add(inviteeForm);
-//        invitationService.inviteUsers(getUser(), inviteeForms, invitation.getDomainId(), invitation.getDomainType());
+//        invitationService.inviteUsers(getUserWithSecurityContext(), inviteeForms, invitation.getDomainId(), invitation.getDomainType());
 //        List<Invitation> invitations = invitationService.getByEmail("invitee@sparcedge.com");
 //        assertTrue(invitations.size() == 1);
 //    }
@@ -146,9 +145,9 @@ public class InvitationServiceIT extends AbstractServiceTests {
         InputStream is = new ByteArrayInputStream(csvBuilder.toString().getBytes());
 
         MultipartFile mockFile = new MockMultipartFile("googleContacts", "googleContacts.csv", "plain/text", is);
-        List<InviteeForm> inviteeForms = invitationService.parseContactsGoogle(mockFile);
-        assertTrue(inviteeForms.size() == 1);
-        assertTrue(inviteeForms.get(0).getEmail().equals("john.doe@sparcedge.com"));
+        List<Contact> contacts = invitationService.parseContactsGoogle(mockFile);
+        assertTrue(contacts.size() == 1);
+        assertTrue(contacts.get(0).getEmail().equals("john.doe@sparcedge.com"));
     }
 
     @Test
@@ -159,13 +158,13 @@ public class InvitationServiceIT extends AbstractServiceTests {
         InputStream is = new ByteArrayInputStream(csvBuilder.toString().getBytes());
 
         MultipartFile mockFile = new MockMultipartFile("outlookContacts", "outlookContacts.csv", "plain/text", is);
-        List<InviteeForm> inviteeForms = invitationService.parseContactsOutlook(mockFile);
-        assertTrue(inviteeForms.size() == 1);
-        assertTrue(inviteeForms.get(0).getEmail().equals("john.doe@sparcedge.com"));
+        List<Contact> contacts = invitationService.parseContactsOutlook(mockFile);
+        assertTrue(contacts.size() == 1);
+        assertTrue(contacts.get(0).getEmail().equals("john.doe@sparcedge.com"));
     }
 
     private Invitation getInvitation() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
 
         Organization organization = getOrganization();
 

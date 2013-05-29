@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" xmlns:ks="http://www.knappsack.com" th:with="title='Knappsack'">
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='${orgName}'">
 <head th:substituteby="/mobile/includesTH :: mobileHead"></head>
 <body>
 <div data-role="page" id="categoryResultsPage">
@@ -14,9 +14,9 @@
     </script>
 
     <div data-role="header" data-id="mainHeader" class="header">
-        <a href="categoriesTH.html" th:href="@{/categories}" data-icon="back" data-direction="reverse" th:text="#{mobile.categoryResults.back}">Back</a>
+        <a data-rel="back" href="categoriesTH.html" th:href="@{/categories}" data-icon="back" data-direction="reverse" th:text="#{mobile.categoryResults.back}">Back</a>
 
-        <h1>Knappsack</h1>
+        <h1 th:text="${orgName}">Knappsack</h1>
 
         <a th:href="@{/home}" href="/home" data-icon="home" th:text="#{mobile.categoryResults.home}">Home</a>
     </div>
@@ -29,7 +29,7 @@
                         <div class="li-floater">
                             <div class="thumb thumb-shadow">
                                 <img src="" th:src="@{${application.icon.url}}" class="li-thumbnail" th:if="${#bools.isTrue(application.icon)}" />
-                                <img src="" ks:src="@{/resources/img/default_icon.png}" class="li-thumbnail" th:if="${#bools.isFalse(application.icon)}" />
+                                <h1 class="default_icon li-thumbnail" th:if="${#bools.isFalse(application.icon)}" />
                             </div>
                         </div>
                         <h3 th:text="${application.name}"></h3>

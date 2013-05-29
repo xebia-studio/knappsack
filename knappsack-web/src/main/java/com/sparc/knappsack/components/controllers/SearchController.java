@@ -7,7 +7,6 @@ import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.ApplicationService;
 import com.sparc.knappsack.components.services.SearchService;
 import com.sparc.knappsack.components.services.UserService;
-import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.models.ApplicationModel;
 import com.sparc.knappsack.models.ImageModel;
 import com.sparc.knappsack.util.UserAgentInfo;
@@ -51,7 +50,7 @@ public class SearchController extends AbstractController {
     @RequestMapping(value = "/search", method = RequestMethod.GET)
     public String displayPage(Model model, UserAgentInfo userAgentInfo) {
         User user = userService.getUserFromSecurityContext();
-        List<Application> applications = userService.getApplicationsForUser(user, userAgentInfo.getApplicationType(), AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, AppState.ORG_PUBLISH_REQUEST);
+        List<Application> applications = userService.getApplicationsForUser(user, userAgentInfo.getApplicationType());
 
         ComparatorChain chain = new ComparatorChain();
         chain.addComparator(new ApplicationNameComparator());
@@ -59,7 +58,7 @@ public class SearchController extends AbstractController {
 
         Collections.sort(applications, chain);
 
-        List<ApplicationModel> applicationModels = applicationService.createApplicationModels(applications);
+        List<ApplicationModel> applicationModels = applicationService.createApplicationModels(applications, false);
         model.addAttribute("applications", applicationModels);
 
         return "searchTH";

@@ -1,6 +1,7 @@
 package com.sparc.knappsack.components.entities;
 
 import com.sparc.knappsack.enums.StorageType;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import javax.persistence.*;
 
@@ -11,7 +12,7 @@ import javax.persistence.*;
 @Inheritance
 @DiscriminatorColumn(name = "DISCRIMINATOR", discriminatorType = DiscriminatorType.STRING)
 @Table(name = "STORAGE_CONFIGURATION")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public abstract class StorageConfiguration extends BaseEntity {
 
     private static final long serialVersionUID = -7395421937578331187L;

@@ -151,7 +151,12 @@ public class SystemNotificationController extends AbstractController {
 
     @RequestMapping(value = "/getSystemNotifications", method = RequestMethod.GET)
     public @ResponseBody List<SystemNotificationModel> getSystemNotifications(@RequestParam(value = "types[]", required = false) SystemNotificationType[] types) {
-        List<SystemNotificationModel> models = systemNotificationService.getAllForTypes(true, types);
+        List<SystemNotificationModel> models;
+        if (types != null && types.length > 0) {
+            models = systemNotificationService.getAllForTypes(true, types);
+        } else {
+            models = systemNotificationService.getAllModels(true);
+        }
 
         Comparator<SystemNotificationModel> notificationTypeComparator = new BeanComparator("notificationType", new SystemNotificationTypeComparator());
         Comparator<SystemNotificationModel> notificationSeverityComparator = new BeanComparator("notificationSeverity", new SystemNotificationSeverityComparator());

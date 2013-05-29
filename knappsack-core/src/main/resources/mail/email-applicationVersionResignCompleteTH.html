@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:remove="all">Knappsack application version resign complete</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+
+<div th:include="email-headerTH :: email-header"/>
+
+<p th:text="#{greeting(${userName})}">
+    Hello, Peter Static!
+</p>
+<p th:inline="text" th:if="${#bools.isTrue(resignSuccess)}">
+    <b>[[${applicationName}]] v.[[${applicationVersion}]]</b> has been successfully resigned.  Please navigate to the below url to view the application version.
+</p>
+<p th:inline="text" th:if="${#bools.isFalse(resignSuccess)}">
+    An error occurred while attempting to resign <b>[[${applicationName}]] v.[[${applicationVersion}]]</b>.  Please navigate to the below url to view the application version.
+    <br />
+    Reason: <b>[[#{${resignErrorType.messageKey}}]]</b>
+</p>
+<p>
+    <a th:href="${url}" th:text="${url}"/>
+</p>
+<div th:include="email-footerTH :: email-footer"/>
+</body>
+</html>

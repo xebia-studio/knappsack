@@ -6,12 +6,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.awt.image.BufferedImage;
 
 import static junit.framework.Assert.*;
 
@@ -49,9 +53,12 @@ public class CategoryValidatorTest {
         categoryForm.setName("name");
         categoryForm.setDescription("description");
         categoryForm.setIcon(mockMultipartFile);
+        BufferedImage mockBufferedImage = Mockito.mock(BufferedImage.class);
 
-        Mockito.when(mockImageValidator.isValidIconDimension(mockMultipartFile)).thenReturn(true);
-        Mockito.when(mockImageValidator.isValidImageSize(mockMultipartFile)).thenReturn(true);
+        Mockito.when(mockImageValidator.createBufferedImage(Matchers.any(MultipartFile.class))).thenReturn(mockBufferedImage);
+        Mockito.when(mockImageValidator.isValidMinDimensions(Matchers.any(BufferedImage.class), Matchers.anyLong(), Matchers.anyLong())).thenReturn(true);
+        Mockito.when(mockImageValidator.isSquare(Matchers.any(BufferedImage.class))).thenReturn(true);
+        Mockito.when(mockImageValidator.isValidImageSize(mockMultipartFile, 819200)).thenReturn(true);
         Mockito.when(mockImageValidator.isValidImageType(mockMultipartFile)).thenReturn(true);
 
         validator.validate(categoryForm, errors);
@@ -65,9 +72,12 @@ public class CategoryValidatorTest {
         categoryForm.setName("name");
         categoryForm.setDescription("description");
         categoryForm.setIcon(mockMultipartFile);
+        BufferedImage mockBufferedImage = Mockito.mock(BufferedImage.class);
 
-        Mockito.when(mockImageValidator.isValidIconDimension(mockMultipartFile)).thenReturn(true);
-        Mockito.when(mockImageValidator.isValidImageSize(mockMultipartFile)).thenReturn(true);
+        Mockito.when(mockImageValidator.createBufferedImage(Matchers.any(MultipartFile.class))).thenReturn(mockBufferedImage);
+        Mockito.when(mockImageValidator.isValidMinDimensions(Matchers.any(BufferedImage.class), Matchers.anyLong(), Matchers.anyLong())).thenReturn(true);
+        Mockito.when(mockImageValidator.isSquare(Matchers.any(BufferedImage.class))).thenReturn(true);
+        Mockito.when(mockImageValidator.isValidImageSize(mockMultipartFile, 819200)).thenReturn(true);
         Mockito.when(mockImageValidator.isValidImageType(mockMultipartFile)).thenReturn(true);
 
         validator.validate(categoryForm, errors);
@@ -130,9 +140,11 @@ public class CategoryValidatorTest {
         categoryForm.setName("name");
         categoryForm.setDescription("description");
         categoryForm.setIcon(mockMultipartFile);
+        BufferedImage mockBufferedImage = Mockito.mock(BufferedImage.class);
 
-        Mockito.when(mockImageValidator.isValidIconDimension(mockMultipartFile)).thenReturn(false);
-        Mockito.when(mockImageValidator.isValidImageSize(mockMultipartFile)).thenReturn(false);
+        Mockito.when(mockImageValidator.createBufferedImage(Matchers.any(MultipartFile.class))).thenReturn(mockBufferedImage);
+        Mockito.when(mockImageValidator.isValidMinDimensions(Matchers.any(BufferedImage.class), Matchers.anyLong(), Matchers.anyLong())).thenReturn(false);
+        Mockito.when(mockImageValidator.isValidImageSize(mockMultipartFile, 819200)).thenReturn(false);
         Mockito.when(mockImageValidator.isValidImageType(mockMultipartFile)).thenReturn(false);
 
         validator.validate(categoryForm, errors);

@@ -1,0 +1,108 @@
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xsi:schemaLocation="
+		        http://www.springframework.org/schema/beans
+		        http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+
+    <beans:beans profile="dev">
+        <beans:bean abstract="true" id="jawrBase"  class="net.jawr.web.servlet.JawrSpringController" >
+            <!-- This must match the servlet-mapping to which the spring servlet is bound -->
+            <beans:property name="mapping" value=""/>
+            <beans:property name="controllerMapping" value="/static"/>
+            <beans:property name="configuration">
+                <beans:props>
+                    <beans:prop key="jawr.debug.on">false</beans:prop>
+                    <beans:prop key="jawr.gzip.on">true</beans:prop>
+                    <beans:prop key="jawr.css.bundle.ext.id">/bundles/ext.css</beans:prop>
+                    <beans:prop key="jawr.css.bundle.ext.mappings">/resources/ext/**</beans:prop>
+                    <beans:prop key="jawr.css.bundle.knappsack.id">/bundles/knappsack.css</beans:prop>
+                    <beans:prop key="jawr.css.bundle.knappsack.mappings">/resources/knappsack/**</beans:prop>
+                    <beans:prop key="jawr.css.bundle.mobile.id">/bundles/mobile.css</beans:prop>
+                    <beans:prop key="jawr.css.bundle.mobile.mappings">/resources/mobile/**</beans:prop>
+                    <beans:prop key="jawr.css.bundle.swagger.id">/bundles/swagger.css</beans:prop>
+                    <beans:prop key="jawr.css.bundle.swagger.mappings">/resources/swagger/**</beans:prop>
+                    <beans:prop key="jawr.css.classpath.handle.image">true</beans:prop>
+                    <beans:prop key="jawr.js.bundle.swagger.id">/bundles/swagger.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.swagger.mappings">/resources/swagger/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.global.id">/bundles/global.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.global.mappings">/resources/global/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.global.global">true</beans:prop>
+                    <beans:prop key="jawr.js.bundle.ext.id">/bundles/ext.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.ext.mappings">/resources/ext/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.knappsack.id">/bundles/knappsack.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.knappsack.mappings">/resources/knappsack/js/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.mobile.id">/bundles/mobile.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.mobile.mappings">/resources/mobile/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.factory.bundlepostprocessors">YUI</beans:prop>
+                    <beans:prop key="jawr.css.bundle.factory.bundlepostprocessors">YUI</beans:prop>
+                </beans:props>
+            </beans:property>
+        </beans:bean>
+    </beans:beans>
+
+    <beans:beans profile="production">
+        <beans:bean abstract="true" id="jawrBase"  class="net.jawr.web.servlet.JawrSpringController" >
+            <!-- This must match the servlet-mapping to which the spring servlet is bound -->
+            <beans:property name="mapping" value=""/>
+            <beans:property name="controllerMapping" value="/static"/>
+            <beans:property name="configuration">
+                <beans:props>
+                    <beans:prop key="jawr.debug.on">false</beans:prop>
+                    <beans:prop key="jawr.gzip.on">true</beans:prop>
+                    <beans:prop key="jawr.css.bundle.ext.id">/bundles/ext.css</beans:prop>
+                    <beans:prop key="jawr.css.bundle.ext.mappings">/resources/ext/**</beans:prop>
+                    <beans:prop key="jawr.css.bundle.knappsack.id">/bundles/knappsack.css</beans:prop>
+                    <beans:prop key="jawr.css.bundle.knappsack.mappings">/resources/knappsack/**</beans:prop>
+                    <beans:prop key="jawr.css.bundle.mobile.id">/bundles/mobile.css</beans:prop>
+                    <beans:prop key="jawr.css.bundle.mobile.mappings">/resources/mobile/**</beans:prop>
+                    <beans:prop key="jawr.css.bundle.swagger.id">/bundles/swagger.css</beans:prop>
+                    <beans:prop key="jawr.css.bundle.swagger.mappings">/resources/swagger/**</beans:prop>
+                    <beans:prop key="jawr.css.classpath.handle.image">true</beans:prop>
+                    <beans:prop key="jawr.js.bundle.swagger.id">/bundles/swagger.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.swagger.mappings">/resources/swagger/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.global.id">/bundles/global.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.global.mappings">/resources/global/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.global.global">true</beans:prop>
+                    <beans:prop key="jawr.js.bundle.ext.id">/bundles/ext.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.ext.mappings">/resources/ext/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.knappsack.id">/bundles/knappsack.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.knappsack.mappings">/resources/knappsack/js/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.mobile.id">/bundles/mobile.js</beans:prop>
+                    <beans:prop key="jawr.js.bundle.mobile.mappings">/resources/mobile/**</beans:prop>
+                    <beans:prop key="jawr.js.bundle.factory.bundlepostprocessors">YUI</beans:prop>
+                    <beans:prop key="jawr.css.bundle.factory.bundlepostprocessors">YUI</beans:prop>
+                    <beans:prop key="jawr.url.contextpath.override">${CloudFrontURL}/static/</beans:prop>
+                    <beans:prop key="jawr.url.contextpath.ssl.override">${CloudFrontURL}/static/</beans:prop>
+                </beans:props>
+            </beans:property>
+        </beans:bean>
+    </beans:beans>
+
+    <beans:beans profile="dev,production">
+
+        <!-- JS controller -->
+        <beans:bean id="jawrJsController" parent="jawrBase" />
+
+        <!--IMG controller -->
+        <beans:bean id="jawrImgController" parent="jawrBase">
+            <beans:property name="type" value="img" />
+        </beans:bean>
+
+        <!-- CSS controller -->
+        <beans:bean id="jawrCSSController" parent="jawrBase">
+            <beans:property name="type" value="css" />
+        </beans:bean>
+
+        <beans:bean id="urlMapping"
+                    class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+            <beans:property name="mappings">
+                <beans:props>
+                    <beans:prop key="/static/**/*.js">jawrJsController</beans:prop>
+                    <beans:prop key="/static/**/*.css">jawrCSSController</beans:prop>
+                    <beans:prop key="/static/**/*">jawrImgController</beans:prop>
+                </beans:props>
+            </beans:property>
+        </beans:bean>
+    </beans:beans>
+</beans:beans>

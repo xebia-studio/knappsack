@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<div th:fragment="email-header">
+    <a class="brand pull-right" style="min-width: 100%;">
+        <h1 id="defaultLogo" class="knappsack-logo" th:alt="#{desktop.includes.logo.alt}" alt="Knappsack" th:style="${!#strings.isEmpty(customLogoURL)} ? 'display: none;' : ''"></h1>
+        <img id="customLogo" th:src="@{${customLogoURL}}" th:alt="${customLogoOrganizationName}" th:title="${customLogoOrganizationName}" th:unless="${#strings.isEmpty(customLogoURL)}" class="pull-right"/>
+    </a>
+    <p th:if="${!#strings.isEmpty(emailHeader)}" th:style="${!#strings.isEmpty(emailHeader)} ? 'display: none;' : ''">
+        <span th:utext="${emailHeader}">Email Header</span>
+    </p>
+</div>
+
+</body>
+</html>

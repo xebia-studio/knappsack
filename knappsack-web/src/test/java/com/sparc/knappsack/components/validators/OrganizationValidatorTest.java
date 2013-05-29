@@ -60,6 +60,7 @@ public class OrganizationValidatorTest {
         organizationForm.setName("name");
         organizationForm.setStorageConfigurationId(1L);
         organizationForm.setStoragePrefix("prefix");
+//        organizationForm.setAdminEmail("valid@valid.com");
         organizationForm.setId(1L);
 
         Organization organization = new Organization();
@@ -105,7 +106,6 @@ public class OrganizationValidatorTest {
         assertNotNull(errors.getFieldError("name"));
         assertNotNull(errors.getFieldError("storagePrefix"));
         assertNotNull(errors.getFieldError("storageConfigurationId"));
-//        assertNotNull(errors.getFieldError("adminEmail"));
 
         setup();
 
@@ -148,7 +148,6 @@ public class OrganizationValidatorTest {
         organizationForm.setStoragePrefix("prefix");
         organizationForm.setStorageConfigurationId(1L);
         organizationForm.setId(2L);
-//        organizationForm.setAdminEmail("valid@valid.com");
 
         organization = new Organization();
         organization.setId(1L);
@@ -168,7 +167,6 @@ public class OrganizationValidatorTest {
         organizationForm.setName("name");
         organizationForm.setStorageConfigurationId(1L);
         organizationForm.setStoragePrefix("prefix");
-//        organizationForm.setAdminEmail("valid@valid.com");
 
         OrgStorageConfig orgStorageConfig = new OrgStorageConfig();
         Organization organization = new Organization();
@@ -184,4 +182,13 @@ public class OrganizationValidatorTest {
         Assert.assertEquals(errors.getErrorCount(), 1);
         assertNotNull(errors.getFieldError("storagePrefix"));
     }
+
+//    @Test
+//        public void testInvalidEmailAddress() {
+//            organizationForm.setAdminEmail("invalidEmailAddress");
+//            validator.validate(organizationForm, errors);
+//
+//            assertTrue(errors.hasErrors());
+//            assertNotNull(errors.getFieldError("adminEmail"));
+//        }
 }

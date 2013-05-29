@@ -1,13 +1,10 @@
 package com.sparc.knappsack.components.validators;
 
 import com.sparc.knappsack.components.entities.*;
-import com.sparc.knappsack.components.services.ApplicationService;
-import com.sparc.knappsack.components.services.ApplicationVersionService;
-import com.sparc.knappsack.components.services.GroupService;
-import com.sparc.knappsack.components.services.OrganizationService;
+import com.sparc.knappsack.components.services.*;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.ApplicationType;
-import com.sparc.knappsack.forms.UploadApplicationVersion;
+import com.sparc.knappsack.forms.ApplicationVersionForm;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,13 +12,13 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
 import static junit.framework.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationVersionValidatorTest {
@@ -31,6 +28,9 @@ public class ApplicationVersionValidatorTest {
 
     @Mock
     private ApplicationService applicationService;
+
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private ApplicationVersionValidator validator = new ApplicationVersionValidator();
@@ -45,17 +45,19 @@ public class ApplicationVersionValidatorTest {
     private OrganizationService organizationService;
 
     private Errors errors;
-    private UploadApplicationVersion uploadApplicationVersion;
+    private ApplicationVersionForm applicationVersionForm;
+    private User user = mock(User.class);
 
     @Before
     public void setup() {
-        uploadApplicationVersion = new UploadApplicationVersion();
-        errors = new BeanPropertyBindingResult(uploadApplicationVersion, "uploadApplicationVersion");
+        applicationVersionForm = new ApplicationVersionForm();
+        errors = new BeanPropertyBindingResult(applicationVersionForm, "applicationVersionForm");
+        when(userService.getUserFromSecurityContext()).thenReturn(user);
     }
 
     @Test
     public void testValidatorSupportsClass() {
-        assertTrue(validator.supports(uploadApplicationVersion.getClass()));
+        assertTrue(validator.supports(applicationVersionForm.getClass()));
     }
 
     @Test
@@ -65,11 +67,10 @@ public class ApplicationVersionValidatorTest {
 
     @Test
     public void testValid() {
-        uploadApplicationVersion.setVersionName("name");
-        uploadApplicationVersion.setRecentChanges("changes");
-        uploadApplicationVersion.setAppState(AppState.GROUP_PUBLISH);
-        uploadApplicationVersion.setAppFile(mockMultipartFile);
-        uploadApplicationVersion.setGroupId(1l);
+        applicationVersionForm.setVersionName("name");
+        applicationVersionForm.setRecentChanges("changes");
+        applicationVersionForm.setAppState(AppState.GROUP_PUBLISH);
+        applicationVersionForm.setAppFile(mockMultipartFile);
 
         Organization organization = new Organization();
         organization.setId(1l);
@@ -83,12 +84,14 @@ public class ApplicationVersionValidatorTest {
         Application parentApplication = new Application();
         parentApplication.setApplicationType(ApplicationType.ANDROID);
 
-        Mockito.when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
-        Mockito.when(mockMultipartFile.getOriginalFilename()).thenReturn(".apk");
-        Mockito.when(groupService.get(uploadApplicationVersion.getGroupId())).thenReturn(group);
+        when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
+        when(mockMultipartFile.getOriginalFilename()).thenReturn(".apk");
+        when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+        when(user.getActiveOrganization()).thenReturn(organization);
+
 //        Mockito.when(organizationService.get(group.getOrganization().getId())).thenReturn(organization);
 
-        validator.validate(uploadApplicationVersion, errors);
+        validator.validate(applicationVersionForm, errors);
 
         assertFalse(errors.hasErrors());
     }
@@ -105,10 +108,9 @@ public class ApplicationVersionValidatorTest {
 //        assertNotNull(errors.getFieldError("appFile"));
 
         setup();
-        uploadApplicationVersion.setVersionName("");
-        uploadApplicationVersion.setRecentChanges("");
-        uploadApplicationVersion.setAppFile(mockMultipartFile);
-        uploadApplicationVersion.setGroupId(1l);
+        applicationVersionForm.setVersionName("");
+        applicationVersionForm.setRecentChanges("");
+        applicationVersionForm.setAppFile(mockMultipartFile);
 
         Organization organization = new Organization();
         organization.setId(1l);
@@ -119,10 +121,15 @@ public class ApplicationVersionValidatorTest {
         group.setDomainConfiguration(new DomainConfiguration());
         group.setOrganization(organization);
 
-        Mockito.when(groupService.get(uploadApplicationVersion.getGroupId())).thenReturn(group);
-        Mockito.when(mockMultipartFile.isEmpty()).thenReturn(true);
+        when(mockMultipartFile.isEmpty()).thenReturn(true);
+        when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+        when(user.getActiveOrganization()).thenReturn(organization);
 
-        validator.validate(uploadApplicationVersion, errors);
+        Application application = mock(Application.class);
+        when(application.getApplicationType()).thenReturn(ApplicationType.ANDROID);
+        when(applicationService.get(anyLong())).thenReturn(application);
+
+        validator.validate(applicationVersionForm, errors);
 
         assertTrue(errors.hasErrors());
         Assert.assertEquals(errors.getErrorCount(), 4);
@@ -134,7 +141,7 @@ public class ApplicationVersionValidatorTest {
 
     @Test
     public void testAllFieldsInvalidEditing() {
-        uploadApplicationVersion.setEditing(true);
+        applicationVersionForm.setEditing(true);
 //        validator.validate(uploadApplicationVersion, errors);
 
 //        assertTrue(errors.hasErrors());
@@ -144,9 +151,8 @@ public class ApplicationVersionValidatorTest {
 //        assertNotNull(errors.getFieldError("appState"));
 
         setup();
-        uploadApplicationVersion.setEditing(true);
-        uploadApplicationVersion.setAppFile(mockMultipartFile);
-        uploadApplicationVersion.setGroupId(1l);
+        applicationVersionForm.setEditing(true);
+        applicationVersionForm.setAppFile(mockMultipartFile);
 
         Organization organization = new Organization();
         organization.setId(1l);
@@ -157,15 +163,19 @@ public class ApplicationVersionValidatorTest {
         group.setDomainConfiguration(new DomainConfiguration());
         group.setOrganization(organization);
 
-        ApplicationVersion appVersion = Mockito.mock(ApplicationVersion.class);
+        ApplicationVersion appVersion = mock(ApplicationVersion.class);
         appVersion.setAppState(AppState.GROUP_PUBLISH);
-        Mockito.when(applicationVersionService.get(uploadApplicationVersion.getId())).thenReturn(appVersion);
 
-        Mockito.when(groupService.get(uploadApplicationVersion.getGroupId())).thenReturn(group);
+        when(applicationVersionService.get(applicationVersionForm.getId())).thenReturn(appVersion);
+        when(mockMultipartFile.isEmpty()).thenReturn(true);
+        when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+        when(user.getActiveOrganization()).thenReturn(organization);
 
-        Mockito.when(mockMultipartFile.isEmpty()).thenReturn(true);
+        Application application = mock(Application.class);
+        when(application.getApplicationType()).thenReturn(ApplicationType.ANDROID);
+        when(applicationService.get(anyLong())).thenReturn(application);
 
-        validator.validate(uploadApplicationVersion, errors);
+        validator.validate(applicationVersionForm, errors);
 
         assertTrue(errors.hasErrors());
     }
@@ -173,12 +183,14 @@ public class ApplicationVersionValidatorTest {
     @Test
     public void testInvalidAppFileExtensions() {
         for (ApplicationType applicationType : ApplicationType.values()) {
-            uploadApplicationVersion.setAppFile(mockMultipartFile);
+            if (ApplicationType.OTHER.equals(applicationType)) {
+                continue;
+            }
+            applicationVersionForm.setAppFile(mockMultipartFile);
 
             Application parentApplication = new Application();
             parentApplication.setApplicationType(applicationType);
 
-            uploadApplicationVersion.setGroupId(1l);
 
             Organization organization = new Organization();
             organization.setId(1l);
@@ -189,12 +201,13 @@ public class ApplicationVersionValidatorTest {
             group.setDomainConfiguration(new DomainConfiguration());
             group.setOrganization(organization);
 
-            Mockito.when(groupService.get(uploadApplicationVersion.getGroupId())).thenReturn(group);
 
-            Mockito.when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
-            Mockito.when(mockMultipartFile.getOriginalFilename()).thenReturn(".invalid");
+            when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
+            when(mockMultipartFile.getOriginalFilename()).thenReturn(".invalid");
+            when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+            when(user.getActiveOrganization()).thenReturn(organization);
 
-            validator.validate(uploadApplicationVersion, errors);
+            validator.validate(applicationVersionForm, errors);
 
             assertTrue(errors.hasErrors());
             assertNotNull(errors.getFieldError("appFile"));
@@ -206,13 +219,15 @@ public class ApplicationVersionValidatorTest {
     @Test
     public void testInvalidAppFileExtensionsEditing() {
         for (ApplicationType applicationType : ApplicationType.values()) {
-            uploadApplicationVersion.setEditing(true);
-            uploadApplicationVersion.setAppFile(mockMultipartFile);
+            if (ApplicationType.OTHER.equals(applicationType)) {
+                continue;
+            }
+            applicationVersionForm.setEditing(true);
+            applicationVersionForm.setAppFile(mockMultipartFile);
 
             Application parentApplication = new Application();
             parentApplication.setApplicationType(applicationType);
 
-            uploadApplicationVersion.setGroupId(1l);
 
             Organization organization = new Organization();
             organization.setId(1l);
@@ -223,16 +238,16 @@ public class ApplicationVersionValidatorTest {
             group.setDomainConfiguration(new DomainConfiguration());
             group.setOrganization(organization);
 
-            ApplicationVersion appVersion = Mockito.mock(ApplicationVersion.class);
+            ApplicationVersion appVersion = mock(ApplicationVersion.class);
             appVersion.setAppState(AppState.GROUP_PUBLISH);
-            Mockito.when(applicationVersionService.get(uploadApplicationVersion.getId())).thenReturn(appVersion);
+            when(applicationVersionService.get(applicationVersionForm.getId())).thenReturn(appVersion);
 
-            Mockito.when(groupService.get(uploadApplicationVersion.getGroupId())).thenReturn(group);
 
-            Mockito.when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
-            Mockito.when(mockMultipartFile.getOriginalFilename()).thenReturn(".invalid");
+            when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
+            when(mockMultipartFile.getOriginalFilename()).thenReturn(".invalid");
+            when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
 
-            validator.validate(uploadApplicationVersion, errors);
+            validator.validate(applicationVersionForm, errors);
 
             assertTrue(errors.hasErrors());
             assertNotNull(errors.getFieldError("appFile"));

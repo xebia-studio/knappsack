@@ -1,10 +1,12 @@
 package com.sparc.knappsack.components.entities;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import javax.persistence.*;
 
 @Entity
 @Table(name = "DOMAIN_CONFIGURATION")
-// @org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class DomainConfiguration extends BaseEntity {
 
     private static final long serialVersionUID = -4164986380312034725L;
@@ -41,6 +43,12 @@ public class DomainConfiguration extends BaseEntity {
     @Column(name = "BANDWIDTH_LIMIT_REACHED", nullable = false)
     private boolean bandwidthLimitReached;
 
+    @Column(name = "APPLICATION_RESIGNER_ENABLED")
+    private boolean applicationResignerEnabled;
+
+    @Column(name = "CUSTOM_BRANDING_ENABLED")
+    private boolean customBrandingEnabled;
+
     public DomainConfiguration() {
         applicationLimit = 2;
         applicationVersionLimit = 5;
@@ -51,6 +59,8 @@ public class DomainConfiguration extends BaseEntity {
         monitorBandwidth = false;
         megabyteBandwidthLimit = 2048;
         bandwidthLimitReached = false;
+        applicationResignerEnabled = false;
+        customBrandingEnabled = false;
     }
 
     public Long getId() {
@@ -131,5 +141,21 @@ public class DomainConfiguration extends BaseEntity {
 
     public void setBandwidthLimitReached(boolean bandwidthLimitReached) {
         this.bandwidthLimitReached = bandwidthLimitReached;
+    }
+
+    public boolean isApplicationResignerEnabled() {
+        return applicationResignerEnabled;
+    }
+
+    public void setApplicationResignerEnabled(boolean applicationResignerEnabled) {
+        this.applicationResignerEnabled = applicationResignerEnabled;
+    }
+
+    public boolean isCustomBrandingEnabled() {
+        return customBrandingEnabled;
+    }
+
+    public void setCustomBrandingEnabled(boolean customBrandingEnabled) {
+        this.customBrandingEnabled = customBrandingEnabled;
     }
 }

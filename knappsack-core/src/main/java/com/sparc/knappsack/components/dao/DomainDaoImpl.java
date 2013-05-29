@@ -17,7 +17,7 @@ public class DomainDaoImpl extends BaseDao implements DomainDao {
 
     public Domain get(Long id) {
 //        return getEntityManager().find(Domain.class, id);
-        return query().from(domain).where(domain.id.eq(id)).uniqueResult(domain);
+        return cacheableQuery().from(domain).where(domain.id.eq(id)).uniqueResult(domain);
     }
 
     @Override
@@ -48,6 +48,6 @@ public class DomainDaoImpl extends BaseDao implements DomainDao {
     }
 
     public List<Domain> getAll(User aUser, DomainType... domainTypes) {
-        return query().from(domain).join(domain.userDomains, userDomain).where(domain.domainType.in(domainTypes).and(userDomain.user.eq(aUser))).list(domain);
+        return cacheableQuery().from(domain).join(domain.userDomains, userDomain).where(domain.domainType.in(domainTypes).and(userDomain.user.eq(aUser))).list(domain);
     }
 }

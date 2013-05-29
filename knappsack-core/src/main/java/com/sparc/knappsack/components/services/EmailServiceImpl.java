@@ -1,5 +1,6 @@
 package com.sparc.knappsack.components.services;
 
+import com.sparc.knappsack.comparators.InvitationDomainNameComparator;
 import com.sparc.knappsack.comparators.LanguageComparator;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.*;
@@ -21,6 +22,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -84,6 +86,10 @@ public class EmailServiceImpl implements EmailService {
     @Autowired(required = true)
     private InvitationService invitationService;
 
+    @Qualifier("appFileService")
+    @Autowired(required = true)
+    private AppFileService appFileService;
+
     @Value("${" + NOTIFICATION_EMAIL + "}")
     private String fromAddress;
 
@@ -118,6 +124,9 @@ public class EmailServiceImpl implements EmailService {
                         ctx.setVariable("request", domainUserRequest);
 
                         ctx.setVariable("url", request.generateURL("/manager"));
+                        if(domainUserRequest.getDomain().getDomainType().equals(DomainType.ORGANIZATION)) {
+                            applyBranding((Organization)domainUserRequest.getDomain(), ctx);
+                        }
 
                         // Create the HTML body using Thymeleaf
                         final String htmlContent = this.templateEngine.process("email-domainUserAccessRequestTH", ctx);
@@ -152,9 +161,11 @@ public class EmailServiceImpl implements EmailService {
             try {
 
                 String organizationName = "";
-                List<Organization> organizations = userService.getOrganizations(user);
+                List<Organization> organizations = userService.getOrganizations(user, null);
                 String subject = "Knappsack: Account Activation";
+                Organization organization = null;
                 if(organizations.size() == 1) {
+                    organization = organizations.get(0);
                     organizationName = organizations.get(0).getName();
                     subject =  organizationName + ": Account Activation - Knappsack";
                 }
@@ -172,6 +183,7 @@ public class EmailServiceImpl implements EmailService {
 
                     String servletPath = "/activate/" + user.getActivationCode();
                     ctx.setVariable("url", request.generateURL(servletPath));
+                    applyBranding(organization, ctx);
 
                     // Create the HTML body using Thymeleaf
                     final String htmlContent = this.templateEngine.process("email-accountActivationTH", ctx);
@@ -204,9 +216,11 @@ public class EmailServiceImpl implements EmailService {
             final MimeMessageHelper message = new MimeMessageHelper(mimeMessage, "UTF-8");
             try {
                 String organizationName = "";
-                List<Organization> organizations = userService.getOrganizations(user);
+                List<Organization> organizations = userService.getOrganizations(user, null);
                 String subject = "Knappsack: Account Activation Success";
+                Organization organization = null;
                 if(organizations.size() == 1) {
+                    organization = organizations.get(0);
                     organizationName = organizations.get(0).getName();
                     subject =  organizationName + ": Account Activation Success - Knappsack";
                 }
@@ -222,6 +236,7 @@ public class EmailServiceImpl implements EmailService {
                     ctx.setVariable("organizationName", organizationName);
                     String servletPath = "/";
                     ctx.setVariable("url", request.generateURL(servletPath));
+                    applyBranding(organization, ctx);
 
                     final String htmlContent = this.templateEngine.process("email-accountActivationSuccessTH", ctx);
                     message.setText(htmlContent, true);
@@ -238,72 +253,110 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public boolean sendInvitationEmail(Long fromUserId, Long invitationId) {
-        boolean emailSent = false;
+    public List<Long> sendInvitationsEmail(Long fromUserId, List<Long> invitationIds) {
+        Set<Long> invitationsSent = new HashSet<Long>();
         WebRequest request = WebRequest.getInstance();
-        Invitation invitation = invitationService.get(invitationId);
-        if (request != null && sendEmail && invitation != null) {
+
+        // Get all Invitations for supplied IDs
+        Set<Invitation> invitations = new HashSet<Invitation>();
+        if (invitationIds != null) {
+            for (Long invitationId : invitationIds) {
+                Invitation invitation = invitationService.get(invitationId);
+                if (invitation != null) {
+                    invitations.add(invitation);
+                }
+            }
+        }
+
+        if (request != null && sendEmail && !CollectionUtils.isEmpty(invitations)) {
 
             User fromUser = null;
-            if(fromUserId != null) {
+            if (fromUserId != null) {
                 fromUser = userService.get(fromUserId);
             }
 
             final MimeMessage mimeMessage = this.mailSender.createMimeMessage();
             final MimeMessageHelper message = new MimeMessageHelper(mimeMessage, "UTF-8");
-            try {
 
-                Domain parentDomain = null;
-                Domain invitationDomain = invitation.getDomain();
+            Locale locale = LocaleContextHolder.getLocale();
 
-                if (invitationDomain != null) {
-                    if (DomainType.ORGANIZATION.equals(invitationDomain.getDomainType())) {
-                        parentDomain = invitation.getDomain();
-                    } else if (DomainType.GROUP.equals(invitationDomain.getDomainType())) {
-                        parentDomain = ((Group) invitation.getDomain()).getOrganization();
+            Context ctx = new Context(locale);
+            if (fromUser != null) {
+                ctx.setVariable("adminName", fromUser.getFullName());
+            }
+
+            // Convert Invitation List to Map with email addresses being keys
+            Map<String, List<Invitation>> emailMap = new HashMap<String, List<Invitation>>();
+            for (Invitation invitation : invitations) {
+                String key = StringUtils.trimAllWhitespace(invitation.getEmail()).toLowerCase();
+                if (emailMap.get(key) == null) {
+                    emailMap.put(key, new ArrayList<Invitation>());
+                }
+                emailMap.get(key).add(invitation);
+            }
+
+            Organization parentDomain = null;
+
+            // Loop over each email address and send out a single invitation for each
+            for (String emailAddress : emailMap.keySet()) {
+
+                // Create Map separating domains for the email addresses invitations
+                Map<String, Set<Invitation>> invitationsMap = new HashMap<String, Set<Invitation>>();
+                for (Invitation invitation : emailMap.get(emailAddress)) {
+                    if (DomainType.ORGANIZATION.equals(invitation.getDomain().getDomainType())) {
+                        if (invitationsMap.get(DomainType.ORGANIZATION.name()) == null) {
+                            invitationsMap.put(DomainType.ORGANIZATION.name(), new TreeSet<Invitation>(new InvitationDomainNameComparator()));
+                        }
+                        invitationsMap.get(DomainType.ORGANIZATION.name()).add(invitation);
+                        parentDomain = (Organization) invitation.getDomain();
+                    } else if (DomainType.GROUP.equals(invitation.getDomain().getDomainType())) {
+                        if (invitationsMap.get(DomainType.GROUP.name()) == null) {
+                            invitationsMap.put(DomainType.GROUP.name(), new TreeSet<Invitation>(new InvitationDomainNameComparator()));
+                        }
+                        invitationsMap.get(DomainType.GROUP.name()).add(invitation);
+                        if(parentDomain == null) {
+                            Group group = (Group) invitation.getDomain();
+                            parentDomain = group.getOrganization();
+                        }
                     }
                 }
 
-                if (parentDomain != null) {
+                ctx.setVariable("domainTypes", invitationsMap.keySet());
+                ctx.setVariable("groupInvitations", invitationsMap.get(DomainType.GROUP.name()));
+                String parentDomainName = parentDomain != null ? parentDomain.getName() : "";
+                ctx.setVariable("parentDomainName", StringUtils.trimTrailingWhitespace(parentDomainName));
+
+                User invitee = userService.getByEmail(emailAddress);
+                if (invitee == null) {
+                    ctx.setVariable("existingUser", false);
+                    NameValuePair emailParam = new BasicNameValuePair("email", emailAddress);
+                    ctx.setVariable("url", request.generateURL("/auth/register", emailParam));
+                } else {
+                    ctx.setVariable("existingUser", true);
+                    ctx.setVariable("url", request.generateURL(""));
+                }
+                applyBranding(parentDomain, ctx);
+
+                // Create the HTML body using Thymeleaf
+                final String htmlContent = this.templateEngine.process("email-invitationTH", ctx);
+                try {
+                    message.setText(htmlContent, true /* isHtml */);
+                    message.setTo(emailAddress);
                     message.setSubject(String.format("%s: Invitation to Knappsack", StringUtils.trimTrailingWhitespace(parentDomain.getName())));
-
-                    Locale locale = LocaleContextHolder.getLocale();
-
                     message.setFrom(fromAddress);
 
-                    Context ctx = new Context(locale);
-                    if (fromUser != null) {
-                        ctx.setVariable("adminName", fromUser.getFullName());
+                    if (sendMessage(mimeMessage)) {
+                        for (Invitation invitation : emailMap.get(emailAddress)) {
+                            invitationsSent.add(invitation.getId());
+                        }
                     }
-                    ctx.setVariable("invitationDomain", StringUtils.trimTrailingWhitespace(invitation.getDomain().getName()));
-                    ctx.setVariable("domainType", invitation.getDomain().getDomainType().name());
-                    ctx.setVariable("parentDomainName", StringUtils.trimTrailingWhitespace(parentDomain.getName()));
-
-                    User invitee = userService.getByEmail(invitation.getEmail());
-                    if (invitee == null) {
-                        ctx.setVariable("existingUser", false);
-                        NameValuePair emailParam = new BasicNameValuePair("email", invitation.getEmail());
-                        ctx.setVariable("url", request.generateURL("/auth/register", emailParam));
-                    } else {
-                        ctx.setVariable("existingUser", true);
-                        ctx.setVariable("url", request.generateURL(""));
-                    }
-
-                    // Create the HTML body using Thymeleaf
-                    final String htmlContent = this.templateEngine.process("email-invitationTH", ctx);
-                    message.setText(htmlContent, true /* isHtml */);
-                    message.setTo(invitation.getEmail());
-
-                    emailSent = sendMessage(mimeMessage);
-                } else {
-                    log.error(String.format("Unable to send invitation email due to Invitations parent domain being null: InvitationId: %s", invitation.getId()));
+                } catch (MessagingException e) {
+                    log.error(String.format("MessagingException sending an invitation for: %s", emailAddress), e);
                 }
-            } catch (MessagingException e) {
-                log.error(String.format("MessagingException sending an invitation for: %s", invitation.getEmail()), e);
             }
         }
 
-        return emailSent;
+        return new ArrayList<Long>(invitationsSent);
     }
 
     @Override
@@ -392,6 +445,7 @@ public class EmailServiceImpl implements EmailService {
 
                         // Create the HTML body using Thymeleaf
                         final String htmlContent = this.templateEngine.process("email-applicationPublishRequestTH", ctx);
+                        applyBranding(organization, ctx);
                         message.setText(htmlContent, true /* isHtml */);
                         message.setTo(userDomain.getUser().getEmail());
 
@@ -469,6 +523,8 @@ public class EmailServiceImpl implements EmailService {
                 ctx.setVariable("existingUser", existingUser);
                 ctx.setVariable("user", userModel);
                 ctx.setVariable("url", request.generateURL(""));
+                applyBranding(organization, ctx);
+
                 // Create the HTML body using Thymeleaf
                 final String htmlContent = this.templateEngine.process("email-organizationRegistrationTH", ctx);
                 message.setText(htmlContent, true /* isHtml */);
@@ -511,6 +567,8 @@ public class EmailServiceImpl implements EmailService {
                 ctx.setVariable("applicationName", applicationVersion.getApplication().getName());
                 ctx.setVariable("url", request.generateURL(String.format("/detail/%s", applicationVersion.getApplication().getId())));
                 ctx.setVariable("applicationVersion", applicationVersion.getVersionName());
+                applyBranding(application.getOwnedGroup().getOrganization(), ctx);
+
                 List<User> users = userService.get(userIds);
                 for (User user : users) {
                     ctx.setVariable("userName", user.getFullName());
@@ -621,6 +679,7 @@ public class EmailServiceImpl implements EmailService {
                         ctx.setVariable("url", url);
                         ctx.setVariable("applicationName", applicationName);
                         ctx.setVariable("applicationVersion", applicationVersion.getVersionName());
+                        applyBranding(parentApplication.getOwnedGroup().getOrganization(), ctx);
 
                         // Create the HTML body using Thymeleaf
                         final String htmlContent = this.templateEngine.process("email-applicationVersionErrorTH", ctx);
@@ -637,6 +696,77 @@ public class EmailServiceImpl implements EmailService {
                 }
             } catch (MessagingException e) {
                 log.error(String.format("MessagingException sending notifications to admins for Application Version: %s", applicationVersion.getId()), e);
+            }
+        }
+
+        return emailsSent;
+    }
+
+    @Override
+    public boolean sendApplicationVersionResignCompleteEmail(Long applicationVersionId, boolean resignSuccess, ResignErrorType resignErrorType, List<Long> userIds) {
+        boolean emailsSent = false;
+        WebRequest webRequest = WebRequest.getInstance();
+        if (sendEmail && applicationVersionId != null && userIds != null) {
+
+            ApplicationVersion applicationVersion = applicationVersionService.get(applicationVersionId);
+            if(applicationVersion == null) {
+                log.error("No ApplicationVersion with ID: " + applicationVersionId);
+                return true;
+            }
+            Application application = applicationVersion.getApplication();
+            if(application == null) {
+                log.error("No application found for ApplicationVersion with ID: " + applicationVersionId);
+            }
+
+            final MimeMessage mimeMessage = this.mailSender.createMimeMessage();
+            final MimeMessageHelper message = new MimeMessageHelper(mimeMessage, "UTF-8");
+            try {
+                int numberOfEmails = 0;
+                if (resignSuccess) {
+                    message.setSubject("Knappsack: Application Resign Complete");
+                } else {
+                    message.setSubject("Knappsack: Application Resign Error");
+                }
+
+                Locale locale = LocaleContextHolder.getLocale();
+                message.setFrom(fromAddress);
+
+                Application parentApplication = applicationVersion.getApplication();
+                if (parentApplication != null) {
+                    String applicationName = parentApplication.getName();
+                    String url;
+                    if (resignSuccess) {
+                        url = webRequest.generateURL(String.format("/detail/%s", parentApplication.getId()));
+                    } else {
+                        url = webRequest.generateURL(String.format("/manager/editVersion/%s/%s", parentApplication.getId(), applicationVersion.getId()));
+                    }
+
+                    List<User> users = userService.get(userIds);
+                    for (User user : users) {
+                        Context ctx = new Context(locale);
+                        ctx.setVariable("userName", user.getFullName());
+                        ctx.setVariable("url", url);
+                        ctx.setVariable("resignSuccess", resignSuccess);
+                        ctx.setVariable("resignErrorType", (resignErrorType != null ? resignErrorType : ResignErrorType.GENERIC));
+                        ctx.setVariable("applicationName", applicationName);
+                        ctx.setVariable("applicationVersion", applicationVersion.getVersionName());
+                        applyBranding(parentApplication.getOwnedGroup().getOrganization(), ctx);
+
+                        // Create the HTML body using Thymeleaf
+                        final String htmlContent = this.templateEngine.process("email-applicationVersionResignCompleteTH", ctx);
+                        message.setText(htmlContent, true /* isHtml */);
+                        message.setTo(user.getEmail());
+
+                        if (sendMessage(mimeMessage)) {
+                            numberOfEmails += 1;
+                        }
+                    }
+                    if (numberOfEmails == users.size()) {
+                        emailsSent = true;
+                    }
+                }
+            } catch (MessagingException e) {
+                log.error(String.format("MessagingException sending notifications to users for Application Resign Complete: %s", applicationVersion.getId()), e);
             }
         }
 
@@ -692,6 +822,7 @@ public class EmailServiceImpl implements EmailService {
                         languages.addAll(domainRequest.getLanguages());
                         Collections.sort(languages, new LanguageComparator());
                         ctx.setVariable("requesterLanguages", languages);
+                        applyBranding(domainRequest.getDomain(), ctx);
 
                         // Create the HTML body using Thymeleaf
                         final String htmlContent = this.templateEngine.process("email-domainAccessRequestTH", ctx);
@@ -772,5 +903,34 @@ public class EmailServiceImpl implements EmailService {
             }
         }
         return success;
+    }
+
+    private void applyBranding(Domain domain, Context context) {
+        if(domain.getDomainType().equals(DomainType.ORGANIZATION)) {
+            applyBranding((Organization)domain, context);
+        }
+    }
+
+    private void applyBranding(Organization organization, Context context) {
+        if(organization == null) {
+            return;
+        }
+
+        if(organizationService.isCustomBrandingEnabled(organization)) {
+            CustomBranding branding = organization.getCustomBranding();
+            if(branding.getEmailHeader() != null && !branding.getEmailHeader().isEmpty()) {
+                context.setVariable("emailHeader", branding.getEmailHeader());
+            }
+            if(branding.getEmailFooter() != null && !branding.getEmailFooter().isEmpty()) {
+                context.setVariable("emailFooter", branding.getEmailFooter());
+            }
+            AppFile logo = organization.getCustomBranding().getLogo();
+            if (logo != null) {
+                context.setVariable("customLogoURL", appFileService.getImageUrl(logo));
+                context.setVariable("customLogoOrganizationName", StringUtils.trimTrailingWhitespace(organization.getName()));
+            }
+        } else {
+            context.setVariable("customLogoURL", WebRequest.getInstance().generateURL("/static/resources/img/logo.png"));
+        }
     }
 }

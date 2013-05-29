@@ -27,7 +27,7 @@ public class UserDetailsServiceIT extends AbstractServiceTests {
 
     @Test
     public void loadUserByUsernameTest() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.add(user);
 
         user = userDetailsService.loadUserByUsername(user.getEmail());
@@ -36,7 +36,7 @@ public class UserDetailsServiceIT extends AbstractServiceTests {
 
 //    @Test
 //    public void loadUserDetailsTest() {
-//        User user = getUser();
+//        User user = getUserWithSecurityContext();
 //        userService.add(user);
 //        List<String> openIdIdentifiers = new ArrayList<String>();
 //        openIdIdentifiers.add("testOpenIdIdentifier");
@@ -56,7 +56,7 @@ public class UserDetailsServiceIT extends AbstractServiceTests {
 
     @Test
     public void loadUserDetailsByEmailTest() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
         userService.add(user);
         Set<String> openIdIdentifiers = new HashSet<String>();
         openIdIdentifiers.add("oldOpenIdIdentifier");

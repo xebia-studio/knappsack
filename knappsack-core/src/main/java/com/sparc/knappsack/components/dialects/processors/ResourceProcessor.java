@@ -19,6 +19,9 @@ public abstract class ResourceProcessor extends AbstractAttributeModifierAttrPro
     @Value("${CloudFrontURL}")
     private String staticContentURL = "";
 
+    @Value("${build.timestamp}")
+    private String buildTimestamp = "";
+
     public ResourceProcessor(String attributeName) {
         super(attributeName);
     }
@@ -58,6 +61,10 @@ public abstract class ResourceProcessor extends AbstractAttributeModifierAttrPro
             }
 
         }
+
+//        if (StringUtils.hasText(resourceValue) && StringUtils.hasText(buildTimestamp) && !"${build.timestamp}".equalsIgnoreCase(buildTimestamp)) {
+//            resourceValue = resourceValue.trim() + String.format("?tstmp=%s", buildTimestamp);
+//        }
 
         String rawAttributeName = PrefixUtils.getUnprefixed(attributeName);
         values.put(rawAttributeName, resourceValue);

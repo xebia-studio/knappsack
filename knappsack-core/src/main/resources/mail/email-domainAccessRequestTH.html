@@ -5,6 +5,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 </head>
 <body>
+
+<div th:include="email-headerTH :: email-header"/>
+
 <p th:text="#{greeting(${user.fullName})}" th:if="${user}">
     Hello, Peter Static!
 </p>
@@ -33,9 +36,7 @@
     <a th:href="${url}" th:text="${url}"/>
 </p>
 
-<p>
-    Regards, <br/>
-    &emsp; <em>The Knappsack Team</em>
-</p>
+<div th:include="email-footerTH :: email-footer"/>
+
 </body>
 </html>

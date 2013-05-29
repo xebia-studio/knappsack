@@ -2,7 +2,7 @@ package com.sparc.knappsack.components.dao;
 
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.Group;
-import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.User;
 
 import java.util.List;
 
@@ -10,10 +10,10 @@ public interface GroupDao extends Dao<Group> {
 
     /**
      * @param name String
-     * @param organization Organization
+     * @param organizationId ID of organization to search on
      * @return Group matching the given name and Organization
      */
-    Group get(String name, Organization organization);
+    Group get(String name, long organizationId);
 
     /**
      * @return List of all Group entities
@@ -37,4 +37,22 @@ public interface GroupDao extends Dao<Group> {
      * @return Group with the given UUID
      */
     Group getGroupByUUID(String uuid);
+
+    /**
+     * @param user
+     * @return List of all Groups which the user is a direct admin or through organizations which the user is an admin
+     */
+    List<Group> getAdministeredGroupsForUser(User user);
+
+    /**
+     * @param user
+     * @return List of all Groups which the user is a direct member (ROLE_GROUP_ADMIN or ROLE_GROUP_USER) or through organizations which the user is an admin (ROLE_ORG_ADMIN)
+     */
+    List<Group> getGroupsForUser(User user);
+
+    /**
+     * @param user
+     * @return List of all Groups for the users active organization which a user is a direct member (ROLE_GROUP_ADMIN or ROLE_GROUP_USER) or the user is an admin (ROLE_ORG_ADMIN)
+     */
+    List<Group> getGroupsForUserActiveOrganization(User user);
 }

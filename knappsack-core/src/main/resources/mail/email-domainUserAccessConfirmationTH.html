@@ -5,6 +5,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 </head>
 <body>
+
+<div th:include="email-headerTH :: email-header"/>
+
 <p th:text="#{greeting(${name})}">
     Hello, Peter Static!
 </p>
@@ -16,9 +19,7 @@
     Your request for access to group <b>[[${groupName}]]</b> has been <b>Declined</b>.  We are sorry for the inconvenience.
 </p>
 
-<p>
-    Regards, <br/>
-    &emsp; <em>The Knappsack Team</em>
-</p>
+<div th:include="email-footerTH :: email-footer"/>
+
 </body>
 </html>

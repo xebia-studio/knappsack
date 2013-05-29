@@ -25,6 +25,53 @@
 
     <beans:bean id="jpaDialect" class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
 
+
+    <!--PRODUCTION PROFILE-->
+    <beans:beans profile="production">
+
+        <beans:bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
+                    depends-on="flyway"
+                    p:packagesToScan="com.sparc.knappsack.components.entities"
+                    p:jpaDialect-ref="jpaDialect"
+                    p:dataSource-ref="dataSource"
+                    p:jpaVendorAdapter-ref="jpaVendorAdapter"
+                    p:persistenceUnitName="ComposerJPA"
+                    p:jpaPropertyMap-ref="jpaPropertyMap"/>
+
+        <beans:bean id="flyway" class="com.googlecode.flyway.core.Flyway" init-method="migrate">
+            <beans:property name="dataSource" ref="dataSource"/>
+        </beans:bean>
+
+        <util:map id="jpaPropertyMap">
+            <beans:entry key="hibernate.hbm2ddl.auto" value="none"/>
+            <beans:entry key="hibernate.dialect" value="org.hibernate.dialect.MySQL5InnoDBDialect"/>
+            <beans:entry key="hibernate.show_sql" value="false"/>
+            <beans:entry key="hibernate.enable_lazy_load_no_trans" value="true"/>
+            <beans:entry key="hibernate.cache.use_second_level_cache" value="true"/>
+            <beans:entry key="hibernate.cache.use_query_cache" value="true"/>
+            <beans:entry key="hibernate.cache.region.factory_class" value="com.sparc.knappsack.components.cache.KnappsackCacheRegionFactory"/>
+        </util:map>
+
+        <!-- Declare a datasource that has pooling capabilities-->
+        <beans:bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource" destroy-method="close">
+            <beans:property name="driverClass" value="${prod.jdbc.driverClassName}" />
+            <beans:property name="jdbcUrl" value="${JDBC_CONNECTION_STRING}" />
+            <beans:property name="idleConnectionTestPeriodInMinutes" value="5"/>
+            <beans:property name="idleMaxAgeInMinutes" value="2"/>
+            <beans:property name="maxConnectionsPerPartition" value="30"/>
+            <beans:property name="minConnectionsPerPartition" value="10"/>
+            <beans:property name="partitionCount" value="4"/>
+            <beans:property name="acquireIncrement" value="5"/>
+            <beans:property name="statementsCacheSize" value="100"/>
+            <beans:property name="releaseHelperThreads" value="3"/>
+        </beans:bean>
+
+        <jdbc:initialize-database data-source="dataSource" enabled="true" ignore-failures="DROPS">
+            <jdbc:script location="${prod.jdbc.loggingStartupScript}"/>
+        </jdbc:initialize-database>
+
+    </beans:beans>
+
     <!--DEV PROFILE-->
     <beans:beans profile="dev">
 
@@ -44,8 +91,11 @@
         <!--<util:map id="jpaPropertyMap">-->
             <!--<beans:entry key="hibernate.hbm2ddl.auto" value="none"/>-->
             <!--<beans:entry key="hibernate.dialect" value="${dev.jdbc.dialect}"/>-->
-            <!--<beans:entry key="hibernate.show_sql" value="false"/>-->
+            <!--<beans:entry key="hibernate.show_sql" value="true"/>-->
             <!--<beans:entry key="hibernate.enable_lazy_load_no_trans" value="true"/>-->
+            <!--<beans:entry key="hibernate.cache.use_second_level_cache" value="true"/>-->
+            <!--<beans:entry key="hibernate.cache.use_query_cache" value="true"/>-->
+            <!--<beans:entry key="hibernate.cache.region.factory_class" value="com.sparc.knappsack.components.cache.KnappsackCacheRegionFactory"/>-->
         <!--</util:map>-->
 
         <beans:bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
@@ -56,32 +106,30 @@
                     p:persistenceUnitName="ComposerJPA"
                     p:jpaPropertyMap-ref="jpaPropertyMap"/>
 
-
         <util:map id="jpaPropertyMap">
             <beans:entry key="hibernate.hbm2ddl.auto" value="update"/>
             <beans:entry key="hibernate.dialect" value="${dev.jdbc.dialect}"/>
             <beans:entry key="hibernate.show_sql" value="true"/>
             <beans:entry key="hibernate.enable_lazy_load_no_trans" value="true"/>
-            <!--<beans:entry key="hibernate.cache.use_second_level_cache" value="true"/>-->
-            <!--<beans:entry key="hibernate.cache.use_query_cache" value="true"/>-->
-            <!--<beans:entry key="hibernate.cache.region.factory_class" value="com.hazelcast.hibernate.HazelcastCacheRegionFactory"/>-->
+            <!--<beans:entry key="hibernate.generate_statistics" value="true"/>-->
+            <beans:entry key="hibernate.cache.use_second_level_cache" value="true"/>
+            <beans:entry key="hibernate.cache.use_query_cache" value="true"/>
+            <beans:entry key="hibernate.cache.region.factory_class" value="com.sparc.knappsack.components.cache.KnappsackCacheRegionFactory"/>
         </util:map>
 
         <!-- Declare a datasource that has pooling capabilities-->
-        <beans:bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
-                    destroy-method="close"
-                    p:driverClass="${dev.jdbc.driverClassName}"
-                    p:jdbcUrl="${dev.jdbc.url}"
-                    p:maxIdleTime="1800"
-                    p:maxConnectionAge="3600"
-                    p:maxIdleTimeExcessConnections="1800"
-                    p:acquireIncrement="5"
-                    p:idleConnectionTestPeriod="3600"
-                    p:maxPoolSize="120"
-                    p:maxStatementsPerConnection="15"
-                    p:minPoolSize="20"
-                    p:numHelperThreads="6"
-                    p:unreturnedConnectionTimeout="600"/>
+        <beans:bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource" destroy-method="close">
+            <beans:property name="driverClass" value="${dev.jdbc.driverClassName}" />
+            <beans:property name="jdbcUrl" value="${dev.jdbc.url}" />
+            <beans:property name="idleConnectionTestPeriod" value="3600"/>
+            <beans:property name="idleMaxAge" value="240"/>
+            <beans:property name="maxConnectionsPerPartition" value="30"/>
+            <beans:property name="minConnectionsPerPartition" value="10"/>
+            <beans:property name="partitionCount" value="3"/>
+            <beans:property name="acquireIncrement" value="5"/>
+            <beans:property name="statementsCacheSize" value="100"/>
+            <beans:property name="releaseHelperThreads" value="3"/>
+        </beans:bean>
 
         <jdbc:initialize-database data-source="dataSource" enabled="true" ignore-failures="DROPS">
             <jdbc:script location="${dev.jdbc.loggingStartupScript}"/>
@@ -97,8 +145,8 @@
 
     </beans:beans>
 
-    <beans:beans profile="dev">
-
+    <beans:beans profile="dev,production">
+        <!--<beans:bean name="hibernateUtils" class="com.sparc.knappsack.util.HibernateUtils"/>-->
         <beans:bean id="txManager" class="org.springframework.orm.jpa.JpaTransactionManager">
             <beans:property name="dataSource" ref="dataSource"/>
             <beans:property name="entityManagerFactory" ref="entityManagerFactory"/>

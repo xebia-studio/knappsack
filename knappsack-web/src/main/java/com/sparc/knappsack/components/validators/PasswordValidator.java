@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -54,6 +53,10 @@ public class PasswordValidator implements Validator {
 
         if (!doPasswordsMatch(passwordForm.getFirstNewPassword(), passwordForm.getSecondNewPassword())) {
             errors.rejectValue(FIRST_NEW_PASSWORD_FIELD, "passwordValidator.newPasswordMismatch");
+        }
+
+        if (doPasswordsMatch(passwordForm.getFirstNewPassword(), passwordForm.getSecondNewPassword()) && doPasswordsMatch(passwordForm.getOriginalPassword(), passwordForm.getFirstNewPassword())) {
+            errors.rejectValue(FIRST_NEW_PASSWORD_FIELD, "passwordValidator.newPasswordMatchesOriginal");
         }
     }
 

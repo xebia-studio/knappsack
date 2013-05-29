@@ -1,18 +1,21 @@
 package com.sparc.knappsack.components.validators;
 
 import com.sparc.knappsack.components.entities.DomainConfiguration;
-import com.sparc.knappsack.components.entities.Group;
 import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.GroupService;
 import com.sparc.knappsack.components.services.OrganizationService;
-import com.sparc.knappsack.forms.UploadApplication;
+import com.sparc.knappsack.components.services.UserService;
+import com.sparc.knappsack.forms.ApplicationForm;
+import com.sparc.knappsack.forms.ApplicationVersionForm;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-import org.springframework.validation.Errors;
-import org.springframework.validation.Validator;
+import org.springframework.validation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.image.BufferedImage;
 import java.util.List;
 
 @Component("applicationValidator")
@@ -24,77 +27,77 @@ public class ApplicationValidator implements Validator {
     private static final String CATEGORY_ID_FIELD = "categoryId";
     private static final String ICON_FIELD = "icon";
 
-    @Autowired
+    @Qualifier("imageValidator")
+    @Autowired(required = true)
     private ImageValidator imageValidator;
 
-    @Autowired
-    private GroupService groupService;
-
-    @Autowired
+    @Qualifier("organizationService")
+    @Autowired(required = true)
     private OrganizationService organizationService;
+
+    @Qualifier("applicationVersionValidator")
+    @Autowired(required = true)
+    private ApplicationVersionValidator applicationVersionValidator;
+
+    @Qualifier("userService")
+    @Autowired(required = true)
+    private UserService userService;
+
+    @Qualifier("groupService")
+    @Autowired(required = true)
+    private GroupService groupService;
 
     @Override
     public boolean supports(Class<?> clazz) {
-        return UploadApplication.class.isAssignableFrom(clazz);
+        return ApplicationForm.class.isAssignableFrom(clazz);
     }
 
     @Override
     public void validate(Object target, Errors errors) {
-        UploadApplication uploadApplication = (UploadApplication) target;
+        ApplicationForm applicationForm = (ApplicationForm) target;
 
-        validateApplicationLimit(uploadApplication, errors);
+        validateApplicationLimit(applicationForm, errors);
 
-        if (uploadApplication.getApplicationType() == null) {
+        if (applicationForm.getApplicationType() == null) {
             errors.rejectValue(APPLICATION_TYPE_FIELD, "applicationValidator.emptyApplicationType");
         }
 
-        if (uploadApplication.getName() == null || !StringUtils.hasText(uploadApplication.getName())) {
+        if (applicationForm.getName() == null || !StringUtils.hasText(applicationForm.getName())) {
             errors.rejectValue(NAME_FIELD, "applicationValidator.emptyName");
         }
 
-        if (uploadApplication.getDescription() == null || !StringUtils.hasText(uploadApplication.getDescription())) {
+        if (applicationForm.getDescription() == null || !StringUtils.hasText(applicationForm.getDescription())) {
             errors.rejectValue(DESCRIPTION_FIELD, "applicationValidator.emptyDescription");
         }
 
-        if (uploadApplication.getCategoryId() == null) {
+        if (applicationForm.getCategoryId() == null) {
             errors.rejectValue(CATEGORY_ID_FIELD, "applicationValidator.categoryId");
         }
 
-        if (uploadApplication.getIcon() != null && !imageValidator.isValidImageSize(uploadApplication.getIcon())) {
+        BufferedImage bufferedImage = imageValidator.createBufferedImage(applicationForm.getIcon());
+
+        if (applicationForm.getIcon() != null && !imageValidator.isValidImageSize(applicationForm.getIcon(), 819200 /*Bytes: 800 KB*/)) {
             errors.rejectValue(ICON_FIELD, "validator.invalidIconSize");
         }
 
-        if (uploadApplication.getIcon() != null && !imageValidator.isValidImageType(uploadApplication.getIcon())) {
+        if (applicationForm.getIcon() != null && !imageValidator.isValidImageType(applicationForm.getIcon())) {
             errors.rejectValue(ICON_FIELD, "validator.invalidIconType");
         }
 
-        if (uploadApplication.getIcon() != null && !imageValidator.isValidIconDimension(uploadApplication.getIcon())) {
+        if (applicationForm.getIcon() != null && (!imageValidator.isValidMinDimensions(bufferedImage, 72, 72) || !imageValidator.isSquare(bufferedImage))) {
             errors.rejectValue(ICON_FIELD, "validator.invalidIconDimension");
         }
 
-        validateScreenShots(uploadApplication, errors);
+        validateScreenShots(applicationForm, errors);
+
+        validateApplicationVersion(applicationForm, errors);
     }
 
-    private void validateApplicationLimit(UploadApplication uploadApplication, Errors errors) {
-        if(!uploadApplication.isEditing() && uploadApplication.getGroupId() != null) {
-            Group group = groupService.get(uploadApplication.getGroupId());
-            validateGroupApplicationLimit(group, errors);
-            validateOrganizationApplicationLimit(group.getOrganization(), errors);
-        }
-    }
-
-    private void validateGroupApplicationLimit(Group group, Errors errors) {
-        DomainConfiguration domainConfiguration = group.getDomainConfiguration();
-        if(domainConfiguration.isDisabledDomain()) {
-            errors.reject("applicationValidator.group.disabled");
-        }
-
-        if(domainConfiguration.isDisableLimitValidations()) {
-            return;
-        }
-
-        if(groupService.isApplicationLimit(group)) {
-            errors.reject("applicationValidator.group.applicationLimit");
+    private void validateApplicationLimit(ApplicationForm applicationForm, Errors errors) {
+        boolean editing = applicationForm.getId() != null && applicationForm.getId() > 0;
+        if(!editing && applicationForm.getGroupId() != null) {
+            Organization organization = organizationService.getForGroupId(applicationForm.getGroupId());
+            validateOrganizationApplicationLimit(organization, errors);
         }
     }
 
@@ -113,16 +116,41 @@ public class ApplicationValidator implements Validator {
         }
     }
 
-    private void validateScreenShots(UploadApplication uploadApplication, Errors errors) {
-        List<MultipartFile> screenShots = uploadApplication.getScreenShots();
+    private void validateScreenShots(ApplicationForm applicationForm, Errors errors) {
+        List<MultipartFile> screenShots = applicationForm.getScreenshots();
         for (int i = 0; i < screenShots.size(); i++) {
             MultipartFile screenShot = screenShots.get(i);
-            if (!imageValidator.isValidImageSize(screenShot)) {
-                errors.rejectValue("screenShots[" + i + "]", "applicationValidator.invalidScreenShotSize");
+            if (!imageValidator.isValidImageSize(screenShot, 819200 /*Bytes: 800 KB*/)) {
+                errors.rejectValue("screenshots[" + i + "]", "applicationValidator.invalidScreenshotSize");
             }
 
             if (!imageValidator.isValidImageType(screenShot)) {
-                errors.rejectValue("screenShots[" + i + "]", "applicationValidator.invalidScreenShotType");
+                errors.rejectValue("screenshots[" + i + "]", "applicationValidator.invalidScreenshotType");
+            }
+        }
+    }
+
+    private void validateApplicationVersion(ApplicationForm applicationForm, Errors errors) {
+        if (applicationForm.getId() == null || applicationForm.getId() <= 0) {
+            ApplicationVersionForm versionForm = applicationForm.getApplicationVersion();
+            User user = userService.getUserFromSecurityContext();
+
+            Errors versionErrors = new BeanPropertyBindingResult(versionForm, "applicationVersionForm");
+
+            applicationVersionValidator.validateVersionName(versionErrors, versionForm);
+            applicationVersionValidator.validateRecentChanges(versionErrors, versionForm);
+            applicationVersionValidator.validateOrganizationLimits(versionErrors, versionForm, null, user.getActiveOrganization());
+            applicationVersionValidator.validateInstallFile(versionErrors, versionForm, applicationForm.getApplicationType());
+            applicationVersionValidator.validateResign(versionForm, groupService.get(applicationForm.getGroupId()), applicationForm.getApplicationType(), versionErrors);
+
+            // Add all applicationVersion errors to application errors object
+            if (versionErrors.hasErrors()) {
+                for (FieldError error : versionErrors.getFieldErrors()) {
+                    errors.rejectValue(String.format("applicationVersion.%s", error.getField()), error.getCode());
+                }
+                for (ObjectError error : versionErrors.getGlobalErrors()) {
+                    errors.reject(error.getCode());
+                }
             }
         }
     }

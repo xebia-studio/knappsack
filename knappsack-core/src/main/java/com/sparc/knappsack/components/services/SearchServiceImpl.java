@@ -4,7 +4,6 @@ import com.sparc.knappsack.comparators.ApplicationDescriptionComparator;
 import com.sparc.knappsack.comparators.ApplicationNameComparator;
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.User;
-import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.models.ApplicationModel;
 import org.apache.commons.collections.comparators.ComparatorChain;
@@ -30,12 +29,11 @@ public class SearchServiceImpl implements SearchService {
     @Autowired(required = true)
     private UserService userService;
 
-    @Override
-    public List<ApplicationModel> searchApplications(String criteria, User user, ApplicationType deviceType) {
+    private List<Application> searchApps(String criteria, User user, ApplicationType applicationType) {
         List<Application> applications = new ArrayList<Application>();
         if (criteria != null && !criteria.isEmpty()) {
             criteria = criteria.toLowerCase();
-            List<Application> userApplications = userService.getApplicationsForUser(user, deviceType, AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, AppState.ORG_PUBLISH_REQUEST);
+            List<Application> userApplications = userService.getApplicationsForUser(user, applicationType);
             for (Application application : userApplications) {
                 if ((application.getName().toLowerCase().contains(criteria) || application.getDescription().toLowerCase().contains(criteria)) && !applications.contains(application)) {
                     applications.add(application);
@@ -48,7 +46,20 @@ public class SearchServiceImpl implements SearchService {
             Collections.sort(applications, chain);
         }
 
-        return applicationService.createApplicationModels(applications);
+        return applications;
     }
 
+    @Override
+    public List<ApplicationModel> searchApplications(String criteria, User user, ApplicationType applicationType) {
+        List<Application> applications = searchApps(criteria, user, applicationType);
+
+        return applicationService.createApplicationModels(applications, false);
+    }
+
+    @Override
+    public <D> List<D> searchApplications(String criteria, User user, ApplicationType deviceType, Class<D> classModel) {
+        List<Application> applications = searchApps(criteria, user, deviceType);
+
+        return applicationService.getApplicationModels(applications, classModel);
+    }
 }

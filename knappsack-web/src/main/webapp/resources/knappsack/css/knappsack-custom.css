@@ -1,0 +1,7 @@
+table td div.overflow-inner {
+    overflow: hidden;
+    white-space: nowrap;
+    position: absolute;
+    width: 100%;
+    text-overflow: ellipsis;
+}

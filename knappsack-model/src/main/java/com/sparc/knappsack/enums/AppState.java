@@ -12,6 +12,8 @@ public enum AppState {
     DISABLED("appState.disabled", true, true, true, false),
     //Request that the AppState be changed to ORGANIZATION_PUBLISH
     ORG_PUBLISH_REQUEST("appState.org.publish.request", true, false, true, true),
+    //Currently resigning so not available to anyone
+    RESIGNING("appState.resigning", false, false, false, false),
     //Generic Error state.  No one can download.
     ERROR("appState.error", false, false, false, false);
 
@@ -62,5 +64,15 @@ public enum AppState {
             }
         }
         return userSelectable;
+    }
+
+    public static List<AppState> getAllDownloadable() {
+        List<AppState> downloadable = new ArrayList<AppState>();
+        for (AppState appState : AppState.values()) {
+            if (appState.isDownloadable()) {
+                downloadable.add(appState);
+            }
+        }
+        return downloadable;
     }
 }

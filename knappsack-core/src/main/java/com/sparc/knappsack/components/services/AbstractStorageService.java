@@ -1,6 +1,7 @@
 package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.AppFile;
+import com.sparc.knappsack.components.entities.StorageConfiguration;
 import com.sparc.knappsack.enums.MimeType;
 import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.exceptions.ImageException;
@@ -102,4 +103,6 @@ public abstract class AbstractStorageService implements StorageService {
             }
         }
     }
+
+    protected abstract <T extends StorageConfiguration> T getStorageConfiguration(Long id);
 }

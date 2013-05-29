@@ -1,9 +1,13 @@
 package com.sparc.knappsack.components.validators;
 
 import com.sparc.knappsack.components.entities.Group;
+import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.GroupService;
+import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.forms.GroupForm;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -12,8 +16,14 @@ import org.springframework.validation.Validator;
 public class GroupValidator implements Validator {
 
     private static final String NAME_FIELD = "name";
+
+    @Qualifier("groupService")
     @Autowired(required = true)
     private GroupService groupService;
+
+    @Qualifier("userService")
+    @Autowired(required = true)
+    private UserService userService;
 
     @Override
     public boolean supports(Class<?> aClass) {
@@ -28,7 +38,18 @@ public class GroupValidator implements Validator {
         }
 
         if (!errors.hasFieldErrors(NAME_FIELD)) {
-            Group group = groupService.get(groupForm.getName(), groupForm.getOrganizationId());
+            User user = userService.getUserFromSecurityContext();
+            if (user == null) {
+                errors.reject("groupValidator.generic");
+                return;
+            }
+
+            Organization organization = user.getActiveOrganization();
+            if (organization == null) {
+                errors.reject("groupValidator.generic");
+            }
+
+            Group group = groupService.get(groupForm.getName(), organization.getId());
             if (group != null) {
                 errors.rejectValue(NAME_FIELD, "groupValidator.groupNameExistsInOrganization");
             }

@@ -9,19 +9,6 @@
 <div th:substituteby="/includesTH :: header"></div>
 
 <div class="container">
-    <script type="text/javascript" th:inline="javascript">
-        /*<![CDATA[*/
-        $(document).ready(function () {
-            var url = /*[[@{/domain/requestAccess/}]]*/ '';
-            $('#accessForm').submit(function() {
-                url = url + $('#accessCode').val();
-                $(this).attr('action', url);
-                return true;
-            })
-        });
-        /*]]>*/
-    </script>
-
     <header class="jumbotron subhead" id="overview">
         <h1 th:text="#{desktop.group.access.overview.header}">Request Group Access</h1>
 
@@ -36,11 +23,11 @@
                 <form id="accessForm" action="" method="POST" class="form-horizontal">
                     <div th:unless="${success == null}">
                         <div class="alert alert-success" th:if="${#bools.isTrue(success)}">
-                            <strong th:text="#{desktop.alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.group.access.success}">Request submitted successfully!</span>
+                            <strong th:text="#{alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.group.access.success}">Request submitted successfully!</span>
                         </div>
 
                         <div class="alert alert-error" th:if="${#bools.isFalse(success)}">
-                            <strong th:text="#{desktop.alert.error.prefix}">Oh snap!</strong> <span th:text="#{desktop.group.access.error}">Request submission failed!</span>
+                            <strong th:text="#{alert.error.prefix}">Oh snap!</strong> <span th:text="#{desktop.group.access.error}">Request submission failed!</span>
                         </div>
                     </div>
 
@@ -77,9 +64,17 @@
 
 <footer th:substituteby="/includesTH :: footer"></footer>
 
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-</section>
+<div th:substituteby="/includesTH :: scripts"/>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    (function() {
+        $(document).ready(function () {
+            $(document).trigger('knappsack.domain_access-page');
+        });
+    })();
+    /*]]>*/
+</script>
 
 </body>
 </html>

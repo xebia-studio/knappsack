@@ -8,7 +8,6 @@ public class OrganizationModel extends DomainModel {
 
     private Long storageConfigurationId;
     private String storagePrefix;
-    private Long paymentPlanId;
     private Date createDate;
 
     public Long getStorageConfigurationId() {

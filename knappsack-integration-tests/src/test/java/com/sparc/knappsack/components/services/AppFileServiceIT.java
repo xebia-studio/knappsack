@@ -49,10 +49,10 @@ public class AppFileServiceIT extends AbstractServiceTests {
     public void deleteTest() {
         AppFile appFile = getAppFile();
         appFileService.add(appFile);
-        List<AppFile> appFiles = appFileService.getAll();
+        List<AppFile> appFiles = appFileService.getAllByOrganizations();
         assertTrue(appFiles.size() == 1);
         appFileService.delete(appFile.getId());
-        appFiles = appFileService.getAll();
+        appFiles = appFileService.getAllByOrganizations();
         assertTrue(appFiles.size() == 0);
     }*/
 

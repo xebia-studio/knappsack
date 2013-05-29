@@ -5,6 +5,8 @@ import com.sparc.knappsack.components.entities.StorageConfiguration;
 import com.sparc.knappsack.forms.StorageForm;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
+
 public interface StorageService {
 
     /**
@@ -30,5 +32,7 @@ public interface StorageService {
     StorageConfiguration toStorageConfiguration(StorageForm storageForm);
 
     void mapFormToEntity(StorageForm form, StorageConfiguration entity);
+
+    InputStream getInputStream(AppFile appFile);
 
 }

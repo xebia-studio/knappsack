@@ -4,50 +4,39 @@
 <head th:substituteby="/includesTH :: head"></head>
 <body>
 
-<div th:substituteby="/includesTH :: header"></div>
+<div class="container knappsack-container">
 
-<div class="container">
+    <div th:substituteby="/includesTH :: header"/>
 
-    <script type="text/javascript" th:inline="javascript">
-        /*<![CDATA[*/
-        $(window).load(function() {
-            $('img.delay-image').each(function(index, value) {
-                var $elem = $(this);
-                $elem.attr('src', $elem.data('img-url'));
-            });
-        });
+    <section class="row">
 
-        $(document).ready(function () {
+        <div th:substituteby="/includesTH :: side_menu"/>
 
-            $('.category').click(function() {
-                var url = /*[[@{/categories/}]]*/ '/categories/';
-                url += $(this).attr('data-id');
-                window.location = url;
-            });
-
-        });
-        /*]]>*/
-    </script>
+        <div class="span10">
 
 
-    <header class="jumbotron subhead" id="overview">
-        <h1 th:text="#{desktop.categories.overview.header}">Categories</h1>
 
-        <p class="lead" th:text="#{desktop.categories.overview.lead}">
-            Select a category to view its applications.
-        </p>
-    </header>
 
-    <section class="row" style="margin: 0 auto;">
-
-        <span id="noResults" th:if="${#lists.isEmpty(categories)}" th:text="#{desktop.categories.no.categories}">No Categories</span>
-
-        <div class="row" style="margin: 0 auto;">
-
-            <div th:each="category : ${categories}" th:attr="data-id=${category.id}" class="category" th:title="${category.name}">
-                <div class="icon"><img class="delay-image" th:attr="data-img-url=@{${category.icon.url}}"/></div>
-                <div style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"><span th:text="${category.name}"/></div>
+            <div class="page-info callout"> <b class="notch"></b>
+                <span class="page-info-bold"><span th:text="#{desktop.categories.overview.header}">Categories</span><span>:</span></span> <span th:text="#{desktop.categories.overview.lead}">Select a category to view its applications.</span>
             </div>
+
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid page-header first" style="border: none;">
+                        <span id="noResults" th:if="${#lists.isEmpty(categories)}" th:text="#{desktop.categories.no.categories}">No Categories</span>
+
+                        <div class="row" style="margin: 0 auto;">
+
+                            <div th:each="category : ${categories}" th:attr="data-id=${category.id}" class="category" th:title="${category.name}">
+                                <div class="icon"><img class="delay-image" th:attr="data-img-url=@{${category.icon.url}}"/></div>
+                                <div style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"><span th:text="${category.name}"/></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </section>
@@ -56,8 +45,24 @@
 
 <footer th:substituteby="/includesTH :: footer"></footer>
 
-<section id="scripts">
-    <section th:include="/includesTH :: required_scripts"/>
-</section>
+<div th:substituteby="/includesTH :: scripts"/>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+    $(window).load(function() {
+        $('img.delay-image').each(function(index, value) {
+            var $elem = $(this);
+            $elem.attr('src', $elem.data('img-url'));
+        });
+    });
+
+    $(document).ready(function () {
+
+        $(document).trigger('knappsack.categories-page');
+
+    });
+    /*]]>*/
+</script>
+
 </body>
 </html>

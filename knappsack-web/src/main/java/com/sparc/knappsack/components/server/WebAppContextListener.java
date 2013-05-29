@@ -3,8 +3,6 @@ package com.sparc.knappsack.components.server;
 
 import ch.qos.logback.classic.LoggerContext;
 import com.hazelcast.core.Hazelcast;
-import com.mchange.v2.c3p0.C3P0Registry;
-import com.mchange.v2.c3p0.PooledDataSource;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +14,6 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Enumeration;
-import java.util.Set;
 
 /**
  * This class manages startup and shutdown procedures.
@@ -36,7 +33,6 @@ public class WebAppContextListener implements ServletContextListener {
             DBWebServer.stopServer();
 
             shutDownLogger();
-            shutDownConnectionPooling();
 
             Thread.sleep(1000);
             deregisterDrivers();
@@ -54,20 +50,6 @@ public class WebAppContextListener implements ServletContextListener {
             log.info("Shutting down LoggerContext");
             LoggerContext context = (LoggerContext) loggerFactory;
             context.stop();
-        }
-    }
-
-    private void shutDownConnectionPooling() {
-        log.info("Shutting down connection pools");
-        Set connectionIterator = C3P0Registry.getPooledDataSources();
-        for (Object o : connectionIterator) {
-            try {
-                PooledDataSource pooledDataSource = (PooledDataSource) o;
-                log.info(String.format("Closing PooledDataSource: %s", pooledDataSource.getDataSourceName()));
-                pooledDataSource.close();
-            } catch (SQLException e) {
-                log.error("SQLException closing PooledDataSource", e);
-            }
         }
     }
 

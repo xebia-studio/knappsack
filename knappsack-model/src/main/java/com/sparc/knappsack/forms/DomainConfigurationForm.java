@@ -12,6 +12,8 @@ public class DomainConfigurationForm {
     private long megabyteStorageLimit;
     private boolean monitorBandwidth;
     private long megabyteBandwidthLimit;
+    private boolean applicationResignerEnabled;
+    private boolean customBrandingEnabled;
 
     public Long getId() {
         return id;
@@ -93,4 +95,19 @@ public class DomainConfigurationForm {
         this.megabyteBandwidthLimit = megabyteBandwidthLimit;
     }
 
+    public boolean isApplicationResignerEnabled() {
+        return applicationResignerEnabled;
+    }
+
+    public void setApplicationResignerEnabled(boolean applicationResignerEnabled) {
+        this.applicationResignerEnabled = applicationResignerEnabled;
+    }
+
+    public boolean isCustomBrandingEnabled() {
+        return customBrandingEnabled;
+    }
+
+    public void setCustomBrandingEnabled(boolean customBrandingEnabled) {
+        this.customBrandingEnabled = customBrandingEnabled;
+    }
 }

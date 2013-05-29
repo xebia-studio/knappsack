@@ -61,6 +61,9 @@
             <li id="managerNav">
                 <a href="#" th:href="@{/manager}" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.home}]]</a>
             </li>
+            <li id="paymentPlansNav" th:if="${user.systemAdmin}">
+                <a href="#" th:href="@{/manager/viewPaymentPlans}" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.paymentPlans}]]</a>
+            </li>
             <li id="storageNav" th:if="${user.systemAdmin}">
                 <a href="storageConfigsTH.html" th:href="@{/manager/viewStorageConfigs}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.storageConfigurations}]]</a>
             </li>
@@ -72,6 +75,9 @@
             </li>
             <li id="reportsNav" th:if="${user.systemAdmin}">
                 <a href="reportsTH.html" th:href="@{/manager/viewReports}" class="button" th:inline="text"><i class="icon-chevron-right"></i> Reports</a>
+            </li>
+            <li id="keyVaultNav" th:if="${#bools.isTrue(user.organizationAdminWithResignerEnabled)}">
+                <a href="manageKeyVaultTH.html" th:href="@{/manager/viewKeyVault}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.keyVault}]]</a>
             </li>
             <li id="systemNav" th:if="${user.systemAdmin}">
                 <a href="systemTH.html" th:href="@{/manager/system}" class="button" th:inline="text"><i class="icon-chevron-right"></i> [[#{desktop.managerIncludes.nav.system}]]</a>

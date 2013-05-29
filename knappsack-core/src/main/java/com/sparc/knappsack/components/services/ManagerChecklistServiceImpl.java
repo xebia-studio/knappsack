@@ -2,7 +2,6 @@ package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.Group;
-import com.sparc.knappsack.enums.DomainType;
 import com.sparc.knappsack.models.ManagerChecklist;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,7 +35,7 @@ public class ManagerChecklistServiceImpl implements ManagerChecklistService {
         boolean hasGroups = groupCount > 0;
         managerChecklist.setHasGroups(hasGroups);
 
-        Long organizationUserCount = organizationService.countOrganizationUsers(organizationId);
+        Long organizationUserCount = organizationService.countOrganizationUsers(organizationId, true);
         Long organizationInvitationCount = invitationService.countAll(organizationId);
         boolean hasOrganizationUsers = organizationUserCount > 1 || organizationInvitationCount > 0;
         managerChecklist.setHasOrganizationUsers(hasOrganizationUsers);

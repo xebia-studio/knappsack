@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="title='Knappsack'" >
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='${orgName}'" >
 <head th:substituteby="/mobile/includesTH :: mobileHead" ></head>
 <body>
 <div id="requestPage" data-role="page" data-dom-cache="false" data-url="#requestPage" data-ajax="false">
@@ -16,7 +16,8 @@
         /*]]>*/
     </script>
 
-    <div th:substituteby="/mobile/includesTH :: pageSpecificImports"></div>
+
+
 
     <div data-role="header" data-id="mainHeader" data-theme="b">
         <h1 id="overview" th:text="#{mobile.domainPublicRequest.requestAccess(${domainName})}">Request Access</h1>

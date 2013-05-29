@@ -1,23 +1,17 @@
 package com.sparc.knappsack.forms;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Result {
 
-    private List<Long> ids = new ArrayList<Long>();
+    private Object value;
 
     private boolean result;
 
-    public List<Long> getIds() {
-        if (ids == null) {
-            ids = new ArrayList<Long>();
-        }
-        return ids;
+    public Object getValue() {
+        return value;
     }
 
-    public void setIds(List<Long> ids) {
-        this.ids = ids;
+    public void setValue(Object value) {
+        this.value = value;
     }
 
     public boolean getResult() {

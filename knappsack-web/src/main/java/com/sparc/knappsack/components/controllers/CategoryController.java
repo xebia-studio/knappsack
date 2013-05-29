@@ -1,12 +1,14 @@
 package com.sparc.knappsack.components.controllers;
 
-import com.sparc.knappsack.components.entities.*;
-import com.sparc.knappsack.components.services.ApplicationService;
+import com.sparc.knappsack.components.entities.AppFile;
+import com.sparc.knappsack.components.entities.Category;
+import com.sparc.knappsack.components.entities.Organization;
+import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.CategoryService;
 import com.sparc.knappsack.components.services.OrganizationService;
 import com.sparc.knappsack.components.services.UserService;
 import com.sparc.knappsack.components.validators.CategoryValidator;
-import com.sparc.knappsack.enums.AppState;
+import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.enums.StorageType;
 import com.sparc.knappsack.exceptions.EntityNotFoundException;
 import com.sparc.knappsack.forms.CategoryForm;
@@ -39,10 +41,6 @@ public class CategoryController extends AbstractController {
     @Autowired
     private CategoryService categoryService;
 
-    @Qualifier("applicationService")
-    @Autowired
-    private ApplicationService applicationService;
-
     @Qualifier("userService")
     @Autowired
     private UserService userService;
@@ -69,19 +67,10 @@ public class CategoryController extends AbstractController {
 
         Category category = categoryService.get(id);
 
-        model.addAttribute("selectedCategory", categoryService.createCategoryModel(category));
+        model.addAttribute("selectedCategory", categoryService.createCategoryModel(category, true));
 
         User user = userService.getUserFromSecurityContext();
-        List<Application> applications = userService.getApplicationsForUser(user, userAgentInfo.getApplicationType(), category.getId(), AppState.GROUP_PUBLISH, AppState.ORGANIZATION_PUBLISH, AppState.ORG_PUBLISH_REQUEST);
-        List<ApplicationModel> applicationModels = new ArrayList<ApplicationModel>();
-        for (Application application : applications) {
-            ApplicationModel applicationModel = applicationService.createApplicationModel(application);
-            if (applicationModel != null) {
-                applicationModel.setCanUserEdit(userService.canUserEditApplication(user, application));
-            }
-
-            applicationModels.add(applicationModel);
-        }
+        List<ApplicationModel> applicationModels = userService.getApplicationModelsForUser(user, userAgentInfo.getApplicationType(), category.getId());
         model.addAttribute("applications", applicationModels);
 
         return "category_resultsTH";
@@ -91,11 +80,11 @@ public class CategoryController extends AbstractController {
     public String categories(Model model, UserAgentInfo userAgentInfo) {
         User user = userService.getUserFromSecurityContext();
 
-        List<Category> categoryList = userService.getCategoriesForUser(user, userAgentInfo.getApplicationType());
+        List<Category> categoryList = userService.getCategoriesForUser(user, userAgentInfo.getApplicationType(), SortOrder.ASCENDING);
         List<CategoryModel> categoryModelList = new ArrayList<CategoryModel>();
 
         for (Category category : categoryList) {
-            CategoryModel categoryModel = categoryService.createCategoryModel(category);
+            CategoryModel categoryModel = categoryService.createCategoryModel(category, true);
 
             if (categoryModel != null) {
                 categoryModelList.add(categoryModel);

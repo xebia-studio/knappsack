@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 
-<html xmlns:th="http://www.thymeleaf.org" th:with="title='Knappsack'">
+<html xmlns:th="http://www.thymeleaf.org" th:with="title='${orgName}'">
 <head th:substituteby="/mobile/includesTH :: mobileHead"></head>
 <body>
 <div data-role="page">
 
     <div data-role="header" data-id="mainHeader" class="header">
-        <a th:href="@{/home}" data-icon="back" data-direction="reverse" th:text="#{mobile.categories.back}">Back</a>
+        <a data-rel="back" th:href="@{/home}" data-icon="back" data-direction="reverse" th:text="#{mobile.categories.back}">Back</a>
 
-        <h1>Knappsack</h1>
+        <h1 th:text="${orgName}">Knappsack</h1>
     </div>
 
     <div data-role="content">

@@ -4,7 +4,6 @@ import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.ApplicationVersion;
 import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.components.services.*;
-import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.SortOrder;
 import com.sparc.knappsack.forms.EnumEditor;
@@ -61,7 +60,7 @@ public class DetailController extends AbstractController {
         User user = userService.getUserFromSecurityContext();
         Application application = applicationService.get(id);
 
-        ApplicationModel applicationModel = applicationService.createApplicationModel(application);
+        ApplicationModel applicationModel = applicationService.createApplicationModel(application, true);
         if (applicationModel != null) {
             applicationModel.setCanUserEdit(userService.canUserEditApplication(user, application));
         }
@@ -81,10 +80,10 @@ public class DetailController extends AbstractController {
 
         model.addAttribute("iosDetected", iosDetected);
         model.addAttribute("showInstallBtn", applicationService.determineApplicationVisibility(application, userAgentInfo.getApplicationType()));
-        List<ApplicationVersion> versions = userService.getApplicationVersions(user, id, SortOrder.DESCENDING, AppState.ORGANIZATION_PUBLISH, AppState.GROUP_PUBLISH, AppState.ORG_PUBLISH_REQUEST);
+        List<ApplicationVersion> versions = userService.getApplicationVersions(user, id, SortOrder.DESCENDING);
         List<ApplicationVersionModel> applicationVersionModels = new ArrayList<ApplicationVersionModel>();
         for (ApplicationVersion version : versions) {
-            applicationVersionModels.add(applicationVersionService.createApplicationVersionModel(version.getId()));
+            applicationVersionModels.add(applicationVersionService.createApplicationVersionModel(version, false));
         }
         model.addAttribute("versions", applicationVersionModels);
         model.addAttribute("initialVersionId", (versions != null && versions.size() > 0 ? versions.get(0).getId() : null));

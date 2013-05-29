@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" th:with="adminKeyVaultNavActive=${true},title=#{desktop.manager.title}">
+
+<head th:substituteby="/includesTH :: head"></head>
+
+<body>
+
+<div class="container knappsack-container">
+
+    <div th:substituteby="/includesTH :: header"/>
+
+    <div class="row">
+
+        <div th:substituteby="/includesTH :: side_menu"/>
+
+        <div class="span10">
+
+            <div class="page-info callout"> <b class="notch"></b>
+                <span class="page-info-bold"><span th:text="#{desktop.manager.keyVault.header.overview}">Key Vault</span><span>:</span></span> <span th:text="#{desktop.manager.keyVault.header.info}">Manage all development keys for your organization.</span>
+            </div>
+
+            <div class="content-wrap">
+                <div class="container-fluid">
+                    <div class="row-fluid page-header first" style="border: none;">
+                        <div class="row-fluid">
+                            <span class="label" th:text="#{desktop.manager.keyVault.keyVaultEntry.labelInfo}">Note: Click on a row to edit or delete the entry.</span>
+                            <table id="keyVaultEntryTable" class="table table-striped table-bordered" style="width: 100%;">
+                                <thead>
+                                <tr>
+                                    <th th:text="#{desktop.manager.keyVault.table.header.name}">Name</th>
+                                    <th th:text="#{desktop.manager.keyVault.table.header.type}">Type</th>
+                                    <th th:text="#{desktop.manager.keyVault.table.header.createdBy}">Created By</th>
+                                </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <hr />
+                        <div class="row-fluid">
+                            <div class="span7">
+                                <div id="success" class="alert alert-success" th:if="${#bools.isTrue(success)}">
+                                    <a class="close" data-dismiss="alert" th:text="#{alert.close}">x</a>
+                                    <strong th:text="#{alert.success.prefix}">Well done!</strong> <span th:text="#{desktop.manager.keyVault.update.success}">Key Vault updated successfully.</span>
+                                </div>
+                                <form id="keyVaultEntryForm" class="form-horizontal" th:object="${keyVaultEntryForm}" th:action="@{/manager/saveKeyVaultEntry}" action="/manager/saveKeyVaultEntry" method="POST" enctype="multipart/form-data" style="width: 100%">
+                                    <div id="errors" class="alert alert-error" th:if="${#fields.hasErrors('*')}">
+                                        <h2 th:text="#{errors.header}">Errors</h2>
+                                        <ul>
+                                            <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+                                        </ul>
+                                    </div>
+                                    <fieldset>
+                                        <!--<input type="hidden" id="keyVaultEntryDomainId" th:field="*{domainId}"/>-->
+                                        <input type="hidden" id="keyVaultEntryId" th:field="*{id}"/>
+
+                                        <div id="groupSelectDiv" class="control-group">
+                                            <a href='#' class='select-all' th:text="#{select.all}">Select All</a>
+                                            <span> | </span>
+                                            <a href='#' class='deselect-all' th:text="#{deselect.all}">Deselect All</a>
+                                            <select id="groupsMultiSelect" multiple="multiple" th:field="*{childDomainIds}" style="display: none;">
+                                                <option th:each="group : ${user.activeOrganization.groups}" th:value="${group.id}" th:text="${group.name}"/>
+                                            </select>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label class="control-label"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.keyVault.applicationType.label}">Application Type</span></label>
+                                            <div class="controls">
+                                                <select type="select" id="applicationTypeSelect" th:field="*{applicationType}" required="required" style="width: auto;">
+                                                    <option value="" th:text="#{select.option.default}">--Please Select--</option>
+                                                    <option th:each="applicationType : ${applicationTypes}"
+                                                            th:value="${applicationType.key}" th:text="${applicationType.value}"></option>
+                                                </select>
+                                                <b id="applicationType" style="display: none;"></b>
+                                            </div>
+                                        </div>
+
+                                        <div class="control-group">
+                                            <label class="control-label" for="inputName"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.keyVault.name.label}">Name</span></label>
+                                            <div class="controls">
+                                                <input type="text" id="inputName" th:field="*{name}" required="required" style="width: auto;"/>
+                                            </div>
+                                        </div>
+
+                                        <section id="iosSection" class="entryFormSection" style="display: none;">
+                                            <div class="control-group">
+                                                <label class="control-label" for="inputDistributionCert"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.keyVault.ios.distributionCert.label}">Distribution Certificate</span></label>
+                                                <div class="controls">
+                                                    <input type="file" id="inputDistributionCert" th:field="*{distributionCert}" class="entry-required" required="required" style="width: auto;"/>
+                                                </div>
+                                            </div>
+                                            <div class="control-group">
+                                                <label class="control-label" for="inputDistributionKey"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.keyVault.ios.distributionKey.label}">Distribution Certificate Key</span></label>
+                                                <div class="controls">
+                                                    <input type="file" id="inputDistributionKey" th:field="*{distributionKey}" class="entry-required" required="required" style="width: auto;"/>
+                                                </div>
+                                            </div>
+                                            <div class="control-group">
+                                                <label class="control-label" for="inputDistributionProfile"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.keyVault.ios.distributionProfile.label}">Distribution Profile</span></label>
+                                                <div class="controls">
+                                                    <input type="file" id="inputDistributionProfile" th:field="*{distributionProfile}" class="entry-required" required="required" style="width: auto;"/>
+                                                </div>
+                                            </div>
+                                            <div class="control-group">
+                                                <label class="control-label" for="inputDistributionKeyPassword"><span class="required" th:text="#{desktop.required.field}">*</span> <span th:text="#{desktop.manager.keyVault.ios.distributionKeyPassword.label}">Distribution Certificate Key Password</span></label>
+                                                <div class="controls">
+                                                    <input type="password" id="inputDistributionKeyPassword" th:field="*{distributionKeyPassword}" class="entry-required" required="required" style="width: auto;"/>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        <div class="form-actions">
+                                            <button id="submitButton" type="submit" class="btn btn-primary" disabled="disabled" th:text="#{desktop.manager.keyVault.submit}">Submit</button>
+                                            <button id="cancelKeyVaultEntryBtn" class="btn btn-warning"><i class="icon-white icon-remove"/>&nbsp;<span th:text="#{desktop.manager.keyVault.cancel}">Cancel</span></button>
+                                            <button id="deleteKeyVaultEntryBtn" class="btn btn-danger" style="display: none;"><i class="icon-white icon-trash"/>&nbsp;<span th:text="#{desktop.manager.keyVault.delete}">Delete</span></button>
+                                        </div>
+                                    </fieldset>
+
+                                    <div class="alert alert-info">
+                                        <span th:text="#{desktop.required.field.description(#{desktop.required.field})}">* indicates a required field</span>
+                                    </div>
+
+                                </form>
+                            </div>
+                            <div class="span5">
+                                <dl>
+                                    <dt th:text="#{desktop.manager.keyVault.organization.label}">Organization</dt>
+                                    <dd th:text="#{desktop.manager.keyVault.organization.help}">The Organization which will own the Key Vault Entry.</dd>
+                                    <dt th:text="#{desktop.manager.keyVault.applicationType.label}">Application Type</dt>
+                                    <dd th:text="#{desktop.manager.keyVault.applicationType.help}">The type of application that the Key Vault Entry will work with.</dd>
+                                    <dt th:text="#{desktop.manager.keyVault.name.label}">Name</dt>
+                                    <dd th:text="#{desktop.manager.keyVault.name.help}">An arbitrary name which will be assigned to the Key Vault Entry.</dd>
+                                    <div id="applicationTypeSpecificHelp">
+                                        <div id="iosHelp">
+                                            <dt th:text="#{desktop.manager.keyVault.ios.distributionCert.label}">Distribution Certificate</dt>
+                                            <dd th:text="#{desktop.manager.keyVault.ios.distributionCert.help}">Certificate that flags an application as being a valid signed program that can be distributed.</dd>
+                                            <dt th:text="#{desktop.manager.keyVault.ios.distributionKey.label}">Distribution Certificate Key</dt>
+                                            <dd th:text="#{desktop.manager.keyVault.ios.distributionKey.help}">The private .p12 key for the supplied Distribution Certificate.</dd>
+                                            <dt th:text="#{desktop.manager.keyVault.ios.distributionProfile.label}">Distribution Profile</dt>
+                                            <dd th:text="#{desktop.manager.keyVault.ios.distributionProfile.help}">Only Apple team agents and admins (which you specify in the Apple iOS Provisioning Portal) can create a distribution provisioning profile (this is different from a development provisioning profile). The distribution provisioning profile consists of a name, a distribution certificate, and an app ID.</dd>
+                                            <dt th:text="#{desktop.manager.keyVault.ios.distributionKeyPassword.label}">Distribution Certificate Key Password</dt>
+                                            <dd th:text="#{desktop.manager.keyVault.ios.distributionKeyPassword.help}">The password for the supplied private Distribution Certificate Key.</dd>
+                                            <br />
+                                            <div class="alert">
+                                                <span th:text="#{desktop.manager.keyVault.ios.help.part1}">Click</span> <a href="https://knappsack.zendesk.com/attachments/token/mo2b4qornkzktw9/?name=KnappsackiOSBuildandDeploymentGuide.pdf" rel="external" th:text="#{desktop.manager.keyVault.ios.help.anchor}">Here</a> <span th:text="#{desktop.manager.keyVault.ios.help.part2}">for more detailed instructions on how to generate these files.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div th:substituteBy="/includesTH :: confirmation_modal"></div>
+
+<footer th:substituteby="/includesTH :: footer"></footer>
+
+<div th:substituteby="/includesTH :: scripts"/>
+
+<script type="text/javascript" th:inline="javascript">
+/*<![CDATA[*/
+$(document).ready(function () {
+
+    var deleteKeyVaultEntryUrl = /*[[@{/manager/deleteKeyVaultUrl}]]*/ '/manager/deleteKeyVaultEntry';
+    var getAllKeyVaultEntriesUrl = /*[[@{/manager/getAllKeyVaultEntriesForUser}]]*/ '/manager/getAllKeyVaultEntriesForUser';
+    var recordsPerPageText = /*[[#{desktop.table.records.per.page}]]*/ 'records per page';
+
+    var applicationTypes = /*[[${applicationTypes}]]*/ [];
+
+    var availableGroupsTxt = /*[[#{desktop.manager.keyVault.multiSelect.availableGroups}]]*/ 'Available Groups';
+    var selectedGroupsTxt = /*[[#{desktop.manager.keyVault.multiSelect.selectedGroups}]]*/ 'Selected Groups';
+    $('#groupsMultiSelect').multiSelect({
+        selectableHeader: "<div class='custom-header'><b>" + availableGroupsTxt + "</b></div>",
+        selectedHeader: "<div class='custom-header'><b>" + selectedGroupsTxt + "</b></div>"
+    });
+
+    toggleKeyVaultEntryFormSections();
+
+//    $('#parentDomainSelect').change(function() {
+//        var $this = $(this);
+//        if ($('#keyVaultEntryId').val()) {
+//            var oldVal = $(this).val();
+//            clearKeyVaultEntryForm();
+//            $(this).val(oldVal);
+//        }
+//        var _continue = true;
+//        var $domain = {};
+//        $(domains).each(function(index, value) {
+//            if (value.parentDomain.id == $this.val()) {
+//                $domain = value;
+//                return false;
+//            }
+//        });
+//
+//        toggleKeyVaultEntryFormSections();
+//
+//        $('#groupsMultiSelect').empty();
+//
+//        if ($.isEmptyObject($domain)) {
+//            $('#groupSelectDiv').hide();
+//            return;
+//        }
+//
+//        if ($domain.childDomains.length > 0) {
+//
+//            $($domain.childDomains).each(function(index, value) {
+//                $('#groupsMultiSelect').append($("<option>", {
+//                    value: value.id,
+//                    text: value.name
+//                }));
+//            });
+//            $('#groupsMultiSelect').multiSelect('refresh');
+//
+//            $('#groupSelectDiv').show();
+//
+//        } else {
+//            $('#groupSelectDiv').hide();
+//        }
+//
+//    });
+
+    $('#groupSelectDiv .select-all').click(function() {
+        $('#groupsMultiSelect').multiSelect('select_all');
+        return false;
+    });
+    $('#groupSelectDiv .deselect-all').click(function() {
+        $('#groupsMultiSelect').multiSelect('deselect_all');
+        return false;
+    });
+
+    $('#applicationTypeSelect').on('change', function() {
+        toggleKeyVaultEntryFormSections();
+    });
+
+    function toggleKeyVaultEntryFormSections() {
+        var selectedApplicationType = $('#applicationTypeSelect option:selected').val();
+
+        $('#keyVaultEntryForm .entryFormSection').hide();
+        var id = $('#keyVaultEntryId').val();
+        if (id == undefined || id == "" || id <= 0) {
+            $('#applicationType').hide();
+            $('#applicationTypeSelect').show();
+            $('#applicationTypeSpecificHelp > div').hide();
+            switch (selectedApplicationType) {
+                case 'IOS':
+                    $('#iosSection .entry-required').attr('required', 'required')
+                    $('#iosSection').show();
+                    $('#iosHelp').show();
+                    break;
+                default:
+                    $('#submitButtom').attr('disabled', 'disabled');
+                    return;
+            }
+        } else {
+            $('#applicationTypeSelect').removeAttr('required');
+            $('#applicationTypeSelect').hide();
+            $('#applicationType').text($('#applicationTypeSelect option:selected').text());
+            $('#applicationType').show();
+        }
+        $('#submitButton').removeAttr('disabled');
+
+    }
+
+    var $keyVaultEntryTable = $('#keyVaultEntryTable').dataTable({
+        "sDom": "<'table-inline'<<'span6'l><'pull-right'f>r>t<<'span6'i><'pull-right'p>>>",
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sLengthMenu": '<select>'+
+                    '<option value="5">5</option>'+
+                    '<option value="10">10</option>'+
+                    '<option value="25">25</option>'+
+                    '<option value="50">50</option>'+
+                    '<option value="-1">All</option>'+
+                    '</select> ' + recordsPerPageText
+        },
+        "bSort": true,
+        "sAjaxSource": getAllKeyVaultEntriesUrl,
+        "sAjaxDataProp":"",
+        "bProcessing": true,
+        "aaSorting": [[1, "asc"], [2, "asc"]],
+        "iDisplayLength": 5,
+        "bAutoWidth": false,
+        "aoColumnDefs" : [
+            {
+                "aTargets" : [0],
+                "mData" : "name",
+                "sDefaultContent" : "N/A"
+            },
+            {
+                "aTargets" : [1],
+                "mData" : "applicationType",
+                "mRender" : function(data, type, full) {
+                    var type;
+                    $(applicationTypes).each(function(index, value) {
+                        if (this.key.$name == data) {
+                            type = this;
+                        }
+                    });
+
+                    if (type) {
+                        return type.value;
+                    }
+                },
+                "sDefaultContent" : "N/A"
+            },
+            {
+                "aTargets" : [2],
+                "mData" : "createdBy.email",
+                "mRender" : function(data, type, full) {
+                    return data;
+                },
+                "sDefaultContent" : "N/A"
+            }
+        ],
+        "fnCreatedRow": function( nRow, aData, iDataIndex ) {
+            $(nRow).data('entry-details', aData);
+            $(nRow).css('cursor', 'pointer');
+            $(nRow).on('click', function(event) {
+                $($keyVaultEntryTable.fnSettings().aoData).each(function (){
+                    $(this.nTr).removeClass('row_selected');
+                });
+                $(event.target.parentNode).addClass('row_selected');
+
+                $('#keyVaultEntryId').val(aData.id);
+                toggleKeyVaultEntryDeleteBtn();
+//                $('#parentDomainSelect').val(aData.parentDomain.id);
+//                var $domain = {};
+//                $(domains).each(function(index, value) {
+//                    if (value.parentDomain.id == aData.parentDomain.id) {
+//                        $domain = value;
+//                        return false;
+//                    }
+//                });
+//
+//                $('#groupsMultiSelect').empty();
+
+//                if ($.isEmptyObject($domain)) {
+//                    $('#groupSelectDiv').hide();
+//                    return;
+//                }
+
+//                if ($domain.childDomains.length > 0) {
+
+//                    $('#groupsMultiSelect').append($('<optgroup>').attr('label', 'Groups'));
+//                    $($domain.childDomains).each(function(index, value) {
+//                        $('#groupsMultiSelect > optgroup').append($("<option>", {
+//                            value: value.id,
+//                            text: value.name
+//                        }));
+//                    });
+                    $('#groupsMultiSelect').multiSelect('refresh');
+
+                    $(aData.childDomains).each(function(index, value) {
+                        $('#groupsMultiSelect').multiSelect('select', value.id);
+                    });
+
+//                    $('#groupSelectDiv').show();
+
+//                } else {
+//                    $('#groupSelectDiv').hide();
+//                }
+
+                $('#applicationTypeSelect').val(aData.applicationType);
+                toggleKeyVaultEntryFormSections();
+                $('#applicationType').text(aData.applicationType);
+                $('#inputName').val(aData.name);
+
+                $('#keyVaultEntryForm .entry-required').removeAttr('required');
+
+                $('#success').alert('close');
+
+                $('#submitButton').removeAttr('disabled');
+            });
+            if ($('#keyVaultEntryId').val() == aData.id) {
+                $(nRow).addClass('row_selected');
+            }
+        },
+        "fnInitComplete": function() {
+            this.fnAdjustColumnSizing(true);
+        }
+    });
+
+    toggleKeyVaultEntryDeleteBtn();
+    function toggleKeyVaultEntryDeleteBtn() {
+        var id = $('#keyVaultEntryId').val();
+        if (id != undefined && id != "" && id > 0) {
+            $('#deleteKeyVaultEntryBtn').show();
+        } else {
+            $('#deleteKeyVaultEntryBtn').hide();
+        }
+    }
+
+    $('#cancelKeyVaultEntryBtn').on('click', function(e) {
+        e.preventDefault();
+        clearKeyVaultEntryForm();
+    });
+
+    function clearKeyVaultEntryForm() {
+        $($keyVaultEntryTable.fnSettings().aoData).each(function (){
+            $(this.nTr).removeClass('row_selected');
+        });
+
+//        $('#parentDomainSelect').val();
+//        $('#groupsMultiSelect').empty();
+
+        $('#groupsMultiSelect').multiSelect('deselect_all');
+        $('#groupsMultiSelect').multiSelect('refresh');
+//        $('#groupSelectDiv').hide();
+        $('#applicationType').text('');
+        $('#applicationTypeSelect').val('');
+        $(':input', '#keyVaultEntryForm').val('');
+//        $('#keyVaultEntryId').val("");
+        toggleKeyVaultEntryFormSections();
+        $('#errors', '#keyVaultEntryForm').hide();
+        toggleKeyVaultEntryDeleteBtn();
+    }
+
+    $('#deleteKeyVaultEntryBtn').on('click', function(e) {
+        e.preventDefault();
+        var deleteConfirmationModalHeaderTxt = /*[[#{desktop.manager.keyVault.confirmationModal.deleteKeyVaultEntry.header}]]*/ 'Delete Key Vault Entry?';
+        showModal("#confirmationModal", deleteConfirmationModalHeaderTxt, fnOnDeleteKeyVaultEntryModalShow, fnOnDeleteKeyVaultEntryModalHide);
+    });
+
+    var fnOnDeleteKeyVaultEntryModalShow = function(data) {
+        var deleteUrl = /*[[@{/manager/deleteKeyVaultEntry}]]*/ '/manager/deleteKeyVaultEntry'
+
+        $('.modal-header h3', '#confirmationModal').text(data);
+        $('#confirmationModalSubmit').off('click');
+        $('#confirmationModalSubmit').on('click', function(e) {
+            $.post(deleteUrl, {"id":$('#keyVaultEntryId').val()}, function(result) {
+                if (result.result) {
+                    $('#confirmationModal .modal-body .alert-error').hide();
+                    $('#confirmationModal .modal-body .alert-success').show();
+                    clearKeyVaultEntryForm();
+                    $keyVaultEntryTable.fnReloadAjax(getAllKeyVaultEntriesUrl, function() {
+                        $keyVaultEntryTable.fnDisplayRow($keyVaultEntryTable.$('tr.row_selected').get(0));
+                    });
+                    hideModal(500);
+                } else {
+                    $('#confirmationModal .modal-body .alert-error').show();
+                    $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+                    $('#confirmationModal .close').removeAttr('disabled');
+                }
+            });
+        });
+    };
+
+    var fnOnDeleteKeyVaultEntryModalHide = function() {
+        //        $('#confirmationModalSubmit').off('click');
+        $('#confirmationModal .modal-body .alert').hide();
+        $('#confirmationModal .modal-footer .btn').removeAttr('disabled');
+        $('#confirmationModal .close').removeAttr('disabled');
+    };
+
+    function showModal(id, data, fnOnShow, fnOnHide) {
+        if (id.substr(0, 1) !== '#') {
+            id = '#' + id;
+        }
+
+        $(id).off('show');
+        $(id).on('show', fnOnShow(data));
+
+        $(id).off('hidden');
+        $(id).on('hidden', fnOnHide());
+
+        $(id).modal();
+    }
+
+    function hideModal(delay) {
+        setTimeout(function () {
+                    $('.modal').modal('hide');
+                }, delay
+        );
+    }
+});
+/*]]>*/
+</script>
+
+</body>
+</html>

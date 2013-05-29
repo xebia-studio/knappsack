@@ -8,8 +8,6 @@ import junit.framework.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.UUID;
-
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -47,7 +45,7 @@ public class RegistrationServiceIT extends AbstractServiceTests {
 
     @Test
     public void registerUserWithInvitationTest() {
-        User user = getUser();
+        User user = getUserWithSecurityContext();
 
         Organization organization = getOrganization();
 

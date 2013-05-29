@@ -11,7 +11,7 @@
         <if condition='property("spring.profiles.active").equals("production")'>
             <then>
                 <connectionSource class="ch.qos.logback.core.db.DataSourceConnectionSource">
-                    <dataSource class="com.mchange.v2.c3p0.ComboPooledDataSource">
+                    <dataSource class="com.jolbox.bonecp.BoneCPDataSource">
                         <driverClass>${prod.jdbc.driverClassName}</driverClass>
                         <jdbcUrl>${JDBC_CONNECTION_STRING}</jdbcUrl>
                     </dataSource>
@@ -19,7 +19,7 @@
             </then>
             <else>
                 <connectionSource class="ch.qos.logback.core.db.DataSourceConnectionSource">
-                    <dataSource class="com.mchange.v2.c3p0.ComboPooledDataSource">
+                    <dataSource class="com.jolbox.bonecp.BoneCPDataSource">
                         <driverClass>${dev.jdbc.driverClassName}</driverClass>
                         <jdbcUrl>${dev.jdbc.url}</jdbcUrl>
                     </dataSource>
@@ -41,6 +41,19 @@
             <then>
                 <appender-ref ref="STDOUT"/>
             </then>
+        </if>
+    </logger>
+
+    <logger name="net.jawr" additivity="false">
+        <if condition='!property("spring.profiles.active").equals("production")'>
+            <then>
+                <level value="DEBUG"/>
+                <appender-ref ref="STDOUT" />
+            </then>
+            <else>
+                <level value="ERROR"/>
+                <appender-ref ref="DB"/>
+            </else>
         </if>
     </logger>
 

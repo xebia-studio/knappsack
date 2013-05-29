@@ -4,7 +4,8 @@ public enum AppFileType {
     INSTALL("install"),
     ICON("icon"),
     SCREENSHOT("screenshot"),
-    KEY_VAULT_ENTRY("key_vault_entry");
+    KEY_VAULT_ENTRY("key_vault_entry"),
+    LOGO("logo");
 
     private final String pathName;
 

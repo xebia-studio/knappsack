@@ -3,6 +3,7 @@ package com.sparc.knappsack.components.services;
 import com.sparc.knappsack.components.entities.LocalStorageConfiguration;
 import com.sparc.knappsack.components.entities.StorageConfiguration;
 import com.sparc.knappsack.enums.StorageType;
+import com.sparc.knappsack.forms.OrganizationForm;
 import com.sparc.knappsack.forms.StorageForm;
 import com.sparc.knappsack.models.OrganizationModel;
 import org.junit.Assert;
@@ -58,12 +59,12 @@ public class StorageConfigurationServiceIT extends AbstractServiceTests {
         storageConfigurationService.add(storageConfiguration);
         storageConfiguration = storageConfigurationService.getByName(storageConfiguration.getName());
 
-        OrganizationModel organizationModel = new OrganizationModel();
-        organizationModel.setStorageConfigurationId(storageConfiguration.getId());
-        organizationModel.setStoragePrefix("test");
-        organizationModel.setName("Test Organization");
+        OrganizationForm organizationForm = new OrganizationForm();
+        organizationForm.setStorageConfigurationId(storageConfiguration.getId());
+        organizationForm.setStoragePrefix("test");
+        organizationForm.setName("Test Organization");
 
-        organizationService.createOrganization(organizationModel);
+        organizationService.createOrganization(organizationForm);
 
         storageConfigurationService.delete(storageConfiguration.getId());
         storageConfiguration = storageConfigurationService.getByName(storageConfiguration.getName());

@@ -47,7 +47,7 @@ public class ExcelServiceImpl implements ExcelService {
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
 
         buildTitle(worksheet, String.format("Organization Details for Date Range: %s - %s", (minDate == null ? "Start" : sdf.format(minDate)), (maxDate == null ? "Present" : sdf.format(maxDate))), startRowIndex, startColIndex);
-        buildHeaders(worksheet, startRowIndex, startColIndex, new String[]{"NAME", "Ceate Date", "Admins"});
+        buildHeaders(worksheet, startRowIndex, startColIndex, new String[]{"NAME", "Ceate Date", "Payment Plan", "Customer Id", "Status", "Admins"});
 
         HSSFCreationHelper helper = workbook.getCreationHelper();
 
@@ -71,11 +71,24 @@ public class ExcelServiceImpl implements ExcelService {
             cell1.setCellValue(organizationModels.get(i).getName());
             cell1.setCellStyle(bodyCellStyle);
 
-            HSSFCell cell2 = row.createCell(startColIndex + 1);
+            HSSFCell cell2 = row.createCell(startColIndex+1);
             cell2.setCellValue(organizationModels.get(i).getCreateDate());
             cell2.setCellStyle(bodyCellStyle);
 
-            //Populate info
+            HSSFCell cell3 = row.createCell(startColIndex+2);
+
+            cell3.setCellValue(NOT_AVAILABLE_VALUE);
+            cell3.setCellStyle(bodyCellStyle);
+
+            HSSFCell cell4 = row.createCell(startColIndex+3);
+
+            cell4.setCellValue(NOT_AVAILABLE_VALUE);
+            cell4.setCellStyle(bodyCellStyle);
+
+            HSSFCell cell5 = row.createCell(startColIndex+4);
+
+            cell5.setCellValue(NOT_AVAILABLE_VALUE);
+            cell5.setCellStyle(bodyCellStyle);
 
             boolean createRow = false;
             List<UserDomainModel> userDomainModels = organizationService.getAllOrganizationAdmins(organizationModels.get(i).getId());
@@ -87,11 +100,11 @@ public class ExcelServiceImpl implements ExcelService {
 
                 HSSFCell cell;
                 if (!createRow) {
-                    cell = row.createCell(startColIndex + 2);
+                    cell = row.createCell(startColIndex+5);
                     createRow = true;
                 } else {
                     HSSFRow newRow = worksheet.createRow(previousRowNum + x + 1);
-                    cell = newRow.createCell(startColIndex + 2);
+                    cell = newRow.createCell(startColIndex+5);
                 }
 
                 cell.setCellValue(name);
@@ -107,6 +120,9 @@ public class ExcelServiceImpl implements ExcelService {
         worksheet.autoSizeColumn(0);
         worksheet.autoSizeColumn(1);
         worksheet.autoSizeColumn(2);
+        worksheet.autoSizeColumn(3);
+        worksheet.autoSizeColumn(4);
+        worksheet.autoSizeColumn(5);
 
         try {
             worksheet.getWorkbook().write(outputStream);
@@ -135,15 +151,15 @@ public class ExcelServiceImpl implements ExcelService {
         cellTitle.setCellStyle(cellStyleTitle);
 
         // Create merged region for the report title
-        worksheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
+        worksheet.addMergedRegion(new CellRangeAddress(0,0,0,4));
 
         // Create date header
-        HSSFRow dateTitle = worksheet.createRow((short) startRowIndex + 1);
+        HSSFRow dateTitle = worksheet.createRow((short) startRowIndex +1);
         HSSFCell cellDate = dateTitle.createCell(startColIndex);
         cellDate.setCellValue("This report was generated at " + new Date());
 
         // Create merged region for the report title
-        worksheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 4));
+        worksheet.addMergedRegion(new CellRangeAddress(1,1,0,4));
     }
 
     public static void buildHeaders(HSSFSheet worksheet, int startRowIndex, int startColIndex, String[] headerNames) {
@@ -162,7 +178,7 @@ public class ExcelServiceImpl implements ExcelService {
         headerCellStyle.setBorderBottom(CellStyle.BORDER_THIN);
 
         // Create the column headers
-        HSSFRow rowHeader = worksheet.createRow((short) startRowIndex + 2);
+        HSSFRow rowHeader = worksheet.createRow((short) startRowIndex +2);
         rowHeader.setHeight((short) 500);
 
         for (int x = 0; x < headerNames.length; x++) {

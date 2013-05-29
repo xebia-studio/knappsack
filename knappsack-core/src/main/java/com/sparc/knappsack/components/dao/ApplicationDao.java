@@ -2,6 +2,8 @@ package com.sparc.knappsack.components.dao;
 
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.Category;
+import com.sparc.knappsack.components.entities.Group;
+import com.sparc.knappsack.components.entities.User;
 import com.sparc.knappsack.enums.ApplicationType;
 
 import java.util.List;
@@ -39,6 +41,10 @@ public interface ApplicationDao extends Dao<Application> {
      * @return List of Application entities for a given Category and ApplicationType
      */
     List<Application> getByCategoryAndApplicationType(Category category, ApplicationType applicationType);
+
+    List<Application> getAllForUser(User user, ApplicationType... applicationTypes);
+
+    List<Application> getByGroup(Group group, ApplicationType... applicationTypes);
 
     /**
      * @return Count of all Applications

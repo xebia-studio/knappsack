@@ -2,6 +2,7 @@ package com.sparc.knappsack.components.services;
 
 import com.sparc.knappsack.components.entities.Application;
 import com.sparc.knappsack.components.entities.ApplicationVersion;
+import com.sparc.knappsack.components.entities.Organization;
 
 public interface BandwidthService {
 
@@ -22,4 +23,6 @@ public interface BandwidthService {
      * @return double - the total amount of bandwidth used since the creation of the organization.
      */
     double getMegabyteBandwidthUsed(Long organizationId);
+
+    double getMegabyteBandwidthUsed(Organization organization);
 }

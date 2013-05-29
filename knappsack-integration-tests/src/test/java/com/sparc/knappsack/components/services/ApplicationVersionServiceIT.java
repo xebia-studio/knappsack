@@ -4,7 +4,7 @@ import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.enums.AppState;
 import com.sparc.knappsack.enums.ApplicationType;
 import com.sparc.knappsack.enums.StorageType;
-import com.sparc.knappsack.forms.UploadApplicationVersion;
+import com.sparc.knappsack.forms.ApplicationVersionForm;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -71,14 +71,14 @@ public class ApplicationVersionServiceIT extends AbstractServiceTests {
     @Test
     public void saveApplicationVersionTest() {
         ApplicationVersion applicationVersion = getApplicationVersion();
-        UploadApplicationVersion uploadApplicationVersion = new UploadApplicationVersion();
-        uploadApplicationVersion.setAppState(AppState.GROUP_PUBLISH);
-        uploadApplicationVersion.setGroupId(applicationVersion.getApplication().getCategory().getOrganization().getGroups().get(0).getId());
-        uploadApplicationVersion.setStorageConfigurationId(applicationVersion.getStorageConfiguration().getId());
-        uploadApplicationVersion.setEditing(false);
-        uploadApplicationVersion.setVersionName("1.1.1");
-        uploadApplicationVersion.setParentId(applicationVersion.getApplication().getId());
-        ApplicationVersion newApplicationVersion = applicationVersionService.saveApplicationVersion(uploadApplicationVersion);
+        ApplicationVersionForm applicationVersionForm = new ApplicationVersionForm();
+        applicationVersionForm.setAppState(AppState.GROUP_PUBLISH);
+//        applicationVersionForm.setGroupId(applicationVersion.getApplication().getCategory().getOrganization().getGroups().get(0).getId());
+//        applicationVersionForm.setStorageConfigurationId(applicationVersion.getStorageConfiguration().getId());
+        applicationVersionForm.setEditing(false);
+        applicationVersionForm.setVersionName("1.1.1");
+        applicationVersionForm.setParentId(applicationVersion.getApplication().getId());
+        ApplicationVersion newApplicationVersion = applicationVersionService.saveApplicationVersion(applicationVersionForm);
         assertNotNull(newApplicationVersion);
         assertTrue(newApplicationVersion.getAppState().equals(AppState.GROUP_PUBLISH));
         assertTrue(newApplicationVersion.getVersionName().equals("1.1.1"));
@@ -142,7 +142,7 @@ public class ApplicationVersionServiceIT extends AbstractServiceTests {
         ApplicationVersionUserStatistic statistic = new ApplicationVersionUserStatistic();
         statistic.setApplicationVersion(applicationVersion);
         statistic.setRemoteAddress("127.0.0.1");
-        statistic.setUser(getUser());
+        statistic.setUser(getUserWithSecurityContext());
         statistic.setUserAgent("UserAgent");
 
         applicationVersionUserStatisticService.add(statistic);
