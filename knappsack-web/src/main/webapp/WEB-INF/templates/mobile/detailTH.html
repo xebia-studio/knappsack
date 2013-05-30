@@ -65,12 +65,13 @@
             var downloadDirectly = /*[[${downloadDirectly}]]*/ true;
 
             if (downloadDirectly) {
+                var tt = new Date().getTime();
                 $.ajax({
                     type:"POST",
                     url:generateDownloadApplicationUrl + selectedVersionId,
                     cache:false,
                     dataType:"text",
-                    data:({id:selectedAppId}),
+                    data:({id:selectedAppId, ts:tt}),
                     async:true,
                     success:onSuccess,
                     error:onError
