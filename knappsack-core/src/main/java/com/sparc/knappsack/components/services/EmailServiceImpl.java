@@ -891,15 +891,15 @@ public class EmailServiceImpl implements EmailService {
             } catch (MailSendException mailSendException) {
                 try {
                     for (Address address : message.getRecipients(Message.RecipientType.TO)) {
-                        log.info("Error sending email to " + address + ".", mailSendException);
+                        log.error("Error sending email to " + address + ".", mailSendException);
                     }
                 } catch (MessagingException messagingException) {
-                    log.info("Error logging message recipients.", messagingException);
+                    log.error("Error logging message recipients.", messagingException);
                 }
 
                 throw mailSendException;
             } catch (MailException mailException) {
-                log.info("Error sending email.", mailException);
+                log.error("Error sending email.", mailException);
             }
         }
         return success;

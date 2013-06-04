@@ -161,7 +161,7 @@ public class DomainUserRequestServiceImpl implements DomainUserRequestService {
                 EventDelivery deliveryMechanism = eventDeliveryFactory.getEventDelivery(EventType.DOMAIN_USER_ACCESS_REQUEST_CONFIRMATION);
                 if (deliveryMechanism != null) {
                     if (!deliveryMechanism.sendNotifications(domainUserRequest)) {
-                        log.info("Error sending Group Access Request Confirmation Email:", domainUserRequest);
+                        log.error("Error sending Group Access Request Confirmation Email:", domainUserRequest);
                     }
                 }
 
@@ -184,7 +184,7 @@ public class DomainUserRequestServiceImpl implements DomainUserRequestService {
             if (deliveryMechanism != null) {
                 success = deliveryMechanism.sendNotifications(domainUserRequest);
                 if (!success) {
-                    log.info("Error sending Domain User Access Request Confirmation Email:", domainUserRequest);
+                    log.error("Error sending Domain User Access Request Confirmation Email:", domainUserRequest);
                 }
             }
 

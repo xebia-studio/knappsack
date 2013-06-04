@@ -25,7 +25,7 @@ public class SQSUserAccountActivationSuccessEvent implements SQSEventDelivery {
                 Long userId = (Long) emailModel.getParams().get("userId");
                 success = emailService.sendActivationSuccessEmail(userId);
             } catch (ClassCastException e) {
-                log.info("Error casting params out of EmailModel:", e);
+                log.error("Error casting params out of EmailModel:", e);
             }
 
         }

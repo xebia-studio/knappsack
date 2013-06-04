@@ -202,16 +202,18 @@ public class CategoryController extends AbstractController {
         Category category = categoryService.get(id);
         Long organizationId = category.getOrganization().getId();
         if (!orgId.equals(organizationId)) {
-            log.info("Attempted to delete category icon for organization with different Id");
-        }
-        categoryService.deleteIcon(id);
-
-        category = categoryService.get(id);
-
-        if (category != null && category.getIcon() == null) {
-            result.setResult(true);
+            log.error("Attempted to delete category icon for organization with different Id");
+            result.setResult(false);
         } else {
-            result.setResult(true);
+            categoryService.deleteIcon(id);
+
+            category = categoryService.get(id);
+
+            if (category != null && category.getIcon() == null) {
+                result.setResult(true);
+            } else {
+                result.setResult(true);
+            }
         }
 
         return result;

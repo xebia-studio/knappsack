@@ -38,7 +38,7 @@ public class SQSApplicationVersionResignCompleteEvent implements SQSEventDeliver
                     try {
                         resignErrorType = ResignErrorType.valueOf((String) resignErrorTypeObject);
                     } catch (Exception e) {
-                        log.info("Error converting resignErrorType to enum value", e);
+                        log.error("Error converting resignErrorType to enum value", e);
                     }
                 }
 
@@ -46,7 +46,7 @@ public class SQSApplicationVersionResignCompleteEvent implements SQSEventDeliver
                 userIds.add(userId);
                 success = emailService.sendApplicationVersionResignCompleteEmail(applicationVersionId, resignSuccess, resignErrorType, userIds);
             } catch (ClassCastException e) {
-                log.info("Error casting params out of EmailModel:", e);
+                log.error("Error casting params out of EmailModel:", e);
             }
         }
 

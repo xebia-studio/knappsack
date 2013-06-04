@@ -87,7 +87,7 @@ public class S3StorageService extends AbstractStorageService implements RemoteSt
                 length = bytes.length;
                 inputStream = new ByteArrayInputStream(bytes);
             } catch (Exception e) {
-                log.info("Exception creating thumbnail", e);
+                log.error("Exception creating thumbnail", e);
                 saveMultipartFile(multipartFile, key, storageConfigurationId);
                 return createAppFile(key, multipartFile);
             }

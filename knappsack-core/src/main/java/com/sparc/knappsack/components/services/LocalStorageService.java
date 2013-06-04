@@ -142,7 +142,7 @@ public class LocalStorageService extends AbstractStorageService implements Stora
             try {
                 deletePath(path);
             } catch (IllegalArgumentException e) {
-                log.info("An error occurred deleting the path: " + path, e);
+                log.error("An error occurred deleting the path: " + path, e);
             }
         }
 
@@ -200,7 +200,7 @@ public class LocalStorageService extends AbstractStorageService implements Stora
                 length = bytes.length;
                 inputStream = new ByteArrayInputStream(outputStream.toByteArray());
             } catch (Exception e) {
-                log.info("Exception creating thumbnail: ", e);
+                log.error("Exception creating thumbnail: ", e);
                 saveMultipartFile(multipartFile, file);
                 return createAppFile(path, multipartFile);
             }

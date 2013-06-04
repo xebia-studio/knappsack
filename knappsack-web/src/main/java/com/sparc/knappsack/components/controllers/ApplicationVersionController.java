@@ -273,7 +273,7 @@ public class ApplicationVersionController extends AbstractController {
         try {
             savedApplicationVersion = applicationVersionControllerService.saveApplicationVersion(applicationVersionForm, true);
         } catch (ApplicationVersionResignException e) {
-            log.info(e.getMessage());
+            log.error(e.getMessage());
             String[] codes = {"desktop.manageApplicationVersion.resignError.generic"};
             ObjectError error = new ObjectError("version", codes, null, null);
             bindingResult.addError(error);

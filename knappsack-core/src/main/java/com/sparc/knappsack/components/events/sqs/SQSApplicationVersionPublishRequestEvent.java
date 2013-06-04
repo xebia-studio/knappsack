@@ -43,7 +43,7 @@ public class SQSApplicationVersionPublishRequestEvent implements SQSEventDeliver
 
                 success = emailService.sendApplicationPublishRequestEmail(applicationVersionId, userModel);
             } catch (ClassCastException e) {
-                log.info("Error casting params out of EmailModel:", e);
+                log.error("Error casting params out of EmailModel:", e);
             }
         }
 

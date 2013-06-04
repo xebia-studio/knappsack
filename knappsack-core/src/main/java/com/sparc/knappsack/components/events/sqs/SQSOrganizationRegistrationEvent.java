@@ -41,7 +41,7 @@ public class SQSOrganizationRegistrationEvent implements SQSEventDelivery {
                 }
                 success = emailService.sendOrganizationRegistrationEmail(organizationId, userModel);
             } catch (ClassCastException e) {
-                log.info("Error casting params out of EmailModel:", e);
+                log.error("Error casting params out of EmailModel:", e);
             }
         }
         return success;

@@ -125,7 +125,7 @@ public class DomainRequestController extends AbstractController {
                         log.info("Error sending DomainAccessRequest email.", domainRequest);
                     }
                 } else {
-                    log.info(String.format("Unable to process public request for domain.  Entity not persisted to database. Domain UUID: %s", domain.getUuid()));
+                    log.error(String.format("Unable to process public request for domain.  Entity not persisted to database. Domain UUID: %s", domain.getUuid()));
 
                     String[] codes = {"desktop.domain_public_request.generic.error"};
                     ObjectError error = new ObjectError("domainRequestForm", codes, null, null);
@@ -135,7 +135,7 @@ public class DomainRequestController extends AbstractController {
                     redirectAttributes.addFlashAttribute("domainRequestForm", domainRequestForm);
                 }
             } else {
-                log.info(String.format("Unable to process public request for domain.  Domain does not exist for UUID: %s", domainRequestForm.getDomainUUID()));
+                log.error(String.format("Unable to process public request for domain.  Domain does not exist for UUID: %s", domainRequestForm.getDomainUUID()));
 
                 return "redirect:/errorTH.html";
             }

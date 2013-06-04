@@ -34,7 +34,7 @@ public class SQSBandwidthLimitEvent implements SQSEventDelivery {
 
                 success = emailService.sendBandwidthLimitNotification(organizationId, userModelList);
             } catch (ClassCastException e) {
-                log.info("Error casting params out of EmailModel:", e);
+                log.error("Error casting params out of EmailModel:", e);
             }
         }
         return success;

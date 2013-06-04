@@ -81,7 +81,7 @@ public class InvitationControllerServiceImpl implements InvitationControllerServ
             try {
                 invitationSent = deliveryMechanism.sendNotifications(invitations);
             } catch (MailException e) {
-                log.info("Error during invitations notification.", e);
+                log.error("Error during invitations notification.", e);
                 if (deleteOnError) {
                     for (Invitation invitation : invitations) {
                         invitationService.delete(invitation.getId());
