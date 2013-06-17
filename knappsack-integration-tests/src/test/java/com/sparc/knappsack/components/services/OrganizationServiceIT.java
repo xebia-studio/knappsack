@@ -96,58 +96,58 @@ public class OrganizationServiceIT extends AbstractServiceTests {
         assertFalse(retrievedOrganization.getDomainConfiguration().isDisabledDomain());
     }
 
-//    @Test
-//    public void deleteOrganization() {
-//        Organization organization = getOrganization();
-//
-//        Category category = new Category();
-//        category.setOrganization(organization);
-//        category.setDescription("Test Category");
-//        category.setName("Test Category");
-//        category.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
-//
-//        categoryService.add(category);
-//
-//        AppFile categoryIcon = new AppFile();
-//        categoryIcon.setName("Category Icon");
-//        categoryIcon.setRelativePath("relativePath");
-//        categoryIcon.setStorable(category);
-//        category.setIcon(categoryIcon);
-//
-//        organization.getCategories().add(category);
-//
-//        categoryService.update(category);
-//
-//        Group group = new Group();
-//        group.setName("Test Group");
-//        group.setOrganization(organization);
-//
-//        organization.getGroups().add(group);
-//
-//        groupService.add(group);
-//
-//        Application application = new Application();
-//        application.setApplicationType(ApplicationType.CHROME);
-//        application.setCategory(category);
-//        application.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
-//        application.setOwnedGroup(group);
-//        List<Application> applications = new ArrayList<Application>();
-//        applications.add(application);
-//
-//        group.setOwnedApplications(applications);
-//
-//        applicationService.add(application);
-//
-//        Organization retrievedOrganization = organizationService.getByName("Test Organization");
-//        assertNotNull(applicationService.get(application.getId()));
-//        assertNotNull(retrievedOrganization);
-//        assertNotNull(retrievedOrganization.getId());
-//        organizationService.delete(retrievedOrganization.getId());
-//        retrievedOrganization = organizationService.getByName("Test Organization");
-//        assertNull(retrievedOrganization);
-//        assertTrue(groupService.getAll().isEmpty());
-//        assertNull(applicationService.get(application.getId()));
-//    }
+    @Test
+    public void deleteOrganization() {
+        Organization organization = getOrganization();
+
+        Category category = new Category();
+        category.setOrganization(organization);
+        category.setDescription("Test Category");
+        category.setName("Test Category");
+        category.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
+
+        categoryService.add(category);
+
+        AppFile categoryIcon = new AppFile();
+        categoryIcon.setName("Category Icon");
+        categoryIcon.setRelativePath("relativePath");
+        categoryIcon.setStorable(category);
+        category.setIcon(categoryIcon);
+
+        organization.getCategories().add(category);
+
+        categoryService.update(category);
+
+        Group group = new Group();
+        group.setName("Test Group");
+        group.setOrganization(organization);
+
+        organization.getGroups().add(group);
+
+        groupService.add(group);
+
+        Application application = new Application();
+        application.setApplicationType(ApplicationType.CHROME);
+        application.setCategory(category);
+        application.setStorageConfiguration(organization.getOrgStorageConfig().getStorageConfigurations().get(0));
+        application.setOwnedGroup(group);
+        List<Application> applications = new ArrayList<Application>();
+        applications.add(application);
+
+        group.setOwnedApplications(applications);
+
+        applicationService.add(application);
+
+        Organization retrievedOrganization = organizationService.getByName("Test Organization");
+        assertNotNull(applicationService.get(application.getId()));
+        assertNotNull(retrievedOrganization);
+        assertNotNull(retrievedOrganization.getId());
+        organizationService.delete(retrievedOrganization.getId());
+        retrievedOrganization = organizationService.getByName("Test Organization");
+        assertNull(retrievedOrganization);
+        assertTrue(groupService.getAll().isEmpty());
+        assertNull(applicationService.get(application.getId()));
+    }
 
     @Test
     public void modelToEntityMappingTest() {
