@@ -40,6 +40,6 @@ public class CategoryDaoImpl extends BaseDao implements CategoryDao {
 
         return cacheableQuery().from(category)
                 .where(category.in(applicationsForUser.list(application.category)))
-                .listDistinct(category);
+                .distinct().list(category);
     }
 }

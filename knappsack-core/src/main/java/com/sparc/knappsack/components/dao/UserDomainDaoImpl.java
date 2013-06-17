@@ -44,7 +44,7 @@ public class UserDomainDaoImpl extends BaseDao implements UserDomainDao {
 
     @Override
     public List<UserDomain> getUserDomainsForDomain(Long domainId) {
-        return cacheableQuery().from(userDomain).where(userDomain.domain.id.eq(domainId)).listDistinct(userDomain);
+        return cacheableQuery().from(userDomain).where(userDomain.domain.id.eq(domainId)).distinct().list(userDomain);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class UserDomainDaoImpl extends BaseDao implements UserDomainDao {
 
     @Override
     public List<UserDomain> getUserDomainsForEmailsAndDomains(List<String> userEmails, List<Long> domainIds) {
-        return cacheableQuery().from(userDomain).where(userDomain.domain.id.in(domainIds).and(userDomain.user.email.in(userEmails))).listDistinct(userDomain);
+        return cacheableQuery().from(userDomain).where(userDomain.domain.id.in(domainIds).and(userDomain.user.email.in(userEmails))).distinct().list(userDomain);
     }
 
     @Override
@@ -68,6 +68,6 @@ public class UserDomainDaoImpl extends BaseDao implements UserDomainDao {
 
     @Override
     public long countDomains(User user, UserRole userRole) {
-        return cacheableQuery().from(userDomain).where(userDomain.user.eq(user).and(userDomain.role.authority.eq(userRole.toString()))).countDistinct();
+        return cacheableQuery().from(userDomain).where(userDomain.user.eq(user).and(userDomain.role.authority.eq(userRole.toString()))).distinct().count();
     }
 }

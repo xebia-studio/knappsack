@@ -15,7 +15,7 @@ public class AppFileDaoImpl extends BaseDao implements AppFileDao {
     }
 
     public List<AppFile> getAll() {
-        return query().from(appFile).listDistinct(appFile);
+        return query().from(appFile).distinct().list(appFile);
     }
 
     public AppFile get(Long id) {

@@ -33,13 +33,13 @@ public class Application extends Storable implements Notifiable {
     @Enumerated(EnumType.STRING)
     private ApplicationType applicationType;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = false)
     @JoinColumn(name = "ICON_ID")
     @LazyToOne(value = LazyToOneOption.NO_PROXY)
 //    @Fetch(FetchMode.JOIN)
     private AppFile icon;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = false)
     @JoinTable(name = "APPLICATION_SCREENSHOT", joinColumns = @JoinColumn(name = "APPLICATION_ID"), inverseJoinColumns = @JoinColumn(name = "SCREENSHOT_ID"))
     @JsonManagedReference
     @BatchSize(size=30)

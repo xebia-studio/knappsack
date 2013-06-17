@@ -16,10 +16,10 @@
         <org.springframework-version>3.1.4.RELEASE</org.springframework-version>
         <org.springframework.security-version>3.1.3.RELEASE</org.springframework.security-version>
         <org.springframework.security-oauth-version>1.0.6.BUILD-SNAPSHOT</org.springframework.security-oauth-version>
-        <org.hibernate-version>4.1.9.Final</org.hibernate-version>
+        <org.hibernate-version>4.2.2.Final</org.hibernate-version>
         <org.hsqldb-version>2.2.8</org.hsqldb-version>
         <org.jackson-version>2.1.0</org.jackson-version>
-        <com.mysema.querydsl-version>3.0.0</com.mysema.querydsl-version>
+        <com.mysema.querydsl-version>3.2.0</com.mysema.querydsl-version>
         <bonecp-version>0.7.1.RELEASE</bonecp-version>
         <javax.servlet-version>2.5</javax.servlet-version>
         <cglib-version>2.2.2</cglib-version>
@@ -46,7 +46,7 @@
         <joda.time-version>2.1</joda.time-version>
         <org.bouncycastle-version>1.47</org.bouncycastle-version>
         <net.jawr-version>3.3.3</net.jawr-version>
-        <com.hazelcast-version>2.5.1</com.hazelcast-version>
+        <com.hazelcast-version>2.6</com.hazelcast-version>
     </properties>
 
     <repositories>

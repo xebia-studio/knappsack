@@ -35,11 +35,11 @@ public class DomainUserRequestDaoImpl extends BaseDao implements DomainUserReque
 
     @Override
     public List<DomainUserRequest> getAllRequests(Domain domain) {
-        return query().from(domainUserRequest).where(domainUserRequest.domain.eq(domain)).listDistinct(domainUserRequest);
+        return query().from(domainUserRequest).where(domainUserRequest.domain.eq(domain)).distinct().list(domainUserRequest);
     }
 
     @Override
     public List<DomainUserRequest> getAllRequests(Domain domain, Status status) {
-        return query().from(domainUserRequest).where(domainUserRequest.domain.eq(domain).and(domainUserRequest.status.eq(status))).listDistinct(domainUserRequest);
+        return query().from(domainUserRequest).where(domainUserRequest.domain.eq(domain).and(domainUserRequest.status.eq(status))).distinct().list(domainUserRequest);
     }
 }

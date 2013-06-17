@@ -41,17 +41,17 @@ public class InvitationDaoImpl extends BaseDao implements InvitationDao {
 
     @Override
     public List<Invitation> getByEmail(String email) {
-        return query().from(invitation).where(invitation.email.equalsIgnoreCase(email)).listDistinct(invitation);
+        return query().from(invitation).where(invitation.email.equalsIgnoreCase(email)).distinct().list(invitation);
     }
 
     @Override
     public List<Invitation> getAllForDomain(Long domainId) {
-        return query().from(invitation).where(invitation.domain.id.eq(domainId)).listDistinct(invitation);
+        return query().from(invitation).where(invitation.domain.id.eq(domainId)).distinct().list(invitation);
     }
 
     @Override
     public long countAll(Long domainId) {
-        return query().from(invitation).where(invitation.domain.id.eq(domainId)).countDistinct();
+        return query().from(invitation).where(invitation.domain.id.eq(domainId)).distinct().count();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class InvitationDaoImpl extends BaseDao implements InvitationDao {
 
     @Override
     public List<Invitation> getAllForEmailAndDomain(String email, Long domainId) {
-        return query().from(invitation).where(invitation.email.equalsIgnoreCase(email).and(invitation.domain.id.eq(domainId))).listDistinct(invitation);
+        return query().from(invitation).where(invitation.email.equalsIgnoreCase(email).and(invitation.domain.id.eq(domainId))).distinct().list(invitation);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class InvitationDaoImpl extends BaseDao implements InvitationDao {
                         .and(BooleanExpression.anyOf(domainExpressions.toArray(new BooleanExpression[domainExpressions.size()])))
                 ).groupBy(invitation.email).list(invitation.email);
 
-        return emails.size() - query().from(invitation).where(invitation.email.in(emailListSubQuery)).countDistinct();
+        return emails.size() - query().from(invitation).where(invitation.email.in(emailListSubQuery)).distinct().count();
     }
 
     @Override
@@ -109,7 +109,7 @@ public class InvitationDaoImpl extends BaseDao implements InvitationDao {
                         .and(domainBooleanExpression)
                 ).groupBy(invitation.email).list(invitation.email);
 
-        return query().from(invitation).where(invitation.email.in(emailListSubQuery)).listDistinct(invitation);
+        return query().from(invitation).where(invitation.email.in(emailListSubQuery)).distinct().list(invitation);
     }
 
     @Override
