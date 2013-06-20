@@ -387,11 +387,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.stripe</groupId>
-            <artifactId>stripe-java</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>com.googlecode.flyway</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
