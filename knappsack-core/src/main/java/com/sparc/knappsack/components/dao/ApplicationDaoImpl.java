@@ -85,7 +85,7 @@ public class ApplicationDaoImpl extends BaseDao implements ApplicationDao {
         JPAQuery query = cacheableQuery().from(application)
                 .where(getApplicationForUserBooleanExpression(user, applicationTypes));
 
-        return query.listDistinct(application);
+        return query.distinct().list(application);
     }
 
     public void update(Application application) {

@@ -85,7 +85,7 @@ public class OrganizationDaoImpl extends BaseDao implements OrganizationDao {
 
         return cacheableQuery().from(user)
                 .where(user.id.in(userIds))
-                .countDistinct();
+                .distinct().count();
     }
 
     @Override

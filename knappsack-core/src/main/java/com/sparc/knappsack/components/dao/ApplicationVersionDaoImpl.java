@@ -54,7 +54,7 @@ public class ApplicationVersionDaoImpl extends BaseDao implements ApplicationVer
     public List<ApplicationVersion> getAllByOrganizations(List<Organization> organizations, AppState... appStates) {
         return query().from(applicationVersion).join(applicationVersion.application, application)
                 .join(application.ownedGroup, group)
-                .join(group.organization, organization).where(organization.in(organizations).and(applicationVersion.appState.in(appStates))).listDistinct(applicationVersion);
+                .join(group.organization, organization).where(organization.in(organizations).and(applicationVersion.appState.in(appStates))).distinct().list(applicationVersion);
 
     }
 
@@ -62,7 +62,7 @@ public class ApplicationVersionDaoImpl extends BaseDao implements ApplicationVer
         return cacheableQuery().from(applicationVersion).join(applicationVersion.application, application)
                 .join(application.ownedGroup, group)
                 .join(group.organization, organization)
-                .where(organization.id.eq(organizationId).and(applicationVersion.appState.in(appStates))).listDistinct(applicationVersion);
+                .where(organization.id.eq(organizationId).and(applicationVersion.appState.in(appStates))).distinct().list(applicationVersion);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class ApplicationVersionDaoImpl extends BaseDao implements ApplicationVer
                                 .or(applicationVersionGuestGroup) /* ApplicationVersion is shared to a Guest Group which a user belongs */
                                 .or(applicationVersionOrgPublish)
                         )
-                ).listDistinct(applicationVersion);
+                ).distinct().list(applicationVersion);
     }
 
     @Override

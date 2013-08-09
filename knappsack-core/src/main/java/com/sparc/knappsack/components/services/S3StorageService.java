@@ -12,6 +12,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jets3t.service.*;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
 import org.jets3t.service.model.S3Object;
+import org.jets3t.service.model.StorageObject;
 import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.utils.RestUtils;
 import org.jets3t.service.utils.ServiceUtils;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.Security;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static com.sparc.knappsack.properties.SystemProperties.*;
 
@@ -85,7 +87,7 @@ public class S3StorageService extends AbstractStorageService implements RemoteSt
                 length = bytes.length;
                 inputStream = new ByteArrayInputStream(bytes);
             } catch (Exception e) {
-                log.info("Exception creating thumbnail", e);
+                log.error("Exception creating thumbnail", e);
                 saveMultipartFile(multipartFile, key, storageConfigurationId);
                 return createAppFile(key, multipartFile);
             }
@@ -212,10 +214,19 @@ public class S3StorageService extends AbstractStorageService implements RemoteSt
         Date expiryDate = cal.getTime();
 
         try {
+            S3StorageConfiguration storageConfiguration = (S3StorageConfiguration) appFile.getStorable().getStorageConfiguration();
+
             if (cloudfrontEnabled) {
-                return CloudFrontService.signUrlCanned(String.format("%s/%s", cloudfrontURL, RestUtils.encodeUrlPath(appFile.getRelativePath(), "/")), cloudfrontKeyPairID, cloudfrontPrivateKey, expiryDate);
+                String encodedUrlPath = RestUtils.encodeUrlPath(appFile.getRelativePath(), "/");
+
+                //Determine when the object was last modified in S3 and append the timestamp to the URL to force cloudfront cache busting
+                StorageObject storageObject = getS3Service(storageConfiguration).getObjectDetails(storageConfiguration.getBucketName(), appFile.getRelativePath());
+                if (storageObject != null && storageObject.getLastModifiedDate() != null) {
+                    encodedUrlPath += String.format("?%s", TimeUnit.MILLISECONDS.toSeconds(storageObject.getLastModifiedDate().getTime()));
+                }
+
+                return CloudFrontService.signUrlCanned(String.format("%s/%s", cloudfrontURL, encodedUrlPath), cloudfrontKeyPairID, cloudfrontPrivateKey, expiryDate);
             } else {
-                S3StorageConfiguration storageConfiguration = (S3StorageConfiguration) appFile.getStorable().getStorageConfiguration();
                 return getS3Service(storageConfiguration).createSignedGetUrl(storageConfiguration.getBucketName(), appFile.getRelativePath(), expiryDate, false);
             }
         } catch (CloudFrontServiceException e) {

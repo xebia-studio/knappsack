@@ -31,7 +31,7 @@ public class RoleDaoImpl extends BaseDao implements RoleDao {
     }
 
     public List<Role> getAll() {
-        return query().from(role).listDistinct(role);
+        return query().from(role).distinct().list(role);
     }
 
     public Role getByAuthority(String authority) {

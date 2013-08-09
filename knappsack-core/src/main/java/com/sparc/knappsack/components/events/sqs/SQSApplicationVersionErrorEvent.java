@@ -35,7 +35,7 @@ public class SQSApplicationVersionErrorEvent implements SQSEventDelivery {
                 userIds.add(userId);
                 success = emailService.sendApplicationVersionResignCompleteEmail(applicationVersionId, resignSuccess, ResignErrorType.GENERIC, userIds);
             } catch (ClassCastException e) {
-                log.info("Error casting params out of EmailModel:", e);
+                log.error("Error casting params out of EmailModel:", e);
             }
         }
 

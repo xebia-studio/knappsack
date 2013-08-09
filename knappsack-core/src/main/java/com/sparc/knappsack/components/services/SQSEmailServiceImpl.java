@@ -259,7 +259,7 @@ public class SQSEmailServiceImpl implements EmailService {
                         success = true;
                     }
                 } catch (AmazonClientException e) {
-                    log.info("Error sending email message to SQS: ", e);
+                    log.error("Error sending email message to SQS: ", e);
                 }
             }
         }
@@ -295,7 +295,7 @@ public class SQSEmailServiceImpl implements EmailService {
                         result = sqsClient.sendMessageBatch(request);
                         messagesSent += result.getSuccessful().size();
                     } catch (AmazonClientException e) {
-                        log.info("Error sending batch email messages to SQS: ", e);
+                        log.error("Error sending batch email messages to SQS: ", e);
                     }
                 }
             }

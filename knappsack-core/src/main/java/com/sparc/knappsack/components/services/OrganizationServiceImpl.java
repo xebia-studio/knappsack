@@ -759,7 +759,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public Organization getForGroupId(Long groupId) {
         if (groupId == null || groupId <= 0) {
-            log.info("Attempted to retrieve Organization for empty groupId.");
+            log.error("Attempted to retrieve Organization for empty groupId.");
             return null;
         }
 

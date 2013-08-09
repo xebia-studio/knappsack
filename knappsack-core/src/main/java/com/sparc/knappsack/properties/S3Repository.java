@@ -61,7 +61,7 @@ public class S3Repository {
 
         } catch (Exception e) {
             log.info("Bucket Name: " + bucketName + " File Name: " + fileKey);
-            log.info("Error reading properties from Amazon S3.", e);
+            log.error("Error reading properties from Amazon S3.", e);
         }
     }
 

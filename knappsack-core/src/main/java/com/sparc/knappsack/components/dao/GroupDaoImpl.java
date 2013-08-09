@@ -102,7 +102,7 @@ public class GroupDaoImpl extends BaseDao implements GroupDao {
                         .or(group.in(groupAdminDomains.list(domain.as(group.getClass()))))).and(getActiveOrganizationBooleanExpression(group.organization, user))
                 );
 
-        return mainQuery.listDistinct(group);
+        return mainQuery.distinct().list(group);
     }
 
     @Override
@@ -114,7 +114,7 @@ public class GroupDaoImpl extends BaseDao implements GroupDao {
                 .where(group.in(
                         userGroups.list(group)));
 
-        return mainQuery.listDistinct(group);
+        return mainQuery.distinct().list(group);
     }
 
     @Override
@@ -127,6 +127,6 @@ public class GroupDaoImpl extends BaseDao implements GroupDao {
                 .where(group.in(userGroups.list(group))
                         .and(getActiveOrganizationBooleanExpression(organization, user)));
 
-        return mainQuery.listDistinct(group);
+        return mainQuery.distinct().list(group);
     }
 }

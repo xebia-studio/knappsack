@@ -112,7 +112,7 @@ public class SQSEmailServiceWorker {
                 log.info(String.format("Deleting message from queue %s: %s", sqsQueueName, message.getMessageId()));
                 sqsClient.deleteMessage(request);
             } catch (AmazonClientException e) {
-                log.info(String.format("Error while deleting message from queue %s: %s", sqsQueueName, message.getMessageId()));
+                log.error(String.format("Error while deleting message from queue %s: %s", sqsQueueName, message.getMessageId()));
             }
         }
     }

@@ -78,7 +78,7 @@ public class DomainController extends AbstractController {
                 success = deliveryMechanism.sendNotifications(domainUserRequest);
             }
             if (!success) {
-                log.info("Error sending DomainAccessRequest email.", domainUserRequest);
+                log.error("Error sending DomainAccessRequest email.", domainUserRequest);
                 requestService.delete(domainUserRequest.getId());
             }
         }

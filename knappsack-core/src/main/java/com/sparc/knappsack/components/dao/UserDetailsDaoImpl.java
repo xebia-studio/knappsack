@@ -21,7 +21,7 @@ public class UserDetailsDaoImpl extends BaseDao implements UserDetailsDao {
     }
 
     public List<User> getAll() {
-        return query().from(userDetails).listDistinct(userDetails);
+        return query().from(userDetails).distinct().list(userDetails);
     }
 
     public User get(Long id) {
@@ -54,7 +54,7 @@ public class UserDetailsDaoImpl extends BaseDao implements UserDetailsDao {
 
     @Override
     public List<User> getBatch(List<Long> ids) {
-        return query().from(userDetails).where(userDetails.id.in(ids)).listDistinct(userDetails);
+        return query().from(userDetails).where(userDetails.id.in(ids)).distinct().list(userDetails);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class UserDetailsDaoImpl extends BaseDao implements UserDetailsDao {
         for (String email : emails) {
             formattedEmails.add(StringUtils.trimAllWhitespace(email.toLowerCase()));
         }
-        return cacheableQuery().from(userDetails).where(userDetails.email.in(formattedEmails)).listDistinct(userDetails);
+        return cacheableQuery().from(userDetails).where(userDetails.email.in(formattedEmails)).distinct().list(userDetails);
     }
 
     public void update(User user) {

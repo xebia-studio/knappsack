@@ -342,7 +342,9 @@ public class ApplicationVersionServiceImpl implements ApplicationVersionService 
                 applicationVersion.setProvisioningProfile(null);
             }
 
-            applicationVersionDao.deleteAllForApplication(application);
+            for (ApplicationVersion applicationVersion : application.getApplicationVersions()) {
+                applicationVersionDao.delete(applicationVersion);
+            }
         }
     }
 
