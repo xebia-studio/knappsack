@@ -31,7 +31,7 @@ public class KnappsackAbstractCache {
         managementCenterConfig.setEnabled(true);
         managementCenterConfig.setUrl(System.getProperty(SystemProperties.HAZELCAST_MANAGER_URL));
         config.setManagementCenterConfig(managementCenterConfig);
-        Join join = new Join();
+        JoinConfig join = new JoinConfig();
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setEnabled(true);
         awsConfig.setSecurityGroupName(System.getProperty(SystemProperties.EB_SECURITY_GROUP));

@@ -2,7 +2,7 @@ package com.sparc.knappsack.components.cache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.hibernate4.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import org.hibernate.cache.*;
 import org.hibernate.cache.spi.*;
 import org.hibernate.cache.spi.RegionFactory;

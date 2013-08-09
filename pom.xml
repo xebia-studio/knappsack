@@ -46,7 +46,7 @@
         <joda.time-version>2.1</joda.time-version>
         <org.bouncycastle-version>1.47</org.bouncycastle-version>
         <net.jawr-version>3.3.3</net.jawr-version>
-        <com.hazelcast-version>2.5.1</com.hazelcast-version>
+        <com.hazelcast-version>3.0</com.hazelcast-version>
     </properties>
 
     <repositories>
@@ -78,11 +78,17 @@
                 </exclusions>
             </dependency>
 
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-all</artifactId>
-            <version>${com.hazelcast-version}</version>
-        </dependency>
+            <dependency>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast</artifactId>
+                <version>${com.hazelcast-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast-hibernate4</artifactId>
+                <version>${com.hazelcast-version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.springframework</groupId>
