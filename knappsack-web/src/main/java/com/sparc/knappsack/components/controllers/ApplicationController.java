@@ -325,10 +325,10 @@ public class ApplicationController extends AbstractController {
     public void downloadApplicationIOS(HttpServletRequest request, HttpServletResponse response, @PathVariable String id, @RequestParam(required = true) String token, UserAgentInfo userAgentInfo) {
         checkRequiredEntity(applicationVersionService, Long.valueOf(id));
 
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
+        // HttpSession session = request.getSession(false);
+        // if (session != null) {
+        //     session.invalidate();
+        // }
 
         addApplicationToResponse(response, id, userAgentInfo, RequestMethod.GET.equals(RequestMethod.valueOf(request.getMethod())) ? true : false);
     }

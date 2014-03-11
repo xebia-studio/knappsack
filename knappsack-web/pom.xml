@@ -103,6 +103,7 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>2.3</version>
                 <configuration>
+                    <packagingExcludes>WEB-INF/lib/*.properties</packagingExcludes>
                     <webResources>
                         <resource>
                             <directory>.ebextensions</directory>
@@ -111,13 +112,6 @@
                             </includes>
                             <targetPath>.ebextensions</targetPath>
                         </resource>
-                        <!--<resource>-->
-                            <!--<filtering>true</filtering>-->
-                            <!--<directory>src/main/webapp</directory>-->
-                            <!--<includes>-->
-                                <!--<include>**/*.html</include>-->
-                            <!--</includes>-->
-                        <!--</resource>-->
                     </webResources>
                 </configuration>
             </plugin>
