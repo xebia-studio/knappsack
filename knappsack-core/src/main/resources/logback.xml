@@ -13,7 +13,7 @@
                 <connectionSource class="ch.qos.logback.core.db.DataSourceConnectionSource">
                     <dataSource class="com.jolbox.bonecp.BoneCPDataSource">
                         <driverClass>${prod.jdbc.driverClassName}</driverClass>
-                        <jdbcUrl>${JDBC_CONNECTION_STRING}</jdbcUrl>
+                        <jdbcUrl>${log.jdbc.url}</jdbcUrl>
                     </dataSource>
                 </connectionSource>
             </then>
@@ -45,7 +45,7 @@
     </logger>
 
     <logger name="net.jawr" additivity="false">
-        <if condition='!property("spring.profiles.active").equals("production")'>
+        <if condition='!property("spring.profiles.active").contains("production")'>
             <then>
                 <level value="DEBUG"/>
                 <appender-ref ref="STDOUT" />
@@ -61,7 +61,7 @@
     <!-- the level of the root level is set to DEBUG by default.       -->
     <root level="ERROR">
         <appender-ref ref="DB"/>
-        <if condition='!property("spring.profiles.active").equals("production")'>
+        <if condition='!property("spring.profiles.active").contains("production")'>
             <then>
                 <appender-ref ref="STDOUT"/>
             </then>

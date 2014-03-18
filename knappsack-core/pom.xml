@@ -461,6 +461,9 @@
                 <includes>
                     <include>**/*.properties</include>
                 </includes>
+                <excludes>
+                    <exclude>properties/jdbc.properties</exclude>
+                </excludes>
                 <filtering>true</filtering>
             </resource>
             <resource>

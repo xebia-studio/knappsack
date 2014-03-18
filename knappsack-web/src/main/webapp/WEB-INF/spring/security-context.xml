@@ -9,44 +9,51 @@
                 http://www.springframework.org/schema/security/oauth2 http://www.springframework.org/schema/security/spring-security-oauth2-1.0.xsd">
 
     <beans:beans profile="dev">
-        <context:property-placeholder location="classpath:properties/security_dev.properties" ignore-unresolvable="true"/>
+        <context:property-placeholder location="classpath:properties/security_dev.properties"
+                                      ignore-unresolvable="true"/>
         <beans:bean id="tokenRepository"
                     class="com.sparc.knappsack.security.CustomJdbcTokenRepositoryImpl">
             <beans:property name="dataSource" ref="dataSource"/>
-            <beans:property name="createTableOnStartup"  value="true"/>
+            <beans:property name="createTableOnStartup" value="true"/>
         </beans:bean>
         <beans:bean id="sessionRegistry" class="org.springframework.security.core.session.SessionRegistryImpl"/>
         <beans:bean id="singleUseTokenRepository" class="com.sparc.knappsack.security.SingleUseTokenRepositoryImpl"/>
         <beans:bean id="tokenStore" class="org.springframework.security.oauth2.provider.token.InMemoryTokenStore"/>
-        <beans:bean id="clientDetailsUserService" class="org.springframework.security.oauth2.provider.client.ClientDetailsUserDetailsService">
-            <beans:constructor-arg ref="clientDetails" />
+        <beans:bean id="clientDetailsUserService"
+                    class="org.springframework.security.oauth2.provider.client.ClientDetailsUserDetailsService">
+            <beans:constructor-arg ref="clientDetails"/>
         </beans:bean>
         <oauth:client-details-service id="clientDetails">
-            <oauth:client client-id="mobile_api_client"  authorized-grant-types="password,refresh_token" resource-ids="knappsack"
-                          authorities="ROLE_USER" scope="read,write" secret="kzI7QNsbne8KOlS" />
-            <oauth:client client-id="jenkins_api_client"  authorized-grant-types="password,refresh_token" resource-ids="knappsack"
-                          authorities="ROLE_USER" scope="read,write" secret="fjw8MHSI7HOTtBb" />
-            <oauth:client client-id="api_client"  authorized-grant-types="authorization_code" resource-ids="knappsack"
-                          authorities="ROLE_USER" scope="read,write" secret="d56974Vd7hRo7er" />
+            <oauth:client client-id="mobile_api_client" authorized-grant-types="password,refresh_token"
+                          resource-ids="knappsack"
+                          authorities="ROLE_USER" scope="read,write" secret="kzI7QNsbne8KOlS"/>
+            <oauth:client client-id="jenkins_api_client" authorized-grant-types="password,refresh_token"
+                          resource-ids="knappsack"
+                          authorities="ROLE_USER" scope="read,write" secret="fjw8MHSI7HOTtBb"/>
+            <oauth:client client-id="api_client" authorized-grant-types="authorization_code" resource-ids="knappsack"
+                          authorities="ROLE_USER" scope="read,write" secret="d56974Vd7hRo7er"/>
         </oauth:client-details-service>
     </beans:beans>
 
     <beans:beans profile="production">
-        <context:property-placeholder location="classpath:properties/security_production.properties" ignore-unresolvable="true"/>
+        <context:property-placeholder location="classpath:properties/security_production.properties"
+                                      ignore-unresolvable="true"/>
         <beans:bean id="tokenRepository"
                     class="com.sparc.knappsack.security.CustomJdbcTokenRepositoryImpl">
             <beans:property name="dataSource" ref="dataSource"/>
         </beans:bean>
         <beans:bean id="sessionRegistry" class="com.sparc.knappsack.security.MemCachedSessionRegistryImpl"/>
-        <beans:bean id="singleUseTokenRepository" class="com.sparc.knappsack.security.MemCachedSingleUseTokenRepositoryImpl"/>
+        <beans:bean id="singleUseTokenRepository"
+                    class="com.sparc.knappsack.security.MemCachedSingleUseTokenRepositoryImpl"/>
         <beans:bean id="tokenStore" class="org.springframework.security.oauth2.provider.token.JdbcTokenStore">
             <beans:constructor-arg name="dataSource" ref="dataSource"/>
         </beans:bean>
-        <beans:bean id="clientDetailsUserService" class="org.springframework.security.oauth2.provider.client.ClientDetailsUserDetailsService">
-            <beans:constructor-arg ref="clientDetails" />
+        <beans:bean id="clientDetailsUserService"
+                    class="org.springframework.security.oauth2.provider.client.ClientDetailsUserDetailsService">
+            <beans:constructor-arg ref="clientDetails"/>
         </beans:bean>
         <beans:bean id="clientDetails" class="org.springframework.security.oauth2.provider.JdbcClientDetailsService">
-            <beans:constructor-arg name="dataSource" ref="dataSource" />
+            <beans:constructor-arg name="dataSource" ref="dataSource"/>
         </beans:bean>
     </beans:beans>
 
@@ -59,8 +66,9 @@
 
         <!--<http pattern="/ios/**" disable-url-rewriting="true" security="none"/>-->
         <http pattern="/signup/**" disable-url-rewriting="true" security="none"/>
-        <http pattern="/resigner/**" use-expressions="true" disable-url-rewriting="true" authentication-manager-ref="resignerAuthenticationManager">
-            <http-basic />
+        <http pattern="/resigner/**" use-expressions="true" disable-url-rewriting="true"
+              authentication-manager-ref="resignerAuthenticationManager">
+            <http-basic/>
             <intercept-url pattern="/resigner/**" access="hasAnyRole('ROLE_ADMIN','ROLE_RESIGNER')"/>
         </http>
         <http pattern="/resources/**" disable-url-rewriting="true" security="none"/>
@@ -70,29 +78,32 @@
 
         <http pattern="/oauth/token" create-session="stateless" authentication-manager-ref="authenticationManager"
               entry-point-ref="oauthAuthenticationEntryPoint" xmlns="http://www.springframework.org/schema/security">
-            <intercept-url pattern="/oauth/token" access="IS_AUTHENTICATED_FULLY" />
-            <anonymous enabled="false" />
-            <http-basic entry-point-ref="oauthAuthenticationEntryPoint" />
+            <intercept-url pattern="/oauth/token" access="IS_AUTHENTICATED_FULLY"/>
+            <anonymous enabled="false"/>
+            <http-basic entry-point-ref="oauthAuthenticationEntryPoint"/>
             <!-- include this only if you need to authenticate clients via request parameters -->
-            <custom-filter ref="clientCredentialsTokenEndpointFilter" before="BASIC_AUTH_FILTER" />
-            <access-denied-handler ref="oauthAccessDeniedHandler" />
+            <custom-filter ref="clientCredentialsTokenEndpointFilter" before="BASIC_AUTH_FILTER"/>
+            <access-denied-handler ref="oauthAccessDeniedHandler"/>
         </http>
 
-        <http pattern="/api/**" use-expressions="true" create-session="never" entry-point-ref="oauthAuthenticationEntryPoint"
-              access-decision-manager-ref="accessDecisionManager" xmlns="http://www.springframework.org/schema/security">
-            <anonymous enabled="false" />
+        <http pattern="/api/**" use-expressions="true" create-session="never"
+              entry-point-ref="oauthAuthenticationEntryPoint"
+              access-decision-manager-ref="accessDecisionManager"
+              xmlns="http://www.springframework.org/schema/security">
+            <anonymous enabled="false"/>
             <!--<form-login login-page="/auth/login"  authentication-failure-url="${default.failure.url}" always-use-default-target="false"/>-->
-            <intercept-url pattern="/api" access="hasRole('ROLE_USER')" requires-channel="${requires.channel}" />
-            <custom-filter ref="resourceServerFilter" before="PRE_AUTH_FILTER" />
+            <intercept-url pattern="/api" access="hasRole('ROLE_USER')" requires-channel="${requires.channel}"/>
+            <custom-filter ref="resourceServerFilter" before="PRE_AUTH_FILTER"/>
             <!--<access-denied-handler ref="oauthAccessDeniedHandler" />-->
         </http>
 
-        <http use-expressions="true" disable-url-rewriting="true" auto-config="true" create-session="never" access-decision-manager-ref="accessDecisionManager">
+        <http use-expressions="true" disable-url-rewriting="true" auto-config="true" create-session="never"
+              access-decision-manager-ref="accessDecisionManager">
             <expression-handler ref="customMethodSecurityExpressionHandler"/>
 
             <anonymous/>
 
-            <session-management invalid-session-url="/auth/login" session-authentication-strategy-ref="sas" />
+            <session-management invalid-session-url="/auth/login" session-authentication-strategy-ref="sas"/>
 
             <!--<custom-filter ref="tokenFilter" before="FORM_LOGIN_FILTER"/>-->
 
@@ -109,29 +120,43 @@
             <intercept-url pattern="/manager/**" access="isAnyAdmin()"/>
             <intercept-url pattern="/**" access="hasRole('ROLE_USER')" requires-channel="${requires.channel}"/>
 
-            <form-login login-page="/auth/login" authentication-failure-url="${default.failure.url}" always-use-default-target="false" default-target-url="/"/>
+            <form-login login-page="/auth/login" authentication-failure-url="${default.failure.url}"
+                        always-use-default-target="false" default-target-url="/"/>
 
-            <openid-login authentication-failure-handler-ref="openIDAuthenticationFailureHandler" default-target-url="/" user-service-ref="userDetailsService" always-use-default-target="false">
+            <openid-login authentication-failure-handler-ref="openIDAuthenticationFailureHandler" default-target-url="/"
+                          user-service-ref="userDetailsService" always-use-default-target="false">
                 <attribute-exchange identifier-match="https://www.google.com/.*">
                     <openid-attribute name="email" type="http://axschema.org/contact/email" required="true" count="1"/>
-                    <openid-attribute name="firstname" type="http://axschema.org/namePerson/first" required="true" />
-                    <openid-attribute name="lastname" type="http://axschema.org/namePerson/last" required="true" />
+                    <openid-attribute name="firstname" type="http://axschema.org/namePerson/first" required="true"/>
+                    <openid-attribute name="lastname" type="http://axschema.org/namePerson/last" required="true"/>
                 </attribute-exchange>
                 <attribute-exchange identifier-match=".*yahoo.com.*">
                     <openid-attribute name="email" type="http://axschema.org/contact/email" required="true"/>
-                    <openid-attribute name="fullname" type="http://axschema.org/namePerson" required="true" />
+                    <openid-attribute name="fullname" type="http://axschema.org/namePerson" required="true"/>
                 </attribute-exchange>
                 <attribute-exchange identifier-match=".*myopenid.com.*">
                     <openid-attribute name="email" type="http://schema.openid.net/contact/email" required="true"/>
-                    <openid-attribute name="fullname" type="http://schema.openid.net/namePerson" required="true" />
+                    <openid-attribute name="fullname" type="http://schema.openid.net/namePerson" required="true"/>
                 </attribute-exchange>
             </openid-login>
 
-            <remember-me user-service-ref="userDetailsService" token-repository-ref="tokenRepository" token-validity-seconds="86400" key="key" />
+            <remember-me user-service-ref="userDetailsService" token-repository-ref="tokenRepository"
+                         token-validity-seconds="86400" key="key"/>
 
-            <logout invalidate-session="true" logout-success-url="/auth/login" logout-url="/auth/logout" delete-cookies="JSESSIONID"/>
+            <logout invalidate-session="true" logout-success-url="/auth/login" logout-url="/auth/logout"
+                    delete-cookies="JSESSIONID"/>
 
         </http>
+
+        <beans:bean id="secureChannelProcessor"
+                    class="fr.xebia.spring.security.web.access.channel.SecureChannelProcessor"/>
+        <beans:bean id="insecureChannelProcessor"
+                    class="fr.xebia.spring.security.web.access.channel.InsecureChannelProcessor"/>
+
+        <beans:bean class="xebia.spring.LoadBalancerPostProcessor">
+            <beans:property name="insecureChannelProcessor" ref="insecureChannelProcessor"/>
+            <beans:property name="secureChannelProcessor" ref="secureChannelProcessor"/>
+        </beans:bean>
 
         <beans:bean id="accessDecisionManager" class="org.springframework.security.access.vote.AffirmativeBased">
             <beans:property name="decisionVoters">
@@ -143,12 +168,14 @@
             </beans:property>
         </beans:bean>
 
-        <beans:bean id="sas" class="org.springframework.security.web.authentication.session.ConcurrentSessionControlStrategy">
+        <beans:bean id="sas"
+                    class="org.springframework.security.web.authentication.session.ConcurrentSessionControlStrategy">
             <beans:constructor-arg name="sessionRegistry" ref="sessionRegistry"/>
             <beans:property name="maximumSessions" value="-1"/>
         </beans:bean>
 
-        <beans:bean id="openIDAuthenticationFailureHandler" class="com.sparc.knappsack.security.OpenIDAuthenticationFailureHandler">
+        <beans:bean id="openIDAuthenticationFailureHandler"
+                    class="com.sparc.knappsack.security.OpenIDAuthenticationFailureHandler">
             <beans:property name="defaultFailureUrl" value="${default.failure.url}"/>
             <beans:property name="openIdRegistrationUrl" value="/auth/register"/>
         </beans:bean>
@@ -172,20 +199,23 @@
         </authentication-manager>
 
         <!--BEGIN OAuth configuration-->
-        <beans:bean id="oauthAuthenticationEntryPoint" class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">
-            <beans:property name="realmName" value="knappsack" />
+        <beans:bean id="oauthAuthenticationEntryPoint"
+                    class="org.springframework.security.oauth2.provider.error.OAuth2AuthenticationEntryPoint">
+            <beans:property name="realmName" value="knappsack"/>
         </beans:bean>
 
-        <oauth:resource-server id="resourceServerFilter" resource-id="knappsack" token-services-ref="tokenServices" />
+        <oauth:resource-server id="resourceServerFilter" resource-id="knappsack" token-services-ref="tokenServices"/>
 
-        <beans:bean id="oauthAccessDeniedHandler" class="org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler" />
+        <beans:bean id="oauthAccessDeniedHandler"
+                    class="org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler"/>
 
-        <beans:bean id="clientCredentialsTokenEndpointFilter" class="org.springframework.security.oauth2.provider.client.ClientCredentialsTokenEndpointFilter">
-            <beans:property name="authenticationManager" ref="clientAuthenticationManager" />
+        <beans:bean id="clientCredentialsTokenEndpointFilter"
+                    class="org.springframework.security.oauth2.provider.client.ClientCredentialsTokenEndpointFilter">
+            <beans:property name="authenticationManager" ref="clientAuthenticationManager"/>
         </beans:bean>
 
         <authentication-manager id="clientAuthenticationManager" xmlns="http://www.springframework.org/schema/security">
-            <authentication-provider user-service-ref="clientDetailsUserService" />
+            <authentication-provider user-service-ref="clientDetailsUserService"/>
         </authentication-manager>
 
         <beans:bean id="userApprovalHandler" class="com.sparc.knappsack.security.KnappsackUserApprovalHandler">
@@ -194,7 +224,7 @@
                     <beans:value>my-less-trusted-autoapprove-client</beans:value>
                 </beans:set>
             </beans:property>
-            <beans:property name="tokenServices" ref="tokenServices" />
+            <beans:property name="tokenServices" ref="tokenServices"/>
         </beans:bean>
 
         <oauth:authorization-server client-details-service-ref="clientDetails" token-services-ref="tokenServices"
@@ -207,21 +237,24 @@
         </oauth:authorization-server>
 
         <beans:bean id="tokenServices" class="org.springframework.security.oauth2.provider.token.DefaultTokenServices">
-            <beans:property name="tokenStore" ref="tokenStore" />
-            <beans:property name="supportRefreshToken" value="true" />
+            <beans:property name="tokenStore" ref="tokenStore"/>
+            <beans:property name="supportRefreshToken" value="true"/>
             <beans:property name="clientDetailsService" ref="clientDetails"/>
         </beans:bean>
         <!--END OAuth configuration-->
 
-        <beans:bean id="rememberMeAuthenticationProvider" class="org.springframework.security.authentication.RememberMeAuthenticationProvider">
+        <beans:bean id="rememberMeAuthenticationProvider"
+                    class="org.springframework.security.authentication.RememberMeAuthenticationProvider">
             <beans:property name="key" value="key"/>
         </beans:bean>
 
-        <beans:bean id="openIdAuthenticationProvider" class="org.springframework.security.openid.OpenIDAuthenticationProvider">
+        <beans:bean id="openIdAuthenticationProvider"
+                    class="org.springframework.security.openid.OpenIDAuthenticationProvider">
             <beans:property name="userDetailsService" ref="userDetailsService"/>
         </beans:bean>
 
-        <beans:bean id="usernamePasswordAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
+        <beans:bean id="usernamePasswordAuthenticationProvider"
+                    class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
             <beans:property name="userDetailsService" ref="userDetailsService"/>
             <beans:property name="passwordEncoder" ref="passwordEncoder"/>
             <beans:property name="saltSource" ref="saltSource"/>
@@ -231,7 +264,8 @@
             <beans:property name="userPropertyToUse" value="username"/>
         </beans:bean>
 
-        <beans:bean id="passwordEncoder" class="org.springframework.security.authentication.encoding.ShaPasswordEncoder">
+        <beans:bean id="passwordEncoder"
+                    class="org.springframework.security.authentication.encoding.ShaPasswordEncoder">
             <beans:constructor-arg value="256"/>
             <beans:property name="encodeHashAsBase64" value="true"/>
         </beans:bean>
@@ -271,11 +305,11 @@
         </beans:bean>
 
         <!--<beans:bean id="iosFilterChainProxy" class="org.springframework.security.web.FilterChainProxy">-->
-            <!--<beans:constructor-arg>-->
-                <!--<beans:list>-->
-                    <!--<filter-chain pattern="/ios/**" filters="tokenFilter" />-->
-                <!--</beans:list>-->
-            <!--</beans:constructor-arg>-->
+        <!--<beans:constructor-arg>-->
+        <!--<beans:list>-->
+        <!--<filter-chain pattern="/ios/**" filters="tokenFilter" />-->
+        <!--</beans:list>-->
+        <!--</beans:constructor-arg>-->
         <!--</beans:bean>-->
 
     </beans:beans>

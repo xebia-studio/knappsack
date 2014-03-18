@@ -1,0 +1,20 @@
+dev.mail.server.host=
+dev.mail.server.port=587
+dev.mail.server.protocol=smtp
+
+dev.mail.server.username=
+dev.mail.server.password=
+
+prod.mail.server.host=
+prod.mail.server.port=587
+prod.mail.server.protocol=smtp
+
+mail.send=true
+mail.smtp.auth=true
+mail.smtp.starttls.enable=true
+mail.smtp.quitwait=false
+
+#email from address
+NotificationEmailAddress=contact@example.com
+
+email.pattern=[A-Za-z0-9!#$%&'*+-/=?^_`{|}~]+@[A-Za-z0-9-]+(.[A-Za-z0-9-]+)*

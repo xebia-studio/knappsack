@@ -7,7 +7,7 @@
 
     <context:component-scan base-package="com.sparc.knappsack.components.services"/>
 
-    <beans:beans profile="production">
+    <beans:beans profile="amazon">
         <!--<context:property-placeholder location="classpath*:/properties/sqs.properties" ignore-unresolvable="true"/>-->
         <beans:bean id="emailDeliveryService" class="com.sparc.knappsack.components.services.SQSEmailServiceImpl">
             <property name="awsAccessKey" value="${AWS_ACCESS_KEY_ID}"/>
@@ -16,7 +16,7 @@
         </beans:bean>
     </beans:beans>
 
-    <beans:beans profile="dev">
+    <beans:beans profile="dev" >
         <context:property-placeholder location="classpath*:/properties/sqs.properties" ignore-unresolvable="true"/>
 
         <!--<beans:bean id="emailDeliveryService" class="com.sparc.knappsack.components.services.SQSEmailServiceImpl">-->
@@ -27,7 +27,7 @@
 
     </beans:beans>
 
-    <beans:beans profile="dev">
+    <beans:beans profile="dev,postfix">
         <beans:bean id="emailDeliveryService" class="com.sparc.knappsack.components.services.EmailServiceImpl"/>
     </beans:beans>
 

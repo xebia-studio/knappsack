@@ -55,7 +55,7 @@
         <!-- Declare a datasource that has pooling capabilities-->
         <beans:bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource" destroy-method="close">
             <beans:property name="driverClass" value="${prod.jdbc.driverClassName}" />
-            <beans:property name="jdbcUrl" value="${JDBC_CONNECTION_STRING}" />
+            <beans:property name="jdbcUrl" value="${prod.jdbc.url}" />
             <beans:property name="idleConnectionTestPeriodInMinutes" value="5"/>
             <beans:property name="idleMaxAgeInMinutes" value="2"/>
             <beans:property name="maxConnectionsPerPartition" value="30"/>
@@ -67,7 +67,7 @@
         </beans:bean>
 
         <jdbc:initialize-database data-source="dataSource" enabled="true" ignore-failures="DROPS">
-            <jdbc:script location="${prod.jdbc.loggingStartupScript}"/>
+            <jdbc:script location="${log.jdbc.loggingStartupScript}"/>
         </jdbc:initialize-database>
 
     </beans:beans>

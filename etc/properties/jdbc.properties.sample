@@ -1,0 +1,12 @@
+# database properties
+
+#Production - MySQL
+prod.jdbc.url=jdbc:mysql://localhost:3306/knappsack?user=root&useUnicode=true&characterEncoding=utf8
+prod.jdbc.driverClassName=com.mysql.jdbc.Driver
+prod.jdbc.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+prod.jdbc.springOauthSchema=classpath:spring_oauth_schema.sql
+prod.jdbc.target-database=MySQL
+
+log.jdbc.url=jdbc:mysql://localhost:3306/knappsack_log?user=root&useUnicode=true&characterEncoding=utf8
+log.jdbc.loggingStartupScript=classpath:logbackStartupMySQL.sql
+

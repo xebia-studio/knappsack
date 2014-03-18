@@ -10,10 +10,10 @@
             <property name="host" value="${prod.mail.server.host}" />
             <property name="port" value="${prod.mail.server.port}" />
             <property name="protocol" value="${prod.mail.server.protocol}" />
-            <property name="username" value="${SesSMTPUsername}" />
-            <property name="password" value="${SesSMTPPassword}" />
+            <property name="username" value="${prod.mail.server.username}" />
+            <property name="password" value="${prod.mail.server.password}" />
             <property name="javaMailProperties">
-                <util:properties location="classpath:properties/javamail.properties" />
+                <util:properties location="classpath:properties/mail.properties" />
             </property>
         </bean>
     </beans>
@@ -26,7 +26,7 @@
             <property name="username" value="${dev.mail.server.username}" />
             <property name="password" value="${dev.mail.server.password}" />
             <property name="javaMailProperties">
-                <util:properties location="classpath:properties/javamail.properties" />
+                <util:properties location="classpath:properties/mail.properties" />
             </property>
         </bean>
     </beans>

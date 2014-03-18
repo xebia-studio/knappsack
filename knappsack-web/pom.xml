@@ -103,7 +103,7 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>2.3</version>
                 <configuration>
-                    <packagingExcludes>WEB-INF/lib/*.properties</packagingExcludes>
+                    <!--<packagingExcludes>WEB-INF/lib/*.properties</packagingExcludes>-->
                     <webResources>
                         <resource>
                             <directory>.ebextensions</directory>
@@ -153,6 +153,18 @@
                 </executions>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.tomcat.maven</groupId>
+                <artifactId>tomcat7-maven-plugin</artifactId>
+                <version>2.0</version>
+                <configuration>
+                    <path>/</path>
+                    <additionalClasspathDirs>${project.parent.basedir}/etc/</additionalClasspathDirs>
+                    <httpsPort>8443</httpsPort>
+                    <keystoreFile>${project.parent.basedir}/etc/keystore-localhost</keystoreFile>
+                    <keystorePass>changeit</keystorePass>
+                </configuration>
+            </plugin>
             <!--<plugin>-->
                 <!--<groupId>net.jawr</groupId>-->
                 <!--<artifactId>maven-jawr-plugin</artifactId>-->
