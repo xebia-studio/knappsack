@@ -17,87 +17,84 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 
-import static junit.framework.Assert.*;
-import static org.mockito.Mockito.*;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ApplicationVersionValidatorTest {
 
-    @Mock
-    private ApplicationVersionService applicationVersionService;
+  @Mock
+  private ApplicationVersionService applicationVersionService;
+  @Mock
+  private ApplicationService applicationService;
+  @Mock
+  private UserService userService;
+  @InjectMocks
+  private ApplicationVersionValidator validator = new ApplicationVersionValidator();
+  @Mock
+  private MockMultipartFile mockMultipartFile;
+  @Mock
+  private GroupService groupService;
+  @Mock
+  private OrganizationService organizationService;
+  private Errors errors;
+  private ApplicationVersionForm applicationVersionForm;
+  private User user = mock(User.class);
 
-    @Mock
-    private ApplicationService applicationService;
+  @Before
+  public void setup() {
+    applicationVersionForm = new ApplicationVersionForm();
+    errors = new BeanPropertyBindingResult(applicationVersionForm, "applicationVersionForm");
+    when(userService.getUserFromSecurityContext()).thenReturn(user);
+  }
 
-    @Mock
-    private UserService userService;
+  @Test
+  public void testValidatorSupportsClass() {
+    assertTrue(validator.supports(applicationVersionForm.getClass()));
+  }
 
-    @InjectMocks
-    private ApplicationVersionValidator validator = new ApplicationVersionValidator();
+  @Test
+  public void testValidatorNotSupportsClass() {
+    assertFalse(validator.supports(String.class));
+  }
 
-    @Mock
-    private MockMultipartFile mockMultipartFile;
+  @Test
+  public void testValid() {
+    applicationVersionForm.setVersionName("name");
+    applicationVersionForm.setRecentChanges("changes");
+    applicationVersionForm.setAppState(AppState.GROUP_PUBLISH);
+    applicationVersionForm.setAppFile(mockMultipartFile);
 
-    @Mock
-    private GroupService groupService;
+    Organization organization = new Organization();
+    organization.setId(1l);
+    organization.setDomainConfiguration(new DomainConfiguration());
 
-    @Mock
-    private OrganizationService organizationService;
+    Group group = new Group();
+    group.setId(1l);
+    group.setDomainConfiguration(new DomainConfiguration());
+    group.setOrganization(organization);
 
-    private Errors errors;
-    private ApplicationVersionForm applicationVersionForm;
-    private User user = mock(User.class);
+    Application parentApplication = new Application();
+    parentApplication.setApplicationType(ApplicationType.ANDROID);
 
-    @Before
-    public void setup() {
-        applicationVersionForm = new ApplicationVersionForm();
-        errors = new BeanPropertyBindingResult(applicationVersionForm, "applicationVersionForm");
-        when(userService.getUserFromSecurityContext()).thenReturn(user);
-    }
-
-    @Test
-    public void testValidatorSupportsClass() {
-        assertTrue(validator.supports(applicationVersionForm.getClass()));
-    }
-
-    @Test
-    public void testValidatorNotSupportsClass() {
-        assertFalse(validator.supports(String.class));
-    }
-
-    @Test
-    public void testValid() {
-        applicationVersionForm.setVersionName("name");
-        applicationVersionForm.setRecentChanges("changes");
-        applicationVersionForm.setAppState(AppState.GROUP_PUBLISH);
-        applicationVersionForm.setAppFile(mockMultipartFile);
-
-        Organization organization = new Organization();
-        organization.setId(1l);
-        organization.setDomainConfiguration(new DomainConfiguration());
-
-        Group group = new Group();
-        group.setId(1l);
-        group.setDomainConfiguration(new DomainConfiguration());
-        group.setOrganization(organization);
-
-        Application parentApplication = new Application();
-        parentApplication.setApplicationType(ApplicationType.ANDROID);
-
-        when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
-        when(mockMultipartFile.getOriginalFilename()).thenReturn(".apk");
-        when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
-        when(user.getActiveOrganization()).thenReturn(organization);
+    when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
+    when(mockMultipartFile.getOriginalFilename()).thenReturn(".apk");
+    when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+    when(user.getActiveOrganization()).thenReturn(organization);
 
 //        Mockito.when(organizationService.get(group.getOrganization().getId())).thenReturn(organization);
 
-        validator.validate(applicationVersionForm, errors);
+    validator.validate(applicationVersionForm, errors);
 
-        assertFalse(errors.hasErrors());
-    }
+    assertFalse(errors.hasErrors());
+  }
 
-    @Test
-    public void testAllFieldsInvalid() {
+  @Test
+  public void testAllFieldsInvalid() {
 //        validator.validate(uploadApplicationVersion, errors);
 //
 //        assertTrue(errors.hasErrors());
@@ -107,41 +104,41 @@ public class ApplicationVersionValidatorTest {
 //        assertNotNull(errors.getFieldError("appState"));
 //        assertNotNull(errors.getFieldError("appFile"));
 
-        setup();
-        applicationVersionForm.setVersionName("");
-        applicationVersionForm.setRecentChanges("");
-        applicationVersionForm.setAppFile(mockMultipartFile);
+    setup();
+    applicationVersionForm.setVersionName("");
+    applicationVersionForm.setRecentChanges("");
+    applicationVersionForm.setAppFile(mockMultipartFile);
 
-        Organization organization = new Organization();
-        organization.setId(1l);
-        organization.setDomainConfiguration(new DomainConfiguration());
+    Organization organization = new Organization();
+    organization.setId(1l);
+    organization.setDomainConfiguration(new DomainConfiguration());
 
-        Group group = new Group();
-        group.setId(1l);
-        group.setDomainConfiguration(new DomainConfiguration());
-        group.setOrganization(organization);
+    Group group = new Group();
+    group.setId(1l);
+    group.setDomainConfiguration(new DomainConfiguration());
+    group.setOrganization(organization);
 
-        when(mockMultipartFile.isEmpty()).thenReturn(true);
-        when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
-        when(user.getActiveOrganization()).thenReturn(organization);
+    when(mockMultipartFile.isEmpty()).thenReturn(true);
+    when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+    when(user.getActiveOrganization()).thenReturn(organization);
 
-        Application application = mock(Application.class);
-        when(application.getApplicationType()).thenReturn(ApplicationType.ANDROID);
-        when(applicationService.get(anyLong())).thenReturn(application);
+    Application application = mock(Application.class);
+    when(application.getApplicationType()).thenReturn(ApplicationType.ANDROID);
+    when(applicationService.get(anyLong())).thenReturn(application);
 
-        validator.validate(applicationVersionForm, errors);
+    validator.validate(applicationVersionForm, errors);
 
-        assertTrue(errors.hasErrors());
-        Assert.assertEquals(errors.getErrorCount(), 4);
-        assertNotNull(errors.getFieldError("versionName"));
-        assertNotNull(errors.getFieldError("recentChanges"));
-        assertNotNull(errors.getFieldError("appState"));
-        assertNotNull(errors.getFieldError("appFile"));
-    }
+    assertTrue(errors.hasErrors());
+    Assert.assertEquals(errors.getErrorCount(), 4);
+    assertNotNull(errors.getFieldError("versionName"));
+    assertNotNull(errors.getFieldError("recentChanges"));
+    assertNotNull(errors.getFieldError("appState"));
+    assertNotNull(errors.getFieldError("appFile"));
+  }
 
-    @Test
-    public void testAllFieldsInvalidEditing() {
-        applicationVersionForm.setEditing(true);
+  @Test
+  public void testAllFieldsInvalidEditing() {
+    applicationVersionForm.setEditing(true);
 //        validator.validate(uploadApplicationVersion, errors);
 
 //        assertTrue(errors.hasErrors());
@@ -150,109 +147,109 @@ public class ApplicationVersionValidatorTest {
 //        assertNotNull(errors.getFieldError("recentChanges"));
 //        assertNotNull(errors.getFieldError("appState"));
 
-        setup();
-        applicationVersionForm.setEditing(true);
-        applicationVersionForm.setAppFile(mockMultipartFile);
+    setup();
+    applicationVersionForm.setEditing(true);
+    applicationVersionForm.setAppFile(mockMultipartFile);
 
-        Organization organization = new Organization();
-        organization.setId(1l);
-        organization.setDomainConfiguration(new DomainConfiguration());
+    Organization organization = new Organization();
+    organization.setId(1l);
+    organization.setDomainConfiguration(new DomainConfiguration());
 
-        Group group = new Group();
-        group.setId(1l);
-        group.setDomainConfiguration(new DomainConfiguration());
-        group.setOrganization(organization);
+    Group group = new Group();
+    group.setId(1l);
+    group.setDomainConfiguration(new DomainConfiguration());
+    group.setOrganization(organization);
 
-        ApplicationVersion appVersion = mock(ApplicationVersion.class);
-        appVersion.setAppState(AppState.GROUP_PUBLISH);
+    ApplicationVersion appVersion = mock(ApplicationVersion.class);
+    appVersion.setAppState(AppState.GROUP_PUBLISH);
 
-        when(applicationVersionService.get(applicationVersionForm.getId())).thenReturn(appVersion);
-        when(mockMultipartFile.isEmpty()).thenReturn(true);
-        when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
-        when(user.getActiveOrganization()).thenReturn(organization);
+    when(applicationVersionService.get(applicationVersionForm.getId())).thenReturn(appVersion);
+    when(mockMultipartFile.isEmpty()).thenReturn(true);
+    when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+    when(user.getActiveOrganization()).thenReturn(organization);
 
-        Application application = mock(Application.class);
-        when(application.getApplicationType()).thenReturn(ApplicationType.ANDROID);
-        when(applicationService.get(anyLong())).thenReturn(application);
+    Application application = mock(Application.class);
+    when(application.getApplicationType()).thenReturn(ApplicationType.ANDROID);
+    when(applicationService.get(anyLong())).thenReturn(application);
 
-        validator.validate(applicationVersionForm, errors);
+    validator.validate(applicationVersionForm, errors);
 
-        assertTrue(errors.hasErrors());
+    assertTrue(errors.hasErrors());
+  }
+
+  @Test
+  public void testInvalidAppFileExtensions() {
+    for (ApplicationType applicationType : ApplicationType.values()) {
+      if (ApplicationType.OTHER.equals(applicationType)) {
+        continue;
+      }
+      applicationVersionForm.setAppFile(mockMultipartFile);
+
+      Application parentApplication = new Application();
+      parentApplication.setApplicationType(applicationType);
+
+
+      Organization organization = new Organization();
+      organization.setId(1l);
+      organization.setDomainConfiguration(new DomainConfiguration());
+
+      Group group = new Group();
+      group.setId(1l);
+      group.setDomainConfiguration(new DomainConfiguration());
+      group.setOrganization(organization);
+
+
+      when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
+      when(mockMultipartFile.getOriginalFilename()).thenReturn(".invalid");
+      when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+      when(user.getActiveOrganization()).thenReturn(organization);
+
+      validator.validate(applicationVersionForm, errors);
+
+      assertTrue(errors.hasErrors());
+      assertNotNull(errors.getFieldError("appFile"));
+
+      setup();
     }
+  }
 
-    @Test
-    public void testInvalidAppFileExtensions() {
-        for (ApplicationType applicationType : ApplicationType.values()) {
-            if (ApplicationType.OTHER.equals(applicationType)) {
-                continue;
-            }
-            applicationVersionForm.setAppFile(mockMultipartFile);
+  @Test
+  public void testInvalidAppFileExtensionsEditing() {
+    for (ApplicationType applicationType : ApplicationType.values()) {
+      if (ApplicationType.OTHER.equals(applicationType)) {
+        continue;
+      }
+      applicationVersionForm.setEditing(true);
+      applicationVersionForm.setAppFile(mockMultipartFile);
 
-            Application parentApplication = new Application();
-            parentApplication.setApplicationType(applicationType);
-
-
-            Organization organization = new Organization();
-            organization.setId(1l);
-            organization.setDomainConfiguration(new DomainConfiguration());
-
-            Group group = new Group();
-            group.setId(1l);
-            group.setDomainConfiguration(new DomainConfiguration());
-            group.setOrganization(organization);
+      Application parentApplication = new Application();
+      parentApplication.setApplicationType(applicationType);
 
 
-            when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
-            when(mockMultipartFile.getOriginalFilename()).thenReturn(".invalid");
-            when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
-            when(user.getActiveOrganization()).thenReturn(organization);
+      Organization organization = new Organization();
+      organization.setId(1l);
+      organization.setDomainConfiguration(new DomainConfiguration());
 
-            validator.validate(applicationVersionForm, errors);
+      Group group = new Group();
+      group.setId(1l);
+      group.setDomainConfiguration(new DomainConfiguration());
+      group.setOrganization(organization);
 
-            assertTrue(errors.hasErrors());
-            assertNotNull(errors.getFieldError("appFile"));
+      ApplicationVersion appVersion = mock(ApplicationVersion.class);
+      appVersion.setAppState(AppState.GROUP_PUBLISH);
+      when(applicationVersionService.get(applicationVersionForm.getId())).thenReturn(appVersion);
 
-            setup();
-        }
+
+      when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
+      when(mockMultipartFile.getOriginalFilename()).thenReturn(".invalid");
+      when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
+
+      validator.validate(applicationVersionForm, errors);
+
+      assertTrue(errors.hasErrors());
+      assertNotNull(errors.getFieldError("appFile"));
+
+      setup();
     }
-
-    @Test
-    public void testInvalidAppFileExtensionsEditing() {
-        for (ApplicationType applicationType : ApplicationType.values()) {
-            if (ApplicationType.OTHER.equals(applicationType)) {
-                continue;
-            }
-            applicationVersionForm.setEditing(true);
-            applicationVersionForm.setAppFile(mockMultipartFile);
-
-            Application parentApplication = new Application();
-            parentApplication.setApplicationType(applicationType);
-
-
-            Organization organization = new Organization();
-            organization.setId(1l);
-            organization.setDomainConfiguration(new DomainConfiguration());
-
-            Group group = new Group();
-            group.setId(1l);
-            group.setDomainConfiguration(new DomainConfiguration());
-            group.setOrganization(organization);
-
-            ApplicationVersion appVersion = mock(ApplicationVersion.class);
-            appVersion.setAppState(AppState.GROUP_PUBLISH);
-            when(applicationVersionService.get(applicationVersionForm.getId())).thenReturn(appVersion);
-
-
-            when(applicationService.get(Matchers.anyLong())).thenReturn(parentApplication);
-            when(mockMultipartFile.getOriginalFilename()).thenReturn(".invalid");
-            when(organizationService.getForGroupId(group.getId())).thenReturn(organization);
-
-            validator.validate(applicationVersionForm, errors);
-
-            assertTrue(errors.hasErrors());
-            assertNotNull(errors.getFieldError("appFile"));
-
-            setup();
-        }
-    }
+  }
 }

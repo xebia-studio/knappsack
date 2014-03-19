@@ -69,6 +69,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.googlecode.plist</groupId>
+            <artifactId>dd-plist</artifactId>
+            <version>1.8</version> <!-- corresponds to r108 -->
+        </dependency>
+
+        <dependency>
             <groupId>com.yahoo.platform.yui</groupId>
             <artifactId>yuicompressor</artifactId>
             <version>2.4.7</version>
@@ -166,53 +172,53 @@
                 </configuration>
             </plugin>
             <!--<plugin>-->
-                <!--<groupId>net.jawr</groupId>-->
-                <!--<artifactId>maven-jawr-plugin</artifactId>-->
-                <!--<version>1.4.2</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--&lt;!&ndash; Use this phase so that maven war includes our bundles &ndash;&gt;-->
-                        <!--<phase>prepare-package</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>bundle</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-                <!--<configuration>-->
-                    <!--<generateCDNFiles>true</generateCDNFiles>-->
-                    <!--<springConfigFiles>classpath:spring-JawrConfig.xml</springConfigFiles>-->
-                <!--</configuration>-->
+            <!--<groupId>net.jawr</groupId>-->
+            <!--<artifactId>maven-jawr-plugin</artifactId>-->
+            <!--<version>1.4.2</version>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--&lt;!&ndash; Use this phase so that maven war includes our bundles &ndash;&gt;-->
+            <!--<phase>prepare-package</phase>-->
+            <!--<goals>-->
+            <!--<goal>bundle</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--<configuration>-->
+            <!--<generateCDNFiles>true</generateCDNFiles>-->
+            <!--<springConfigFiles>classpath:spring-JawrConfig.xml</springConfigFiles>-->
+            <!--</configuration>-->
             <!--</plugin>-->
 
             <!--<plugin>-->
-                <!--<groupId>com.samaxes.maven</groupId>-->
-                <!--<artifactId>minify-maven-plugin</artifactId>-->
-                <!--<version>1.5.2</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<id>default-minify</id>-->
-                        <!--<phase>process-resources</phase>-->
-                        <!--<configuration>-->
-                            <!--<cssSourceDir>resources</cssSourceDir>-->
-                            <!--<jsSourceDir>resources</jsSourceDir>-->
-                            <!--<cssTargetDir>resources/css</cssTargetDir>-->
-                            <!--<jsTargetDir>resources/js</jsTargetDir>-->
-                            <!--<skipMerge>true</skipMerge>-->
-                            <!--<cssSourceIncludes>-->
-                                <!--<cssSourceInclude>**/*.css</cssSourceInclude>-->
-                            <!--</cssSourceIncludes>-->
-                            <!--<jsSourceIncludes>-->
-                                <!--<jsSourceInclude>**/*.js</jsSourceInclude>-->
-                            <!--</jsSourceIncludes>-->
-                            <!--<jsSourceExcludes>-->
-                                <!--<jsSourceExclude>**/*.min.js</jsSourceExclude>-->
-                            <!--</jsSourceExcludes>-->
-                        <!--</configuration>-->
-                        <!--<goals>-->
-                            <!--<goal>minify</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
+            <!--<groupId>com.samaxes.maven</groupId>-->
+            <!--<artifactId>minify-maven-plugin</artifactId>-->
+            <!--<version>1.5.2</version>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<id>default-minify</id>-->
+            <!--<phase>process-resources</phase>-->
+            <!--<configuration>-->
+            <!--<cssSourceDir>resources</cssSourceDir>-->
+            <!--<jsSourceDir>resources</jsSourceDir>-->
+            <!--<cssTargetDir>resources/css</cssTargetDir>-->
+            <!--<jsTargetDir>resources/js</jsTargetDir>-->
+            <!--<skipMerge>true</skipMerge>-->
+            <!--<cssSourceIncludes>-->
+            <!--<cssSourceInclude>**/*.css</cssSourceInclude>-->
+            <!--</cssSourceIncludes>-->
+            <!--<jsSourceIncludes>-->
+            <!--<jsSourceInclude>**/*.js</jsSourceInclude>-->
+            <!--</jsSourceIncludes>-->
+            <!--<jsSourceExcludes>-->
+            <!--<jsSourceExclude>**/*.min.js</jsSourceExclude>-->
+            <!--</jsSourceExcludes>-->
+            <!--</configuration>-->
+            <!--<goals>-->
+            <!--<goal>minify</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
             <!--</plugin>-->
         </plugins>
     </build>

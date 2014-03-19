@@ -1,9 +1,6 @@
 package com.sparc.knappsack.components.services;
 
-import com.sparc.knappsack.comparators.ApplicationVersionComparator;
-import com.sparc.knappsack.comparators.CategoryNameComparator;
-import com.sparc.knappsack.comparators.GroupNameComparator;
-import com.sparc.knappsack.comparators.OrganizationNameComparator;
+import com.sparc.knappsack.comparators.*;
 import com.sparc.knappsack.components.dao.*;
 import com.sparc.knappsack.components.entities.*;
 import com.sparc.knappsack.components.mapper.Mapper;
@@ -377,7 +374,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<ApplicationVersion> getApplicationVersions(User user, Long applicationId, SortOrder sortOrder) {
-        TreeSet<ApplicationVersion> versionsSet = new TreeSet<ApplicationVersion>(new ApplicationVersionComparator());
+        TreeSet<ApplicationVersion> versionsSet = new TreeSet<ApplicationVersion>(new ApplicationVersionIdComparator());
         if (user != null && applicationId != null && applicationId > 0) {
             List<ApplicationVersion> returnedVersions = applicationVersionDao.getAllByApplicationForUser(applicationId, user);
             if (returnedVersions != null) {
