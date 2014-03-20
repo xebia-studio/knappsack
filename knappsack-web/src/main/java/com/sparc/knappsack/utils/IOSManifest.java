@@ -1,7 +1,6 @@
 package com.sparc.knappsack.utils;
 
 import com.dd.plist.NSDictionary;
-import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
 import org.xml.sax.SAXException;
 
@@ -47,19 +46,16 @@ public class IOSManifest extends Manifest {
     NSDictionary rootDict;
     try {
       rootDict = (NSDictionary) PropertyListParser.parse(manifest);
-      versionName = rootDict.get("CFBundleShortVersionString").toString();
-      label = rootDict.get("CFBundleName").toString();
-    } catch (PropertyListFormatException e) {
-      log.warn("cannot parse file from app manifest");
+      versionName = rootDict.objectForKey("CFBundleShortVersionString").toString();
+      label = rootDict.objectForKey("CFBundleName").toString();
     } catch (ParseException e) {
       log.warn("cannot parse file from app manifest");
     } catch (ParserConfigurationException e) {
       log.warn("cannot parse file from app manifest");
     } catch (SAXException e) {
       log.warn("cannot parse file from app manifest");
+    } catch (java.lang.Exception e) {
+      log.warn("cannot parse file from app manifest");
     }
-
   }
-
-
 }

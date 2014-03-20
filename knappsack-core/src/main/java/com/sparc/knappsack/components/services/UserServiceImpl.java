@@ -389,7 +389,7 @@ public class UserServiceImpl implements UserService {
         List<ApplicationVersion> sortedList = new ArrayList<ApplicationVersion>();
         Map<String, ApplicationVersion> versionsMap = new HashMap<String, ApplicationVersion>();
 
-        if (sortOrder.equals(SortOrder.ASCENDING) || sortOrder.equals(SortOrder.DESCENDING)) {
+        if (SortOrder.ASCENDING.equals(sortOrder) || SortOrder.DESCENDING.equals(sortOrder)) {
             Collections.sort(versions, new ApplicationVersionIdComparator(sortOrder));
         }
 
@@ -409,7 +409,7 @@ public class UserServiceImpl implements UserService {
 
         sortedList.addAll(versionsMap.values());
 
-        if (sortOrder.equals(SortOrder.ASCENDING) || sortOrder.equals(SortOrder.DESCENDING)) {
+        if (SortOrder.ASCENDING.equals(sortOrder) || SortOrder.DESCENDING.equals(sortOrder)) {
             Collections.sort(sortedList, new ApplicationVersionIdComparator(sortOrder));
         }
 
