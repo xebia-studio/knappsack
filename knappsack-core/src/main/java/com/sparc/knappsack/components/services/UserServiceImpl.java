@@ -24,7 +24,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.*;
 
-@Transactional( propagation = Propagation.REQUIRED )
+@Transactional(propagation = Propagation.REQUIRED)
 @Service("userService")
 public class UserServiceImpl implements UserService {
 
@@ -214,16 +214,16 @@ public class UserServiceImpl implements UserService {
     public List<Organization> getOrganizations(User user, SortOrder sortOrder) {
         TreeSet<Organization> organizations = new TreeSet<Organization>(new OrganizationNameComparator());
 
-        if(user.isSystemAdmin()) {
+        if (user.isSystemAdmin()) {
             organizations.addAll(organizationDao.getAll());
         } else {
 
             List<Domain> domains = domainService.getAll(user, DomainType.ORGANIZATION, DomainType.GROUP);
             for (Domain domain : domains) {
-                if(DomainType.ORGANIZATION.equals(domain.getDomainType())) {
+                if (DomainType.ORGANIZATION.equals(domain.getDomainType())) {
                     organizations.add((Organization) domain);
-                } else if(DomainType.GROUP.equals(domain.getDomainType())) {
-                    organizations.add(((Group)domain).getOrganization());
+                } else if (DomainType.GROUP.equals(domain.getDomainType())) {
+                    organizations.add(((Group) domain).getOrganization());
                 }
             }
         }
@@ -282,7 +282,7 @@ public class UserServiceImpl implements UserService {
 
         if (user != null) {
 
-            if(user.isSystemAdmin() && user.getActiveOrganization() != null) {
+            if (user.isSystemAdmin() && user.getActiveOrganization() != null) {
                 groups.addAll(user.getActiveOrganization().getGroups());
             } else {
                 groups.addAll(groupDao.getAdministeredGroupsForUser(user));
@@ -320,7 +320,7 @@ public class UserServiceImpl implements UserService {
     public List<Contacts> getContacts(User user) {
         List<Contacts> contactsList = new ArrayList<Contacts>();
         Organization organization = user.getActiveOrganization();
-        if(organization == null) {
+        if (organization == null) {
             return contactsList;
         }
         Contacts contacts = new Contacts();
@@ -350,48 +350,70 @@ public class UserServiceImpl implements UserService {
         return userDetailsDao.get(ids);
     }
 
-//    public List<ApplicationVersion> getApplicationVersions(User user) {
-//
-//        List<Application>
-//
-//        List<Group> groups = getGroups(user);
-//        Set<ApplicationVersion> applicationVersions = new HashSet<ApplicationVersion>();
-//        for (Group group : groups) {
-//            applicationVersions.addAll(group.getGuestApplicationVersions());
-//            List<Application> applications = group.getOwnedApplications();
-//            for (Application application : applications) {
-//                applicationVersions.addAll(application.getApplicationVersions());
-//            }
-//        }
-//
-//        Organization activeOrganization = user.getActiveOrganization();
-//        if(activeOrganization != null) {
-//            applicationVersions.addAll(applicationVersionService.getAll(activeOrganization.getId(), AppState.ORGANIZATION_PUBLISH, AppState.ORG_PUBLISH_REQUEST));
-//        }
-//
-//        return new ArrayList<ApplicationVersion>(applicationVersions);
-//    }
+    //    public List<ApplicationVersion> getApplicationVersions(User user) {
+    //
+    //        List<Application>
+    //
+    //        List<Group> groups = getGroups(user);
+    //        Set<ApplicationVersion> applicationVersions = new HashSet<ApplicationVersion>();
+    //        for (Group group : groups) {
+    //            applicationVersions.addAll(group.getGuestApplicationVersions());
+    //            List<Application> applications = group.getOwnedApplications();
+    //            for (Application application : applications) {
+    //                applicationVersions.addAll(application.getApplicationVersions());
+    //            }
+    //        }
+    //
+    //        Organization activeOrganization = user.getActiveOrganization();
+    //        if(activeOrganization != null) {
+    //            applicationVersions.addAll(applicationVersionService.getAll(activeOrganization.getId(), AppState.ORGANIZATION_PUBLISH, AppState.ORG_PUBLISH_REQUEST));
+    //        }
+    //
+    //        return new ArrayList<ApplicationVersion>(applicationVersions);
+    //    }
 
     @Override
     public List<ApplicationVersion> getApplicationVersions(User user, Long applicationId, SortOrder sortOrder) {
-        TreeSet<ApplicationVersion> versionsSet = new TreeSet<ApplicationVersion>(new ApplicationVersionIdComparator());
+
+        int maxItemInLIst = 10;
+
         if (user != null && applicationId != null && applicationId > 0) {
             List<ApplicationVersion> returnedVersions = applicationVersionDao.getAllByApplicationForUser(applicationId, user);
-            if (returnedVersions != null) {
-                versionsSet.addAll(returnedVersions);
+            return filterAndSortApplicationVersions(sortOrder,  maxItemInLIst,  returnedVersions);
+        }else{
+            return new ArrayList<ApplicationVersion>();
+        }
+    }
+
+    List<ApplicationVersion> filterAndSortApplicationVersions(SortOrder sortOrder, int maxItemInLIst, List<ApplicationVersion> versions) {
+        List<ApplicationVersion> sortedList = new ArrayList<ApplicationVersion>();
+        Map<String, ApplicationVersion> versionsMap = new HashMap<String, ApplicationVersion>();
+
+        if (sortOrder.equals(SortOrder.ASCENDING) || sortOrder.equals(SortOrder.DESCENDING)) {
+            Collections.sort(versions, new ApplicationVersionIdComparator(sortOrder));
+        }
+
+        Iterator<ApplicationVersion> it = versions.iterator();
+        int nbItemInLIst = 0;
+        while (it.hasNext() && nbItemInLIst < maxItemInLIst) {
+            ApplicationVersion applicationVersion = it.next();
+            if (!versionsMap.containsKey(applicationVersion.getVersionName())) {
+                versionsMap.put(applicationVersion.getVersionName(), applicationVersion);
+                nbItemInLIst++;
+            } else {
+                if (applicationVersion.getId() > versionsMap.get(applicationVersion.getVersionName()).getId()) {
+                    versionsMap.put(applicationVersion.getVersionName(), applicationVersion);
+                }
             }
         }
 
-        List<ApplicationVersion> sortedList = new ArrayList<ApplicationVersion>();
-        if (SortOrder.ASCENDING.equals(sortOrder)) {
-            sortedList.addAll(versionsSet);
-        } else if (SortOrder.DESCENDING.equals(sortOrder)) {
-            sortedList.addAll(versionsSet.descendingSet());
-        } else {
-            sortedList.addAll(versionsSet);
+        sortedList.addAll(versionsMap.values());
+
+        if (sortOrder.equals(SortOrder.ASCENDING) || sortOrder.equals(SortOrder.DESCENDING)) {
+            Collections.sort(sortedList, new ApplicationVersionIdComparator(sortOrder));
         }
 
-        return new ArrayList<ApplicationVersion>(sortedList);
+        return sortedList;
     }
 
     @Override
@@ -431,7 +453,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public <D> List<D> getCategoryModelsForUser(User user, ApplicationType applicationType, Class<D> modelClass, SortOrder sortOrder) {
+    public <D> List<D> getCategoryModelsForUser(User user, ApplicationType
+            applicationType, Class<D> modelClass, SortOrder sortOrder) {
         List<Category> categories = getCategoriesForUser(user, applicationType, sortOrder);
         List<D> categoryModels = new ArrayList<D>();
         for (Category category : categories) {
@@ -442,7 +465,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<ApplicationModel> getApplicationsForUserFiltered(User user, ApplicationType userDeviceType, Long groupId, Long categoryId, ApplicationType applicationType) {
+    public List<ApplicationModel> getApplicationsForUserFiltered(User user, ApplicationType userDeviceType, Long
+            groupId, Long categoryId, ApplicationType applicationType) {
         List<ApplicationModel> applicationModels = new ArrayList<ApplicationModel>();
 
         Group group = groupService.get(groupId);
@@ -533,7 +557,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<ApplicationModel> getApplicationModelsForUser(User user, ApplicationType deviceType, Long categoryId) {
+    public List<ApplicationModel> getApplicationModelsForUser(User user, ApplicationType deviceType, Long
+            categoryId) {
         List<Application> applications = getApplicationsForUser(user, deviceType, categoryId);
         List<ApplicationModel> applicationModels = new ArrayList<ApplicationModel>();
         for (Application application : applications) {
@@ -549,7 +574,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public <D> List<D> getApplicationModelsForUser(User user, ApplicationType applicationType, Long categoryId, Class<D> modelClass) {
+    public <D> List<D> getApplicationModelsForUser(User user, ApplicationType applicationType, Long
+            categoryId, Class<D> modelClass) {
         List<Application> applications = getApplicationsForUser(user, applicationType, categoryId);
         List<D> applicationModels = new ArrayList<D>();
         for (Application application : applications) {
@@ -569,7 +595,7 @@ public class UserServiceImpl implements UserService {
     public UserDomain addUserToGroup(User user, Group group, UserRole userRole) {
         if (user != null && group != null && userRole != null) {
             UserDomain userDomain = userDomainService.get(user, group.getId(), userRole);
-            if(userDomain == null) {
+            if (userDomain == null) {
                 Role role = roleService.getRoleByAuthority(userRole.toString());
                 userDomain = new UserDomain();
                 userDomain.setDomain(group);
@@ -596,7 +622,7 @@ public class UserServiceImpl implements UserService {
     public UserDomain addUserToOrganization(User user, Organization organization, UserRole userRole) {
         if (user != null && organization != null && userRole != null) {
             UserDomain userDomain = userDomainService.get(user, organization.getId(), userRole);
-            if(userDomain == null) {
+            if (userDomain == null) {
                 Role role = roleService.getRoleByAuthority(userRole.toString());
                 userDomain = new UserDomain();
                 userDomain.setDomain(organization);
@@ -615,9 +641,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDomain addUserToDomain(User user, Domain domain, UserRole userRole) {
-        if(DomainType.GROUP.equals(domain.getDomainType()) && DomainType.GROUP.equals(userRole.getDomainType())) {
+        if (DomainType.GROUP.equals(domain.getDomainType()) && DomainType.GROUP.equals(userRole.getDomainType())) {
             return addUserToGroup(user, domain.getId(), userRole);
-        } else if(DomainType.ORGANIZATION.equals(domain.getDomainType()) && DomainType.ORGANIZATION.equals(userRole.getDomainType())) {
+        } else if (DomainType.ORGANIZATION.equals(domain.getDomainType()) && DomainType.ORGANIZATION.equals(userRole.getDomainType())) {
             return addUserToOrganization(user, domain.getId(), userRole);
         }
 
@@ -674,7 +700,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<CategoryModel> getCategoryModelsForUser(User user, ApplicationType applicationType, boolean includeIcons, SortOrder sortOrder) {
+    public List<CategoryModel> getCategoryModelsForUser(User user, ApplicationType applicationType,
+                                                        boolean includeIcons, SortOrder sortOrder) {
         List<CategoryModel> categoryModels = new ArrayList<CategoryModel>();
         List<Category> categories = getCategoriesForUser(user, applicationType, sortOrder);
         for (Category category : categories) {
@@ -684,7 +711,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public <D> List<D> getApplicationModelsForUser(User user, ApplicationType applicationType, Class<D> modelClass) {
+    public <D> List<D> getApplicationModelsForUser(User user, ApplicationType
+            applicationType, Class<D> modelClass) {
         List<D> applicationModels = new ArrayList<D>();
         List<Application> applications = getApplicationsForUser(user, applicationType);
         for (Application application : applications) {
@@ -748,7 +776,7 @@ public class UserServiceImpl implements UserService {
         boolean canEdit = false;
 
         if (user != null && application != null) {
-            if(user.isActiveOrganizationAdmin() || user.isSystemAdmin()) {
+            if (user.isActiveOrganizationAdmin() || user.isSystemAdmin()) {
                 return true;
             }
 
@@ -802,9 +830,9 @@ public class UserServiceImpl implements UserService {
     }
 
     public void setDefaultActiveOrganization(User user) {
-        if(user.getActiveOrganization() == null) {
+        if (user.getActiveOrganization() == null) {
             List<Organization> organizationList = getOrganizations(user, null);
-            if(!organizationList.isEmpty()) {
+            if (!organizationList.isEmpty()) {
                 user.setActiveOrganization(organizationList.get(0));
             }
         }
