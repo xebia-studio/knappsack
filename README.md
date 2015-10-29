@@ -20,7 +20,7 @@ Knapsack is a simple, easy to-use, mobile application management (MAM) platform 
 * Customize open source version
 
 ## Build and Deploy Steps
-For a tutorial on how to build and deploy Knappsack please use the following link:
+For a tutorial on how to build and deploy Knappsack please use the Build and Deployment guide included in the ```docs/`` folder:
 
 [Knappsack Build and Deployment Guide](https://s3.amazonaws.com/knappsack/KnappsackOSSEditionDeploymentGuide.pdf "How to Build and Deploy Knappsack")
 
